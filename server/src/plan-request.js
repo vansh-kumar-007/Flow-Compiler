@@ -143,6 +143,10 @@ function validatePreviousPlan(previousPlan) {
     completedIds = [...completedSet];
   }
 
+  if (taskIds.size + completedIds.length > 20) {
+    return invalid("previousPlan cannot contain more than 20 unfinished and completed task IDs combined.");
+  }
+
   // Reject dangling references in client-supplied context before it reaches the prompt.
   // Cycle detection on generated plans remains a separate model-output validation step.
   const validDependencyIds = new Set([...taskIds, ...completedIds]);

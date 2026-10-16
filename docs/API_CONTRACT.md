@@ -189,7 +189,6 @@ Messages should be concise and actionable, with no stack traces, credentials, ra
 | `502` | `AI_RESPONSE_TOO_LARGE` | The declared or streamed upstream response exceeds the configured byte limit. |
 | `502` | `AI_INVALID_RESPONSE` | The upstream body is invalid UTF-8/JSON or lacks non-empty string message content. |
 | `502` | `AI_PROVIDER_ERROR` | Other non-success NVIDIA HTTP status or an otherwise unexpected provider failure. |
-| `502` | `AI_RATE_LIMITED` | NVIDIA reports its upstream quota/rate limit; don't confuse it with Flow Compiler's own 429. |
 | `502` | `INVALID_MODEL_OUTPUT` | Model response cannot be parsed or fails output schema/dependency validation. |
 | `504` | `AI_TIMEOUT` | NVIDIA request exceeded the bounded provider timeout. |
 
@@ -219,7 +218,8 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 
 - **P2-01:** define/document this contract. This document completes the design decision record for request/response field names, limits, revision semantics, deferral, dependencies, and errors.
 - **P2-02:** implement request validation against Sections 2 and 5, including the existing 20 KiB JSON parser limit and deterministic validation tests.
-- **P2-03/P2-04:** implement the server-only NVIDIA adapter, timeout, bounded response handling, and provider error mapping.
+- **P2-03:** implement the isolated server-only NVIDIA adapter.
+- **P2-04:** bound provider request duration and response size, and map upstream errors to stable safe codes.
 - **P2-05/P2-06/P2-07:** parse and validate generated JSON, task schema, IDs, dependency references, and acyclic graph.
 - **P2-09/P2-10:** implement/test API rate limiting and the full deterministic test matrix.
 

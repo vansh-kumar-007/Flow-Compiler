@@ -38,7 +38,7 @@ The source starter sends `summary`, `tasks`, and `completedTaskIds`. Preserve th
 | `summary` | No | String, 1–500 characters | Previous plan's short summary. |
 | `totalMinutes` | No | Integer, 1–720 | Previous plan's duration metadata, if provided. It is informational context, not the new time budget. |
 | `tasks` | Yes | Array of 1–20 task objects | Unfinished tasks from the previous plan that may be revised. This matches the starter's recompile caller, which passes remaining tasks. |
-| `completedTaskIds` | No | Array of 0–20 unique task IDs | IDs of tasks the user has finished. They must not be scheduled again. |
+| `completedTaskIds` | No | Array of 0–20 unique task IDs | IDs of tasks the user has finished. They must not be scheduled again. The combined number of IDs in `tasks` and `completedTaskIds` must not exceed 20. |
 | `revisionContext` | No | Object described below | Optional reason and blocker details to help the model revise unfinished work. |
 
 `previousPlan.tasks` uses the Task fields defined in Section 3. IDs in `completedTaskIds` must be unique and must not overlap task IDs in `previousPlan.tasks`. The tasks may retain dependencies on IDs in `completedTaskIds`; these are satisfied prerequisites. Full cross-reference/cycle validation for generated plans is a P2-07/P2-10 responsibility; request validation must still reject malformed field types and unreasonable sizes in the revision object.
@@ -115,7 +115,7 @@ The example is illustrative and its values are not a promise that a request will
 | `summary` | Non-empty string, max 500 characters | Concise description of the compiled plan. |
 | `totalMinutes` | Integer, 1–720 | Must equal the sum of `minutes` for `tasks` only. Deferred tasks and work already completed are not included. |
 | `tasks` | Array of 1–20 task objects | Unfinished, executable work selected for the current time window. The source prompt asks for 3–8 tasks when appropriate; fewer are allowed when appropriate. |
-| `deferredTasks` | Optional array of 0–20 deferred-task objects | Work intentionally not scheduled now because of time limits, dependencies, blockers, or lower priority. Omission is treated as an empty list. |
+| `deferredTasks` | Optional array of 0–20 deferred-task objects | Work intentionally not scheduled now because of time limits, dependencies, blockers, or lower priority. Omission is treated as an empty list. The combined number of nodes in `tasks` and `deferredTasks` must not exceed 20, preserving the source plan's 20-task cap. |
 
 `totalMinutes` must not exceed `availableMinutes`. Each task duration is positive; each emitted plan must allocate the current budget realistically rather than quietly exceeding it. If meaningful work does not fit, move it to `deferredTasks` with an explicit `deferredReason`. If no executable action can be scheduled safely (for example, all work is blocked and no useful blocker-resolution action exists), the service may return `422 NO_ACTIONABLE_TASK` rather than invent an action or emit an invalid empty `tasks` array.
 

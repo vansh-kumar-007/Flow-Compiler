@@ -28,6 +28,12 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Export dependency lockfile for one-time bootstrap
+        if: github.event_name == 'push' && startsWith(github.event.head_commit.message, 'EXPORT_LOCKFILE:')
+        run: |
+          echo '__FLOW_LOCKFILE_BEGIN__'
+          cat package-lock.json
+          echo '__FLOW_LOCKFILE_END__'
       - name: Run backend tests
         run: npm test
       - name: Build frontend

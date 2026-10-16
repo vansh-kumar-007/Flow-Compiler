@@ -70,7 +70,7 @@ The successful response shape is:
 ```json
 {
   "summary": "Resolve the blocker, then finish the highest-value work.",
-  "totalMinutes": 60,
+  "totalMinutes": 40,
   "tasks": [
     {
       "id": "t1",

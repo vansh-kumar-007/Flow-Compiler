@@ -1,6 +1,10 @@
-import "dotenv/config";
-import { pathToFileURL } from "node:url";
+import { config as loadEnv } from "dotenv";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createApp } from "./app.js";
+
+// Resolve the documented server/.env path independently of the caller's working directory.
+// Hosting-provided environment variables take precedence because dotenv's override default is false.
+loadEnv({ path: fileURLToPath(new URL("../.env", import.meta.url)) });
 
 export function startServer(options = {}) {
   const port = options.port ?? Number.parseInt(process.env.PORT || "8787", 10);

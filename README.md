@@ -4,7 +4,7 @@ Flow Compiler is planned as an AI-assisted productivity tool that turns unstruct
 
 ## Current status
 
-This branch contains the Phase 1 runtime foundation. The frontend is a real React application and its API connection check calls the real Express health endpoint. AI plan generation, dependency graphs, task completion, focus mode, persistence, and export are not implemented yet. The plan endpoint intentionally returns HTTP 501 until Phase 2 is built; the interface labels that boundary instead of simulating an AI response.
+This feature branch contains the Phase 1 runtime foundation plus the Phase 2 API contract, request validation, and an isolated NVIDIA provider adapter. The frontend API connection check calls the real Express health endpoint. The `/api/plan` route still returns HTTP 501: prompt/output parsing, generated-task and dependency validation, scheduling, and integration of the provider into the route are not complete. Real NVIDIA inference has not been performed or verified.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ This branch contains the Phase 1 runtime foundation. The frontend is a real Reac
 ## Local development
 
 1. Install dependencies from the repository root with npm install.
-2. Copy server/.env.example to server/.env for local backend configuration. No real NVIDIA key is needed for Phase 1. Do not commit .env files.
+2. Copy `server/.env.example` to `server/.env` for local backend configuration. The server explicitly loads that file regardless of the command's working directory; environment variables supplied by the host take precedence. Unit tests inject a mock environment and mock fetch, so no real NVIDIA key is required. Do not commit `.env` files.
 3. In one terminal, run npm run dev:api.
 4. In another terminal, run npm run dev.
 5. Open http://localhost:5173 and use “TEST API CONNECTION”.
@@ -28,7 +28,7 @@ The GitHub Actions workflow runs dependency installation, backend tests, and the
 
 ## Secret handling
 
-The NVIDIA key is a server-only secret. Never put it in a VITE_* variable, frontend source, screenshots, issues, or commits. The server environment example contains a placeholder only. Real AI provider configuration and model-output validation are Phase 2 scope.
+The isolated NVIDIA adapter reads `NVIDIA_API_KEY` only from the server process environment (locally, `server/.env`; in hosting, a server-side secret setting). Never put it in a `VITE_*` variable, frontend source, screenshots, issues, or commits. The environment example contains a placeholder only. The adapter is not connected to `/api/plan` yet, and no live inference is claimed.
 
 ## Project governance
 

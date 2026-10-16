@@ -203,6 +203,14 @@ test("plan endpoint rejects malformed revision context and dangling prior depend
       availableMinutes: 30,
       previousPlan: {
         tasks: [{ ...validTask, dependsOn: [] }],
+        completedTaskIds: Array.from({ length: 20 }, (_value, index) => "done" + (index + 1))
+      }
+    },
+    {
+      brainDump: "Revise my plan",
+      availableMinutes: 30,
+      previousPlan: {
+        tasks: [{ ...validTask, dependsOn: [] }],
         completedTaskIds: [],
         totalMinutes: 0
       }

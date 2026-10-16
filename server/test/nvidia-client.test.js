@@ -369,7 +369,31 @@ test("rejects missing, non-string, and blank provider message content", async ()
   }
 });
 
-test("reads timeout and response bounds from server environment configuration", async () => {
+test("uses NVIDIA_TIMEOUT_MS from server environment configuration", async () => {
+  let observedAbort = false;
+  const client = createNvidiaClient({
+    env: {
+      NVIDIA_API_KEY: testSecret,
+      NVIDIA_TIMEOUT_MS: "15"
+    },
+    fetchImpl: (_url, { signal }) => new Promise((_resolve, reject) => {
+      signal.addEventListener("abort", () => {
+        observedAbort = true;
+        reject(new Error("internal test transport error"));
+      }, { once: true });
+    })
+  });
+
+  await assert.rejects(client.createChatCompletion({ messages }), error => {
+    assert.equal(error.code, "AI_TIMEOUT");
+    assert.equal(error.message, "The AI service request timed out.");
+    assert.equal(error.message.includes(testSecret), false);
+    return true;
+  });
+  assert.equal(observedAbort, true);
+});
+
+test("reads NVIDIA_MAX_RESPONSE_BYTES from server environment configuration", async () => {
   const bodyText = envelopeText("small");
   const client = createNvidiaClient({
     env: {

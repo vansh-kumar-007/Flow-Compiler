@@ -1,58 +1,62 @@
 # Flow Compiler — Project State
 
 Last updated: 2026-10-16
-Authoritative product specification: the ChatGPT Project source file `Plan.txt` / “Flow Compiler — build plan and starter code”.
+Authoritative product source: the ChatGPT Project source titled “Flow Compiler — build plan and starter code” (attached as Plan.txt; the build instructions call it Plan.md).
 
-## Repository baseline
+## Repository baseline and Git history
 
 - Repository: https://github.com/vansh-kumar-007/Flow-Compiler
-- Default branch declared by repository metadata: `main`
-- Initial audit result: public repository is accessible and has push/admin permissions for the connected GitHub identity.
-- GitHub reported the repository as empty (size 0); the `contents` endpoint returned “This repository is empty”, the branches endpoint returned `[]`, commit search returned HTTP 409 (“Git Repository is empty”), and pull-request search returned no results.
-- Therefore there is currently no code, commit history, branch, existing checklist, project-state file, test suite, CI, or deployment to inspect. These are audit findings, not assertions about any earlier local copy.
-- Because no branch has a commit to branch from, the first repository write must establish a root commit. Feature work should move onto a feature branch immediately afterward.
+- Repository metadata: public; default branch main; connected GitHub identity has admin, maintain, and push permissions.
+- Initial audit proved the repository was empty: size 0, contents API reported “This repository is empty”, branches endpoint returned [], commit listing/search gave HTTP 409, and pull-request search returned none.
+- The first GitHub write therefore had to create a root commit on main so a working branch could exist. Initial commit: 3ef22a5998c9f055beae00eaa5e0529dbffd53b (governance baseline only).
+- Working branch: chore/phase-0-audit-and-foundation, created from that root commit before subsequent edits.
+- Latest audited branch head before this reconciliation: 1cae62775e9a662f14177c2fa6a2d45d69d22bf9. Fetching both governance files from the working branch returned their contents and blob SHAs successfully.
+- No previous app code, tests, CI, workflows, releases, deployments, or user work was present in the remote repository at initial audit.
 
 ## Product and architecture baseline
 
-Flow Compiler turns unstructured thoughts into realistic, dependency-aware, time-bounded workflows. The source plan specifies a React + Vite frontend, a separate Express backend, and NVIDIA Nemotron 3 Ultra through NVIDIA's OpenAI-compatible chat completions API. The frontend must never receive the NVIDIA API key.
+Flow Compiler turns unstructured thoughts into actionable, time-bounded, dependency-aware workflows. The source plan specifies a React + Vite frontend, separate Express backend, and NVIDIA Nemotron 3 Ultra via NVIDIA’s OpenAI-compatible Chat Completions API. The NVIDIA API key must remain server-side.
 
-Planned capabilities, not yet implemented or verified:
+Planned features (not yet implemented or verified unless separately recorded):
 - AI-generated actionable tasks with duration, priority, reason, category, and dependency IDs.
-- Dependency-aware workflow presentation in a dark futuristic command-center UI.
-- Completion/progress tracking, next action, countdown/focus mode, and recompile when time changes or blockers/early completion change the plan.
-- Local plan persistence, demo input/data, responsive UI, and export/share output that excludes private raw notes.
-- Backend validation, model-output schema validation, cycle/unknown-dependency rejection, bounded payloads/outputs, safe error handling, timeouts, rate limiting, and server-side secrets.
-- Free-first deployment, with current hosting quotas and the actual service constraints confirmed before deployment choices are made.
+- A dark futuristic command-center UI and dependency graph.
+- Task completion/progress tracking, next-ready action, focus mode/countdown, and recompile when time, early completion, or blockers change the plan.
+- Local plan persistence, demo input/data, responsive UI, and a share/export format excluding private raw notes by default.
+- Backend validation, full model-output schema validation, duplicate/unknown/self/cyclic dependency rejection, bounded payloads/output, safe error handling, timeouts, rate limiting, and server-side secrets.
+- Free-first deployment only after current official limits and architecture compatibility are confirmed.
 
-## Proposed execution phases
+## Phase map and acceptance gates
 
-The source plan's Day 1 / Day 2 / Day 3 order remains the baseline, split into verifiable phases to keep each change reviewable.
+The source plan’s Day 1 / Day 2 / Day 3 sequence is retained, split into reviewable gates:
 
-1. **Phase 0 — Audit and project governance.** Record repository/source baseline, phase map, requirement IDs, dependencies, risks, acceptance criteria, and manual blockers. Acceptance: checklist and state documents exist in the repository and agree about current progress.
-2. **Phase 1 — Repository and runtime foundation (Day 1 foundation).** Bootstrap the minimum React/Vite frontend and Express backend with explicit scripts, environment example, secret-safe ignore rules, health endpoint, readable errors, and a repeatable automated verification path. Acceptance: clean install/build and health/API tests pass in CI or another recorded executable environment; no secret is committed.
-3. **Phase 2 — Secure AI planning API (Day 1 compiler).** Implement validated request contract, NVIDIA adapter, bounded timeout/response handling, schema validation for every task field, ID uniqueness, dependency existence and acyclic-graph checks, rate limits, and stable error responses. Acceptance: automated positive, malformed-input, malformed-model-output, dependency-cycle, timeout/provider-error, and missing-secret tests pass.
-4. **Phase 3 — Core workflow UI (Day 1/2).** Build the input/time selector, demo input, task/dependency display, priorities, loading/error/empty states, task completion, and progress. Acceptance: UI consumes the API contract without exposing secrets and has automated or documented interaction checks.
-5. **Phase 4 — Recompilation, timing, and focus (Day 2).** Preserve completed work and valid dependencies across recompilation; allow remaining-time adjustments, blockers, early completion, countdown, and a focused next-action view. Acceptance: tests prove completed task IDs/status are preserved, dependencies are revalidated, and remaining work is not silently lost.
-6. **Phase 5 — Persistence, export, responsiveness, and polish (Day 2/3).** Local plan persistence, animated dependency visualization, keyboard/accessibility/reduced-motion support, responsive layout, demo data, and privacy-preserving share/export. Acceptance: core flows work at mobile and desktop widths, saved state reloads, and export does not include raw private notes unless explicitly chosen.
-7. **Phase 6 — QA and security hardening (Day 3).** Test vague/large/conflicting inputs, output limits, rate limits, duplicate IDs, unknown/self dependencies, circular dependencies, provider failures, and privacy boundaries. Acceptance: all available automated checks pass and limitations are documented; untested items stay unverified.
-8. **Phase 7 — Free-first deployment and operational docs (Day 3).** Confirm current free tiers/limits and architecture compatibility; deploy only using approved free resources; add secure environment setup, smoke tests, and rollback/manual steps. Acceptance: deployed endpoints are independently checked, secrets remain server-side, and deployment costs/limits are documented.
-9. **Phase 8 — Final acceptance and handoff.** Reconcile every requirement to code and verification evidence, review the diff/CI, and record known limitations. Acceptance: no production-readiness claim without end-to-end evidence.
+1. **Phase 0 — Audit/governance.** Source/remote audit, risk register, stable task IDs, requirements, acceptance criteria, next-task pointer. Gate: checklist and state agree; baseline facts are supported by live GitHub evidence.
+2. **Phase 1 — Runtime foundation (Day 1 foundation).** React/Vite + Express, scripts, env examples, safe ignore rules, health/API error contract, tests, CI. Gate: CI installs dependencies and passes backend tests and frontend production build; this does not imply production readiness.
+3. **Phase 2 — Secure AI planning API (Day 1 compiler).** Request contract, NVIDIA adapter, timeouts/error bounds, complete schema validation, dependency DAG/cycle checks, rate limiting/CORS, deterministic mock-provider tests. Gate: positive and invalid input/model/provider/dependency tests pass; live inference is labeled unverified until a real key-backed call succeeds.
+4. **Phase 3 — Core workflow UI (Day 1/2).** Thought input/time budget, demo, task/dependency display, priorities, progress, completion, empty/loading/error states. Gate: UI uses backend contract; no browser-side NVIDIA calls.
+5. **Phase 4 — Recompilation/focus (Day 2).** Preserve completed work, revalidate dependencies, account for time changes/early completion/blockers, focus/countdown, next-ready selection. Gate: regression tests prove task completion and valid dependencies survive recompile.
+6. **Phase 5 — Persistence/export/polish (Day 2/3).** Local persistence, animated dependency graph, responsive layout, accessibility/reduced-motion, privacy-preserving share/export. Gate: mobile/desktop checks, reload, and export privacy checks pass.
+7. **Phase 6 — QA/security (Day 3).** Edge/conflict inputs, bounds, origin/rate limiting, privacy/logging, dependency/recompile regressions, final diff review. Gate: actual automated/manual outcomes and uncovered gaps are recorded.
+8. **Phase 7 — Free-first deployment (Day 3).** Verify current official service terms/quotas and fit, choose compatible frontend/backend, configure server-side secrets, deploy and smoke-test, document rollback/limits. Gate: deployed behavior independently checked; no paid resources without approval.
+9. **Phase 8 — Final acceptance.** Trace requirements to code/evidence, confirm CI/PR/default branch, update setup/security documentation, publish tested capabilities and limitations.
 
-## Initial risk register
+For repeatable verification, target Node.js 24 LTS in CI (official Node release schedule lists v24 as Active LTS transitioning to Maintenance on 2026-10-20) and test gates for dependency install, backend Node test runner, and Vite production build. Current official pages list Vite 8.3 as supported and React 19.3 as latest; package manifests should use compatible stable ranges and CI should expose incompatibilities rather than assume them. This runtime choice is an engineering baseline, not a claim tests have passed.
 
-- **R-01 — Empty repository / no base commit (blocking Phase 1 branch workflow):** root commit is required before a feature branch can be based on the project.
-- **R-02 — Model access/quota:** the NVIDIA model page currently advertises a free API endpoint, but eligibility, live key validity, request quotas, and real inference are account-specific and remain unverified until a key is configured and a real request is tested. Reference: https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b
-- **R-03 — Public endpoint abuse:** API key protection alone is insufficient; the backend must have request validation, limits, safe errors, and an explicitly selected deployment/authentication strategy.
-- **R-04 — Dependency integrity:** starter-plan validation in the source document is intentionally incomplete; the implementation must reject unknown IDs, duplicate IDs, self-links, and cycles before the UI uses generated plans.
-- **R-05 — Recompile can discard user work:** completed tasks and still-valid dependency relationships must be preserved deliberately.
-- **R-06 — Static frontend/backend split:** static hosting (for example GitHub Pages) cannot host Express; a separately hosted/serverless backend and verified CORS/origin configuration are required.
-- **R-07 — Free-tier drift:** hosting/model usage limits change, so verify official current documentation before choosing services.
-- **R-08 — No executable environment attached to GitHub connection:** repository operations are available through GitHub tools, but local install/build/test execution is not yet established. Add CI early so code can be verified from the repository, and report any CI that has not actually run.
+## Risk register
+
+- **R-01 — Empty repository / no base commit:** resolved for workflow setup by creating the initial governance root commit and a feature branch. No original code existed to preserve.
+- **R-02 — NVIDIA model access/quota:** NVIDIA’s official Build page advertises a free API endpoint, but account eligibility, live key validity, and remaining quota are unverified. Source: https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b
+- **R-03 — Public endpoint abuse:** the backend needs request limits, strict validation, safe errors, CORS/origin controls, and a deliberate deployment/auth approach.
+- **R-04 — Dependency integrity:** starter example validation is incomplete; must reject duplicates, missing IDs, self-links, and graph cycles before rendering/acting.
+- **R-05 — Recompile can discard user work:** completed tasks and valid dependency relationships must be preserved deliberately.
+- **R-06 — Frontend/backend deployment split:** static hosting cannot host Express; separate backend/serverless deployment and origin configuration are required.
+- **R-07 — Free-tier drift:** check official service limits at deployment time; do not assume current free plans.
+- **R-08 — Remote editing vs. execution:** GitHub tools can read/write source but do not execute npm locally by themselves. CI must be created and its actual result inspected. Any result not returned by an execution environment remains unverified.
 
 ## Current progress
 
-- Phase 0: audit established from live GitHub metadata/API evidence.
-- No application code, tests, CI, or deployments have been implemented or verified at this point.
-- The checklist will be maintained in `docs/BUILD_CHECKLIST.md`; stable IDs and statuses there are the authoritative task-level tracking.
-- Current next task: `P0-02`, create the granular master checklist and reconcile the two governance documents.
-- Manual action currently required: none to document the baseline. NVIDIA key configuration and browser/deployment authorization will be requested only when their respective phases are reached.
+- Phase 0 audit is established from repository metadata, contents, branches, commit listing, and PR search.
+- Both governance documents are being reconciled on chore/phase-0-audit-and-foundation.
+- No app code, tests, CI, or deployment had been run before the current implementation pass.
+- Stable task IDs and evidence requirements live in docs/BUILD_CHECKLIST.md.
+- Next implementation task after governance reconciliation: **P1-01 — Establish app directory and dependency scripts.**
+- Manual action currently required: none for baseline/setup. NVIDIA key setup will be requested securely when Phase 2’s live-inference smoke test is reached; no key should be pasted into chat or committed.

@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import { validatePlanRequest } from "./plan-request.js";
 
 export function createApp(options = {}) {
   const app = express();
@@ -20,12 +21,18 @@ export function createApp(options = {}) {
     });
   });
 
-  // AI planning is deliberately not implemented in this foundation phase.
-  app.post("/api/plan", (_request, response) => {
-    response.status(501).json({
+  // Validate public input now, even while the provider integration remains unavailable.
+  // A well-formed request receives 501 until the AI adapter is implemented.
+  app.post("/api/plan", (request, response) => {
+    const validationError = validatePlanRequest(request.body);
+    if (validationError) {
+      return response.status(400).json({ error: validationError });
+    }
+
+    return response.status(501).json({
       error: {
         code: "PLANNING_NOT_IMPLEMENTED",
-        message: "AI planning is not available in this foundation phase."
+        message: "AI planning is not available yet."
       }
     });
   });

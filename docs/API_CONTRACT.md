@@ -181,12 +181,31 @@ Messages should be concise and actionable, with no stack traces, credentials, ra
 | `500` | `INTERNAL_ERROR` | Unexpected internal failure; do not return stack details. Existing envelope. |
 | `500` | `AI_NOT_CONFIGURED` | Server-side NVIDIA key/configuration is missing. This preserves the source starter's 500 status while adopting the foundation's structured error envelope. |
 | `501` | `PLANNING_NOT_IMPLEMENTED` | Current foundation behavior while AI planning remains unimplemented. |
-| `502` | `AI_PROVIDER_ERROR` | NVIDIA returns an error, invalid upstream response, or malformed result. |
+| `502` | `AI_AUTHENTICATION_ERROR` | NVIDIA rejects the server-side API credential (HTTP 401). |
+| `502` | `AI_ACCESS_DENIED` | NVIDIA denies access to the model/resource (HTTP 403). |
+| `502` | `AI_RATE_LIMITED` | NVIDIA reports its upstream quota/rate limit; don't confuse it with Flow Compiler's own 429. |
+| `502` | `AI_PROVIDER_UNAVAILABLE` | NVIDIA returns an HTTP 5xx response. |
+| `502` | `AI_NETWORK_ERROR` | A non-timeout fetch or response-stream transport failure prevents reaching/reading NVIDIA. |
+| `502` | `AI_RESPONSE_TOO_LARGE` | The declared or streamed upstream response exceeds the configured byte limit. |
+| `502` | `AI_INVALID_RESPONSE` | The upstream body is invalid UTF-8/JSON or lacks non-empty string message content. |
+| `502` | `AI_PROVIDER_ERROR` | Other non-success NVIDIA HTTP status or an otherwise unexpected provider failure. |
 | `502` | `AI_RATE_LIMITED` | NVIDIA reports its upstream quota/rate limit; don't confuse it with Flow Compiler's own 429. |
 | `502` | `INVALID_MODEL_OUTPUT` | Model response cannot be parsed or fails output schema/dependency validation. |
 | `504` | `AI_TIMEOUT` | NVIDIA request exceeded the bounded provider timeout. |
 
 Do not expose the provider's raw response body or the API key in the HTTP error. Log only what is operationally needed and avoid recording the user's full brain dump by default.
+
+### Provider request and response bounds
+
+P2-04 provider calls use a finite 90,000 ms timeout, matching the 90-second timeout in the source-plan starter. The timeout covers both waiting for the HTTP response and reading its body; it aborts the request and cancels the body reader when possible. Timeout errors use `AI_TIMEOUT` and the documented 504 mapping. Other fetch or stream transport failures use `AI_NETWORK_ERROR`.
+
+Successful upstream responses are limited to 1,048,576 bytes (1 MiB) by default. The adapter checks a valid `Content-Length` before reading and enforces the same limit incrementally while consuming the response stream; absent, malformed, or dishonest headers cannot bypass streamed enforcement. Oversized bodies are cancelled where supported and map to `AI_RESPONSE_TOO_LARGE`. Error-status response bodies are not read and are cancelled best-effort.
+
+The server may override these values with positive decimal integer environment settings:
+- `NVIDIA_TIMEOUT_MS`: default `90000`; supported range 1–120000 milliseconds.
+- `NVIDIA_MAX_RESPONSE_BYTES`: default `1048576`; supported range 1–10485760 bytes.
+
+Missing, malformed, non-integer, or out-of-range settings fall back to the documented defaults. The settings belong only in server-side environment configuration (locally `server/.env), never `VITE_*` variables. Provider errors use stable codes and safe messages; raw HTTP error bodies and transport exceptions are not included.
 
 ## 6. Credential and data boundary
 

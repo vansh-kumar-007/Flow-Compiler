@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { once } from "node:events";
 import { after, before, test } from "node:test";
 import { createApp } from "../src/app.js";
+import { startServer } from "../src/server.js";
 
 let server;
 let baseUrl;
@@ -73,4 +75,16 @@ test("health response includes configured CORS origin without credentials", asyn
   });
   assert.equal(response.headers.get("access-control-allow-origin"), "http://localhost:5173");
   assert.equal(response.headers.get("access-control-allow-credentials"), null);
+});
+
+test("server bootstrap binds a port and serves the health route", async () => {
+  const started = startServer({ port: 0, host: "127.0.0.1" });
+  await once(started, "listening");
+  try {
+    const response = await fetch("http://127.0.0.1:" + started.address().port + "/api/health");
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).status, "ok");
+  } finally {
+    await new Promise((resolve, reject) => started.close(error => error ? reject(error) : resolve()));
+  }
 });

@@ -1,13 +1,28 @@
 import "dotenv/config";
+import { pathToFileURL } from "node:url";
 import { createApp } from "./app.js";
 
-const port = Number.parseInt(process.env.PORT || "8787", 10);
-const app = createApp();
+export function startServer(options = {}) {
+  const port = options.port ?? Number.parseInt(process.env.PORT || "8787", 10);
+  const host = options.host || process.env.HOST || "127.0.0.1";
 
-if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  throw new Error("PORT must be a valid TCP port number.");
+  if (!Number.isInteger(port) || port < 0 || port > 65535) {
+    throw new Error("PORT must be a valid TCP port number.");
+  }
+
+  return createApp().listen(port, host);
 }
 
-app.listen(port, "127.0.0.1", () => {
-  console.log("Flow Compiler API listening on 127.0.0.1:" + port);
-});
+const isMain = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isMain) {
+  const server = startServer();
+  server.once("listening", () => {
+    const address = server.address();
+    console.log("Flow Compiler API listening on " + address.address + ":" + address.port);
+  });
+  server.once("error", error => {
+    console.error("Flow Compiler API failed to start:", error.message);
+    process.exitCode = 1;
+  });
+}

@@ -36,7 +36,7 @@ The source starter sends `summary`, `tasks`, and `completedTaskIds`. Preserve th
 | Field | Required when object present | Type / bounds | Meaning |
 |---|---|---|---|
 | `summary` | No | String, 1–500 characters | Previous plan's short summary. |
-| `totalMinutes` | No | Integer, 0–720 | Previous plan's duration metadata, if provided. It is informational context, not the new time budget. |
+| `totalMinutes` | No | Integer, 1–720 | Previous plan's duration metadata, if provided. It is informational context, not the new time budget. |
 | `tasks` | Yes | Array of 1–20 task objects | Unfinished tasks from the previous plan that may be revised. This matches the starter's recompile caller, which passes remaining tasks. |
 | `completedTaskIds` | No | Array of 0–20 unique task IDs | IDs of tasks the user has finished. They must not be scheduled again. |
 | `revisionContext` | No | Object described below | Optional reason and blocker details to help the model revise unfinished work. |
@@ -113,7 +113,7 @@ The example is illustrative and its values are not a promise that a request will
 | Field | Type / bounds | Meaning |
 |---|---|---|
 | `summary` | Non-empty string, max 500 characters | Concise description of the compiled plan. |
-| `totalMinutes` | Integer, 0–720 | Must equal the sum of `minutes` for `tasks` only. Deferred tasks and work already completed are not included. |
+| `totalMinutes` | Integer, 1–720 | Must equal the sum of `minutes` for `tasks` only. Deferred tasks and work already completed are not included. |
 | `tasks` | Array of 1–20 task objects | Unfinished, executable work selected for the current time window. The source prompt asks for 3–8 tasks when appropriate; fewer are allowed when appropriate. |
 | `deferredTasks` | Optional array of 0–20 deferred-task objects | Work intentionally not scheduled now because of time limits, dependencies, blockers, or lower priority. Omission is treated as an empty list. |
 

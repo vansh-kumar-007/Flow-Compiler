@@ -88,3 +88,151 @@ test("server bootstrap binds a port and serves the health route", async () => {
     await new Promise((resolve, reject) => started.close(error => error ? reject(error) : resolve()));
   }
 });
+
+test("plan endpoint rejects invalid brain dumps and time budgets", async () => {
+  const invalidPayloads = [
+    {},
+    { brainDump: "   ", availableMinutes: 30 },
+    { brainDump: 42, availableMinutes: 30 },
+    { brainDump: "valid task", availableMinutes: 4 },
+    { brainDump: "valid task", availableMinutes: 721 },
+    { brainDump: "valid task", availableMinutes: 5.5 },
+    { brainDump: "valid task", availableMinutes: "30" },
+    { brainDump: "x".repeat(5001), availableMinutes: 30 }
+  ];
+
+  for (const payload of invalidPayloads) {
+    const response = await fetch(baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    assert.equal(response.status, 400, JSON.stringify(payload).slice(0, 100));
+    assert.equal((await response.json()).error.code, "INVALID_REQUEST");
+  }
+});
+
+test("plan endpoint accepts both inclusive available-time boundaries", async () => {
+  for (const availableMinutes of [5, 720]) {
+    const response = await fetch(baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brainDump: "Finish one concrete task.", availableMinutes })
+    });
+    assert.equal(response.status, 501);
+    assert.equal((await response.json()).error.code, "PLANNING_NOT_IMPLEMENTED");
+  }
+});
+
+test("plan endpoint accepts the source-compatible previousPlan revision shape", async () => {
+  const response = await fetch(baseUrl + "/api/plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      brainDump: "Resolve the blocker and continue.",
+      availableMinutes: 5,
+      previousPlan: {
+        summary: "Existing plan",
+        tasks: [{
+          id: "t2",
+          title: "Resolve the build blocker",
+          minutes: 10,
+          priority: "high",
+          reason: "The release depends on this fix.",
+          dependsOn: ["t1"],
+          category: "build"
+        }],
+        completedTaskIds: ["t1"],
+        revisionContext: {
+          reason: "blocked",
+          blockers: [{
+            taskId: "t2",
+            description: "Build is waiting for a failing test to be repaired."
+          }]
+        }
+      }
+    })
+  });
+  assert.equal(response.status, 501);
+  assert.equal((await response.json()).error.code, "PLANNING_NOT_IMPLEMENTED");
+});
+
+test("plan endpoint rejects malformed revision context and dangling prior dependencies", async () => {
+  const validTask = {
+    id: "t2",
+    title: "Resolve the build blocker",
+    minutes: 10,
+    priority: "high",
+    reason: "The release depends on this fix.",
+    dependsOn: ["missing"],
+    category: "build"
+  };
+  const invalidPayloads = [
+    {
+      brainDump: "Revise my plan",
+      availableMinutes: 30,
+      previousPlan: { tasks: [], completedTaskIds: [] }
+    },
+    {
+      brainDump: "Revise my plan",
+      availableMinutes: 30,
+      previousPlan: { tasks: [validTask], completedTaskIds: [] }
+    },
+    {
+      brainDump: "Revise my plan",
+      availableMinutes: 30,
+      previousPlan: {
+        tasks: [{ ...validTask, dependsOn: [] }],
+        completedTaskIds: [],
+        revisionContext: {
+          reason: "blocked",
+          blockers: [{ taskId: "not-in-plan", description: "Missing task." }]
+        }
+      }
+    },
+    {
+      brainDump: "Revise my plan",
+      availableMinutes: 30,
+      previousPlan: {
+        tasks: [{ ...validTask, dependsOn: [] }],
+        completedTaskIds: ["t2"]
+      }
+    },
+    {
+      brainDump: "Revise my plan",
+      availableMinutes: 30,
+      previousPlan: {
+        tasks: [{ ...validTask, dependsOn: [] }],
+        completedTaskIds: [],
+        totalMinutes: 0
+      }
+    }
+  ];
+
+  for (const payload of invalidPayloads) {
+    const response = await fetch(baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error.code, "INVALID_REQUEST");
+  }
+});
+
+test("plan endpoint rejects unsupported top-level fields such as client-supplied credentials", async () => {
+  const response = await fetch(baseUrl + "/api/plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      brainDump: "Plan a task",
+      availableMinutes: 30,
+      NVIDIA_API_KEY: "not-a-real-key"
+    })
+  });
+  assert.equal(response.status, 400);
+  const payload = await response.json();
+  assert.equal(payload.error.code, "INVALID_REQUEST");
+  assert.equal(payload.error.message.includes("not-a-real-key"), false);
+});
+

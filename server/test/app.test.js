@@ -35,7 +35,8 @@ test("plan endpoint is explicit that AI planning is not yet implemented", async 
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ brainDump: "test", availableMinutes: 30 })
+    // The source starter sends previousPlan: null for initial compilation.
+    body: JSON.stringify({ brainDump: "test", availableMinutes: 30, previousPlan: null })
   });
   assert.equal(response.status, 501);
   const payload = await response.json();

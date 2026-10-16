@@ -16,8 +16,8 @@ This file is the durable, task-level source of truth for implementation progress
 - [x] **P0-03 — Read the complete supplied build plan.** Acceptance: major objectives, architecture, feature sequence, starter limitations, security notes, and deployment constraints are captured. Evidence: the full source was available through the Project source extract (lines 1–1072).
 - [x] **P0-04 — Record project baseline and risk register.** Acceptance: docs/PROJECT_STATE.md records facts, assumptions, risks, phase map, and current progress. Evidence: file committed in initial repository root commit 3ef22a5998c9f055beae00eaa5e0529dbffd53b5; this commit was necessary to initialize the otherwise-empty repository.
 - [x] **P0-05 — Create granular master checklist.** Acceptance: every phase has individually trackable implementation, test, security, documentation, and deployment tasks. Evidence: this file is created on branch chore/phase-0-audit-and-foundation.
-- [ ] **P0-06 — Reconcile governance files and next-task pointer.** Acceptance: PROJECT_STATE.md and this checklist agree on the exact current branch, latest commit, task status, verified checks, and single next task; fetch the remote files to verify. Dependency: P0-05.
-- [ ] **P0-07 — Define foundation verification path.** Acceptance: CI can install dependencies, run backend automated tests, and build the frontend on the selected maintained Node LTS; workflow triggers and results are checked in GitHub. Dependency: P0-06.
+- [x] **P0-06 — Reconcile governance files and next-task pointer.** Acceptance: PROJECT_STATE.md and this checklist agree on the exact current branch, task status, verification caveats, and single next task. Evidence: fetched both files from chore/phase-0-audit-and-foundation and reconciled Phase 0/next task.
+- [x] **P0-07 — Define foundation verification path.** Acceptance: choose a maintained Node LTS and explicit CI gates; the actual workflow and test outcome remain tracked under P1-08. Evidence: selected Node 24 LTS from the official release schedule; planned gates are dependency installation, backend Node tests, and Vite production build. Actual execution is not yet claimed.
 
 ## Phase 1 — Repository and runtime foundation (source-plan Day 1)
 
@@ -129,4 +129,5 @@ This file is the durable, task-level source of truth for implementation progress
 - **2026-10-16 — P0 audit:** inspected remote repository metadata, contents endpoint, branches, commits, and pull requests. Findings are recorded in docs/PROJECT_STATE.md.
 - **2026-10-16 — Initialization:** repository had no commits, so a root commit was required to make the project state durable. Initial commit: 3ef22a5998c9f055beae00eaa5e0529dbffd53b5 (contains docs/PROJECT_STATE.md).
 - **2026-10-16 — Working branch:** created chore/phase-0-audit-and-foundation from the root commit before further work.
+- **2026-10-16 — Governance reconciliation:** fetched both docs from the working branch; state and checklist now share the same next implementation task. Phase 0 planning gates are complete; implementation/test claims remain unverified until CI runs.
 - Tests/build/lint: **not run** at this point; no application implementation or CI had yet been created.

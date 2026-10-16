@@ -30,7 +30,7 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - Committed npm-generated lockfile; CI runs clean `npm ci`.
 - Foundation screen tests the real backend health endpoint.
 - `/api/health`, bounded 20 KiB JSON parser, stable JSON errors for malformed JSON, oversized bodies, and unknown routes.
-- Placeholder-only server environment example, ignored real environment files, local run/test/build documentation, and Node.js 24 CI.
+- Server environment example defaults `NVIDIA_API_KEY` to blank, real `.env` files are ignored, local run/test/build commands are documented, and Node.js 24 CI is configured.
 
 ### Phase 2, tasks P2-01 through P2-03
 

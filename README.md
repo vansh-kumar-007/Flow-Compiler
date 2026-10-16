@@ -28,7 +28,7 @@ The GitHub Actions workflow runs dependency installation, backend tests, and the
 
 ## Secret handling
 
-The isolated NVIDIA adapter reads `NVIDIA_API_KEY` only from the server process environment (locally, `server/.env`; in hosting, a server-side secret setting). Never put it in a `VITE_*` variable, frontend source, screenshots, issues, or commits. The environment example contains a placeholder only. The adapter is not connected to `/api/plan` yet, and no live inference is claimed.
+The isolated NVIDIA adapter reads `NVIDIA_API_KEY` only from the server process environment (locally, `server/.env`; in hosting, a server-side secret setting). Never put it in a `VITE_*` variable, frontend source, screenshots, issues, or commits. The environment example leaves the key blank by default; set it only in the ignored `server/.env` or hosting secret settings when deliberately performing optional live inference. The adapter is not connected to `/api/plan` yet, and no live inference is claimed.
 
 ## Project governance
 

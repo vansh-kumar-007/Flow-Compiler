@@ -181,3 +181,19 @@ P2-01 through P2-10 have deterministic automated evidence. P2-11 is an optional 
 - **P2-08 boundary:** this is deterministic budget/output validation, not a priority-optimizing scheduler that rearranges a graph. The generated model chooses which tasks are scheduled and deferred; the server rejects inconsistent or over-budget placement instead of silently moving work. The adapter remains unconnected to `POST /api/plan`, which still returns HTTP 501. P2-09 through P2-12 and Phases 3–8 remain incomplete.
 
 - **2026-10-17 — P2-11/P2-12 and Phase 2 closure verified:** no authorized connected backend secret environment was available; no NVIDIA request was sent and live inference remains unverified. Docs head `55ffa09bcba0e9c64c8274971dd979e209d2d7fc` passed Actions #80/#81; merge commit `87fd4adc530df9ce437bf3fb55202d4f943e8939` on `main` passed Actions #82: 243/243 backend tests, 0 failures, frontend production build succeeded. Final docs-only bookkeeping commit `5b624800a887ad7ab853732880b23813e08a8970` passed [Actions #84](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031708187), with the same 243-test and production-build result. PR #2 merged. The 20-file diff contains no package/lockfile changes. Valid `POST /api/plan` still returns 501. No deployment, paid service, or Phase 3 implementation.
+
+
+## Phase 3 — Visual application foundation
+
+- [x] **P3-01 — Dark command-center UI frame.** Implemented on `feat/phase-3-command-center-ui` in `src/App.jsx` and `src/styles.css`. Includes responsive shell, raw-thoughts input, execution-window slider/presets, clearly labeled illustrative dependency nodes, honest disabled compile action, and backend health-check UI. No AI results are fabricated; planning is explicitly marked not connected. Source review only at this point; production build, CI, and live browser checks remain pending until observed.
+- [ ] **P3-02 — Implement actual planning UI integration.** Do not begin until P3-01 is reviewed and merged; follow the exact sequence in Plan.txt and existing API contract.
+- [ ] **P3-03+ — Subsequent visual/product features.** Preserve the stable task IDs and scope in this checklist; do not infer acceptance criteria from the mockup alone.
+
+## Phase 3 execution evidence — 2026-10-17
+
+- Created feature branch `feat/phase-3-command-center-ui` from `main` using the connected GitHub integration.
+- Implemented P3-01 in `src/App.jsx` and `src/styles.css` without adding dependencies.
+- Existing `.gitignore` excludes `.env`/server local environment files while allowing `.env.example`; `server/.env.example` has a blank `NVIDIA_API_KEY=` placeholder.
+- Initial Vercel project search found no `Flow-Compiler` project; the available account's five listed projects were unrelated. The Express backend is not thereby deployed.
+- Pending evidence: clean CI/build on the exact feature commit, PR review/merge, Vercel project/repository connection and deployment, and any manual browser verification.
+- P2-11 remains unverified; no live NVIDIA inference was run. `POST /api/plan` remains HTTP 501 by design.

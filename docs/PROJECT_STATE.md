@@ -152,3 +152,11 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - **Current milestone state:** P3-01 implementation plus exact-head CI are verified. Marking the overall deployed acceptance complete and merging are deferred until the exact existing Vercel project/URL and API route behavior are independently checked; do not start P3-02 until the agreed milestone gate is resolved. Valid `POST /api/plan` remains HTTP 501 and P2-11 real NVIDIA inference is still unverified.
 - **Manual action:** use Vercel Dashboard to open the existing project, verify repo `vansh-kumar-007/Flow-Compiler`, Vite, root `./`, `npm ci`, `npm run build`, and `dist`, and confirm a Preview deployment for the feature branch. Share its exact URL (not any secret). Navigate to `/api/health` or use the page's API-check control and confirm an actual Express response. Resolve the route by an approved backend host/origin or explicit Vercel API rewrite without exposing a key; keep NVIDIA_API_KEY out of Vercel frontend variables.
 - **Budget/security:** ₹0 constraint maintained; no project/deployment was created or changed, no secret was read or sent, and no live NVIDIA request was made.
+
+
+## P3-01 API routing guard update — 2026-10-17
+
+- `src/App.jsx` now requires `VITE_API_BASE_URL` for production health checks, builds the explicit backend `/api/health` URL from that non-secret origin, and fails closed with an actionable message when the production origin is unset. Local development continues to use Vite's proxy.
+- Health success requires both HTTP success and the Express service marker `flow-compiler-api`; a static SPA response cannot be mistaken for the API.
+- This change does not enable the Compile Workflow button, add an API key, or claim backend connectivity. The latest feature code SHA is `ca30034ca6ebbcb1dfcf85619acba64f3a128883`; final branch-head CI and Vercel preview verification must be refreshed after the docs commits.
+- After choosing/deploying the backend, set `VITE_API_BASE_URL` only to its public HTTPS origin in Vercel's frontend build environment, and configure exact `APP_ORIGINS` on the backend. `NVIDIA_API_KEY` remains server-side only.

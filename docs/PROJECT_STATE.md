@@ -129,3 +129,14 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 
 - **CI evidence correction:** GitHub Actions [run #96](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39036393828) completed successfully. Its `Install, test, and build` job reports successful dependency installation, backend tests, and frontend production build. This is CI evidence, not a live-browser or deployment test.
 - **Vercel blocker:** project listing shows no Flow Compiler project in the connected team; creating a new project and initiating a deployment returned 403 permission denied. No deployment URL was produced. Existing unrelated Vercel projects were left untouched.
+
+
+## Phase 3 verification update — 2026-10-17
+
+- **PR:** [#3 — Phase 3: dark command-center UI foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/3) is still open and not merged. GitHub reports it mergeable; no submitted PR reviews were found. The four changed files are `docs/BUILD_CHECKLIST.md`, `docs/PROJECT_STATE.md`, `src/App.jsx`, and `src/styles.css`.
+- **Feature SHA at verification:** `675931e52da1a8baabaa2c0338b82cb9da126877`. GitHub Actions [run #99](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39036494378) passed for this SHA. The job step summary shows dependency installation, backend tests, and frontend build succeeded. The run predates this documentation update, so re-check CI on the new HEAD before merge.
+- **Vercel access discrepancy:** the user reports having created/authorized project `flow-compiler-ui`, but the connected Vercel tools cannot see it. Current visible team is `Vansh Kumar's projects` on Hobby plan; visible linked project is `cyber-arena`. Direct project lookup returns 404, and project/deployment searches return no match. Repository link, framework, root directory, build/install/output settings, preview deployment, and live URL remain unverified. No new project or deployment was created by the agent.
+- **Live browser testing:** not possible without a verified deployment URL. No page load, responsive, console/runtime, asset, or backend-health interaction was tested live.
+- **Architecture/security:** Vite frontend and Express backend remain separate. No NVIDIA key has been configured in Vercel frontend. Do not configure `NVIDIA_API_KEY` until the backend host is selected; then set it only in that server's environment. No live inference was performed.
+- **API limitation:** `POST /api/plan` still returns `501 PLANNING_NOT_IMPLEMENTED` for valid requests. P2-11 remains unverified.
+- **Next gate:** make the intended Vercel project visible to the connected integration (correct account/team/authorization, or supply project ID and confirm connector scope), inspect its exact settings, deploy branch `feat/phase-3-command-center-ui` as Preview, test the live page and health-check control, then re-review PR #3 and merge only after the latest required checks pass.

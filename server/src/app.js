@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import cors from "cors";
 import express from "express";
 import { validatePlanRequest } from "./plan-request.js";
@@ -13,6 +14,10 @@ const DEFAULT_RATE_LIMIT_MAX = 10;
 const MAX_RATE_LIMIT_WINDOW_MS = 86_400_000;
 const MAX_RATE_LIMIT_MAX = 10_000;
 const ORIGIN_PATTERN = /^https?:\/\/[^\s,]+$/i;
+const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const UNAUTHORIZED_BODY = Object.freeze({
+  error: { code: "UNAUTHORIZED", message: "Valid authorization credentials are required." }
+});
 
 function parsePositiveInteger(value, name, { min, max, fallback }) {
   if (value === undefined || value === null) {
@@ -91,6 +96,56 @@ export function readRateLimitConfig(env = process.env) {
     min: 1, max: MAX_RATE_LIMIT_MAX, fallback: DEFAULT_RATE_LIMIT_MAX
   });
   return { windowMs, limit };
+}
+
+function readBearerCredential(request) {
+  // Reject repeated Authorization headers instead of guessing which credential
+  // the HTTP stack intended. Never log or reflect the supplied value.
+  const values = [];
+  const rawHeaders = request.rawHeaders ?? [];
+  for (let index = 0; index < rawHeaders.length; index += 2) {
+    if (String(rawHeaders[index]).toLowerCase() === "authorization") {
+      values.push(rawHeaders[index + 1]);
+    }
+  }
+  if (values.length !== 1 || typeof values[0] !== "string") return null;
+  const match = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(values[0]);
+  return match ? match[1] : null;
+}
+
+function constantTimeCredentialMatch(supplied, configured) {
+  if (typeof supplied !== "string" || typeof configured !== "string") return false;
+  // The configured token is exactly a 32-byte base64url token (43 chars).
+  // Compare equal-length ASCII buffers with Node's constant-time API.
+  if (!ACCESS_TOKEN_PATTERN.test(configured) || !ACCESS_TOKEN_PATTERN.test(supplied)) return false;
+  const suppliedBytes = Buffer.from(supplied, "ascii");
+  const configuredBytes = Buffer.from(configured, "ascii");
+  if (suppliedBytes.length !== configuredBytes.length) return false;
+  return timingSafeEqual(suppliedBytes, configuredBytes);
+}
+
+function createPlanAuthenticationMiddleware(env) {
+  return function requirePlanAuthentication(request, response, next) {
+    response.set("Cache-Control", "no-store");
+    const configured = typeof env.FLOW_COMPILER_ACCESS_TOKEN === "string"
+      ? env.FLOW_COMPILER_ACCESS_TOKEN
+      : "";
+    // Fail closed while still allowing a no-secret deployment to pass health checks.
+    if (!ACCESS_TOKEN_PATTERN.test(configured)) {
+      return response.status(503).json({
+        error: {
+          code: "AUTHENTICATION_NOT_CONFIGURED",
+          message: "Plan API authentication is not configured."
+        }
+      });
+    }
+
+    const supplied = readBearerCredential(request);
+    if (!supplied || !constantTimeCredentialMatch(supplied, configured)) {
+      return response.status(401).json(UNAUTHORIZED_BODY);
+    }
+    return next();
+  };
 }
 
 function createInMemoryRateLimiter({ windowMs, limit, now = Date.now }) {
@@ -189,9 +244,20 @@ export function createApp(options = {}) {
       return callback(null, allowedOrigins.includes(normalized));
     },
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Accept"],
+    allowedHeaders: ["Content-Type", "Accept", "Authorization"],
     optionsSuccessStatus: 204
   }));
+
+  // Authenticate plan requests before parsing or validating their body. The
+  // public health route remains unauthenticated; OPTIONS preflights are handled
+  // by CORS and do not require the application token.
+  const requirePlanAuthentication = createPlanAuthenticationMiddleware(env);
+  app.use((request, response, next) => {
+    if (request.method === "POST" && request.path === "/api/plan") {
+      return requirePlanAuthentication(request, response, next);
+    }
+    return next();
+  });
 
   app.use(express.json({ limit: "20kb", strict: true }));
 

@@ -11,3 +11,31 @@ footer{display:flex;justify-content:space-between;align-items:center;gap:15px;ma
 @media(max-width:900px){.workspace{grid-template-columns:minmax(0,1fr)}.hero{padding-top:43px}.hero-orbit{margin-right:2%}}
 @media(max-width:600px){.app-shell{padding:18px 14px 20px}.topbar{align-items:flex-start;padding-bottom:17px}.brand-mark{width:36px;height:36px}.brand-copy strong{font-size:11px;letter-spacing:1.2px}.brand-copy small{font-size:7px}.header-right{align-items:flex-end;flex-direction:column;gap:8px}.version-chip,.system-status{font-size:8px}.hero{padding:37px 0 26px}.hero h1{font-size:clamp(34px,10vw,48px);letter-spacing:-1.9px}.hero-layout p{font-size:13px}.hero-orbit{display:none}.eyebrow{flex-wrap:wrap;gap:7px;font-size:8px}.panel{padding:16px;border-radius:13px}.panel-topline{gap:8px;margin-bottom:20px}.panel-topline,.panel-topline small{font-size:8px}.panel h2{font-size:18px}.output-title{flex-direction:column}.preview-badge{align-self:flex-start}.stats{gap:6px}.stats>div{padding:9px}.stats strong{font-size:20px}.stats p{font-size:8px}.graph-banner{padding:11px}.graph-banner p{font-size:9px}.task-node{gap:8px;padding:10px 8px}.task-node strong{font-size:11px}.task-node small,.task-state{font-size:7px}.time-presets{gap:5px}.preset{padding:9px 2px;font-size:9px}footer{align-items:flex-start;flex-direction:column;gap:10px}footer>span:last-child{flex-wrap:wrap;line-height:1.5}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important}}
+
+
+/* Session authentication and actual API result states. */
+.token-input{display:block;width:100%;margin-top:9px;padding:12px 13px;border:1px solid #30445c;border-radius:8px;background:#070e19;color:#e6f3ff;font:12px var(--mono);letter-spacing:.4px;outline:none}
+.token-input::placeholder{color:#64758e}
+.token-input:focus-visible{border-color:var(--cyan);box-shadow:0 0 0 3px #68e4ef1c;outline:2px solid transparent}
+.token-footer{align-items:center;margin-top:8px;color:#70819a;font-size:8px}
+.compile-button{cursor:pointer;transition:filter .18s ease,transform .18s ease}
+.compile-button:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}
+.compile-button:focus-visible,.text-button:focus-visible,.api-heading button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.compile-button:disabled{cursor:wait;opacity:.68}
+.plan-feedback{margin:14px 0;padding:12px 13px;border:1px solid #34455d;border-radius:8px;color:#b9c8dc;background:#0a1320;font-size:11px;line-height:1.65;overflow-wrap:anywhere}
+.plan-feedback.success{border-color:#4ade8050;color:#a7f3c5;background:#05231865}
+.plan-feedback.error{border-color:#fb718550;color:#fecdd3;background:#2a0b1565}
+.generated-plan{margin:15px 0 20px;padding:15px;border:1px solid #68e4ef38;border-radius:11px;background:linear-gradient(145deg,#0b2630a8,#0b1220e8)}
+.generated-plan-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.generated-plan-heading small{color:var(--cyan);font:8px var(--mono);letter-spacing:1px}
+.generated-plan-heading h3{margin:7px 0 0;font-size:15px;font-weight:600;line-height:1.5;overflow-wrap:anywhere}
+.generated-plan-heading>span{flex:0 0 auto;color:var(--cyan);font:9px var(--mono)}
+.generated-plan ol{list-style:none;margin:12px 0 0;padding:0;counter-reset:generated-task}
+.generated-plan ol>li{padding:13px 0;border-top:1px solid #91a9c21c}
+.generated-task-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.generated-task-title strong{font-size:12px;line-height:1.5;font-weight:600}
+.generated-task-title span{flex:0 0 auto;color:var(--cyan);font:8px var(--mono);white-space:nowrap}
+.generated-plan li p{margin:6px 0;color:#91a2ba;font-size:10px;line-height:1.6}
+.generated-plan li>small{color:#71849f;font:8px var(--mono);line-height:1.5}
+.deferred-tasks{margin-top:12px;padding-top:12px;border-top:1px solid #91a9c21c;color:#b9c8dc;font-size:10px}
+.deferred-tasks ul{padding-left:18px;color:#91a2ba;line-height:1.6}

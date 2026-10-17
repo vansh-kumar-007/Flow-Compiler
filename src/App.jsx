@@ -13,8 +13,117 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\
 export default function App() {
   const [brainDump, setBrainDump] = useState("");
   const [minutes, setMinutes] = useState(120);
+  // The access token intentionally lives only in React state: no browser storage,
+  // URL, telemetry, console output, or persistence is used.
+  const [accessToken, setAccessToken] = useState("");
+  const [planState, setPlanState] = useState("idle");
+  const [planMessage, setPlanMessage] = useState("");
+  const [generatedPlan, setGeneratedPlan] = useState(null);
   const [apiState, setApiState] = useState("idle");
   const [apiMessage, setApiMessage] = useState("Backend connection has not been checked.");
+
+  async function compileWorkflow() {
+    const credential = accessToken.trim();
+    if (!credential) {
+      setPlanState("error");
+      setPlanMessage("Enter your session access token to authorize this request.");
+      setGeneratedPlan(null);
+      return;
+    }
+    if (!brainDump.trim()) {
+      setPlanState("error");
+      setPlanMessage("Enter the work you want to plan first.");
+      setGeneratedPlan(null);
+      return;
+    }
+    if (!import.meta.env.DEV && !API_BASE_URL) {
+      setPlanState("error");
+      setPlanMessage("Production API URL is not configured. Set VITE_API_BASE_URL to the Express backend origin.");
+      setGeneratedPlan(null);
+      return;
+    }
+
+    let requestUrl;
+    try {
+      const localHosts = ["localhost", "127.0.0.1", "[::1]"];
+      const frontendIsLocal = localHosts.includes(window.location.hostname);
+      const backendUrl = API_BASE_URL ? new URL(API_BASE_URL) : new URL(window.location.origin);
+      const backendIsLocal = localHosts.includes(backendUrl.hostname);
+      const isLocalDevelopment = import.meta.env.DEV && frontendIsLocal && backendIsLocal;
+      const isOriginOnly = backendUrl.pathname === "/" && !backendUrl.search && !backendUrl.hash
+        && !backendUrl.username && !backendUrl.password;
+      if (!isOriginOnly || (backendUrl.protocol !== "https:" && !isLocalDevelopment)) {
+        setPlanState("error");
+        setPlanMessage("The planning API must be a valid HTTPS origin. HTTP is allowed only for local development.");
+        setGeneratedPlan(null);
+        return;
+      }
+      requestUrl = (API_BASE_URL ? backendUrl.origin : "") + "/api/plan";
+    } catch {
+      setPlanState("error");
+      setPlanMessage("The configured planning API URL is invalid.");
+      setGeneratedPlan(null);
+      return;
+    }
+
+    setPlanState("loading");
+    setPlanMessage("Sending an authenticated planning request…");
+    setGeneratedPlan(null);
+    try {
+      const response = await fetch(requestUrl, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + credential
+        },
+        body: JSON.stringify({
+          brainDump: brainDump.trim(),
+          availableMinutes: minutes,
+          previousPlan: null
+        })
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        const code = payload?.error?.code;
+        const messages = {
+          UNAUTHORIZED: "Access token rejected. Check it and try again.",
+          AUTHENTICATION_NOT_CONFIGURED: "Backend access-token authentication is not configured yet.",
+          AI_NOT_CONFIGURED: "Access was accepted, but the backend has no NVIDIA API key configured. No plan was generated.",
+          RATE_LIMIT_EXCEEDED: "Too many requests. Wait before trying again."
+        };
+        setPlanState("error");
+        setPlanMessage(messages[code] || ("Planning request failed (HTTP " + response.status + (typeof code === "string" ? " · " + code : "") + ")."));
+        return;
+      }
+      const validTask = task => task && typeof task === "object" && !Array.isArray(task)
+        && typeof task.id === "string" && typeof task.title === "string"
+        && Number.isInteger(task.minutes) && task.minutes > 0
+        && typeof task.priority === "string" && typeof task.reason === "string"
+        && typeof task.category === "string" && Array.isArray(task.dependsOn)
+        && task.dependsOn.every(id => typeof id === "string");
+      const validDeferredTasks = payload && (payload.deferredTasks === undefined
+        || (Array.isArray(payload.deferredTasks) && payload.deferredTasks.every(task =>
+          task && typeof task === "object" && !Array.isArray(task)
+          && typeof task.id === "string" && typeof task.title === "string"
+          && typeof task.deferredReason === "string")));
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)
+          || typeof payload.summary !== "string"
+          || !Number.isInteger(payload.totalMinutes) || payload.totalMinutes < 0
+          || !Array.isArray(payload.tasks) || payload.tasks.length === 0
+          || !payload.tasks.every(validTask) || !validDeferredTasks) {
+        setPlanState("error");
+        setPlanMessage("The backend returned a response that did not match the plan contract.");
+        return;
+      }
+      setGeneratedPlan(payload);
+      setPlanState("success");
+      setPlanMessage("Authenticated request succeeded. The plan below is the actual backend response.");
+    } catch {
+      setPlanState("error");
+      setPlanMessage("Could not reach the planning API. Check the backend URL and allowed origin.");
+    }
+  }
 
   async function checkApi() {
     if (!import.meta.env.DEV && !API_BASE_URL) {
@@ -60,8 +169,29 @@ export default function App() {
         <input className="time-slider" aria-label="Available time in minutes" type="range" min="15" max="240" step="15" value={minutes} onChange={e=>setMinutes(Number(e.target.value))}/>
         <div className="range-labels"><span>15 MIN</span><span>4 HOURS</span></div>
         <div className="time-presets">{[30,60,120,180,240].map(v=><button key={v} className={minutes===v?"preset active":"preset"} onClick={()=>setMinutes(v)}>{v>=60?v/60+"H":v+"M"}</button>)}</div>
-        <button className="compile-button" disabled title="AI planning will be enabled in a later milestone"><span className="compile-glyph">⌘</span><span>COMPILE WORKFLOW<small>PLANNING ENGINE NOT CONNECTED YET</small></span><b>↗</b></button>
-        <p className="honesty-note"><i>i</i> Interface foundation only. AI plan generation is not enabled in this build.</p>
+        <div className="rule"/>
+        <label className="field-label" htmlFor="session-access-token">SESSION ACCESS TOKEN</label>
+        <input
+          id="session-access-token"
+          className="token-input"
+          type="password"
+          autoComplete="off"
+          spellCheck={false}
+          value={accessToken}
+          onChange={event => setAccessToken(event.target.value)}
+          aria-describedby="token-memory-note"
+          placeholder="Enter backend access token for this tab"
+        />
+        <div className="input-footer token-footer">
+          <span id="token-memory-note">Memory only · cleared when this page reloads</span>
+          <button className="text-button" type="button" onClick={() => setAccessToken("")}>CLEAR TOKEN</button>
+        </div>
+        <button className="compile-button" type="button" onClick={compileWorkflow} disabled={planState === "loading"} title="Send an authenticated request to the configured planning API">
+          <span className="compile-glyph">⌘</span>
+          <span>{planState === "loading" ? "COMPILING WORKFLOW" : "COMPILE WORKFLOW"}<small>{planState === "loading" ? "WAITING FOR BACKEND" : "AUTHENTICATED API REQUEST"}</small></span>
+          <b>↗</b>
+        </button>
+        <p className="honesty-note"><i>i</i> Your token stays in this page's memory and is sent only in the Authorization header. Raw notes go to your backend and, when configured, its AI provider.</p>
       </article>
       <article className="panel output-panel">
         <div className="panel-topline"><b>02</b><span>COMPILATION OUTPUT</span><small>FLOW / GRAPH</small></div>
@@ -70,6 +200,16 @@ export default function App() {
         <div className="stats"><div><small>TIME WINDOW</small><strong>{minutes} <i>MIN</i></strong><p>Available focus time</p></div><div><small>ACTION NODES</small><strong>03<sup>*</sup></strong><p>Illustrative only</p></div><div><small>DEPENDENCIES</small><strong>02</strong><p>Example connections</p></div></div>
         <div className="task-graph"><div className="rail" aria-hidden="true"><i/><i/><i/></div>{exampleTasks.map((t,i)=><div className={"task-node node-"+i} key={t[0]}><span className="task-number">{t[0]}</span><div><small>{t[2]}</small><strong>{t[1]}</strong></div><span className={"task-state state-"+i}>{t[3]}</span></div>)}</div>
         <p className="graph-footnote">* Example workflow only — no AI-generated result is displayed.</p>
+        {planState !== "idle" && <div className={"plan-feedback " + planState} role="status" aria-live="polite">{planMessage}</div>}
+        {generatedPlan && <section className="generated-plan" aria-labelledby="generated-plan-title">
+          <div className="generated-plan-heading"><div><small>LIVE API RESPONSE</small><h3 id="generated-plan-title">{generatedPlan.summary}</h3></div><span>{generatedPlan.totalMinutes} MIN</span></div>
+          <ol>{generatedPlan.tasks.map(task => <li key={task.id}>
+            <div className="generated-task-title"><strong>{task.title}</strong><span>{task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
+            <p>{task.reason}</p>
+            <small>{task.category.toUpperCase()}{task.dependsOn.length ? " · DEPENDS ON " + task.dependsOn.join(", ") : " · NO PREREQUISITES"}</small>
+          </li>)}</ol>
+          {Array.isArray(generatedPlan.deferredTasks) && generatedPlan.deferredTasks.length > 0 && <div className="deferred-tasks"><strong>Deferred work</strong><ul>{generatedPlan.deferredTasks.map(task => <li key={task.id}>{task.title} — {task.deferredReason}</li>)}</ul></div>}
+        </section>}
         <div className="api-card"><div className="api-heading"><i className={"api-dot "+apiState}/><div><small>BACKEND CONNECTIVITY</small><strong>{apiState==="success"?"Connection verified":apiState==="loading"?"Checking connection":apiState==="error"?"Backend not reachable":"Not checked yet"}</strong></div><button onClick={checkApi} disabled={apiState==="loading"}>{apiState==="loading"?"CHECKING…":"CHECK API ↗"}</button></div><p role="status" aria-live="polite">{apiMessage}</p></div>
       </article>
     </section>

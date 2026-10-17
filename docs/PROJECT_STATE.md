@@ -195,3 +195,5 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 - Next immediate task: wait for/inspect PR #5 exact-head CI, fix any failures, then manually review the code/security diff. After the PR sequence, deploy the backend without secrets, verify /api/health, configure exact APP_ORIGINS and VITE_API_BASE_URL, verify frontend health and deployed auth with no NVIDIA_API_KEY. Only later, after account quota review and explicit authorization, may one controlled live inference be considered.
 
 - CI history: runs #181/#189 initially failed because an older public-route test fixture omitted the new auth token; the fixture was updated to send a deterministic fake token, and runs #191/#192 passed. No failing check was bypassed.
+
+- Additional auth hardening verification: Actions #195/#196 passed 256 backend tests, 0 failed/skipped, and the Vite production build; #195/#196 include the explicit test that unauthorized attempts consume rate-limit quota before authentication. A subsequent documentation-only update is subject to the latest PR check before merge.

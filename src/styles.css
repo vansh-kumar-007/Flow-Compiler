@@ -39,3 +39,33 @@ footer{display:flex;justify-content:space-between;align-items:center;gap:15px;ma
 .generated-plan li>small{color:#71849f;font:8px var(--mono);line-height:1.5}
 .deferred-tasks{margin-top:12px;padding-top:12px;border-top:1px solid #91a9c21c;color:#b9c8dc;font-size:10px}
 .deferred-tasks ul{padding-left:18px;color:#91a2ba;line-height:1.6}
+
+
+/* P3-02–P3-05: accessible form states, explicit demo mode, and truthful plan display. */
+.mode-switch{display:flex;gap:7px;margin:0 0 18px;padding:4px;border:1px solid #26374c;border-radius:9px;background:#070d17}
+.mode-button{flex:1;padding:10px 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:#9aacc3;font:9px var(--mono);letter-spacing:.7px}
+.mode-button.active{border-color:#68e4ef56;color:var(--cyan);background:#0d3540}
+.mode-button:focus-visible,.preset:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.mode-note,.field-help{margin:8px 0 13px;color:#8798b2;font-size:10px;line-height:1.6}
+.field-error{margin:8px 0 0;color:#fda4af;font-size:11px;line-height:1.6}
+textarea[aria-invalid="true"],input[aria-invalid="true"]{border-color:#fb7185}
+.output-state{display:flex;align-items:flex-start;gap:12px;margin:15px 0;padding:15px;border:1px solid var(--line);border-radius:10px;background:#060c167a}
+.output-state strong{display:block;font-size:13px}
+.output-state p{margin:6px 0 0;color:#9aabc2;font-size:11px;line-height:1.65;overflow-wrap:anywhere}
+.error-state{border-color:#fb71854d;background:#2a0b154d;color:#fecdd3}
+.loading-indicator{width:14px;height:14px;flex:0 0 auto;border:2px solid #28445a;border-top-color:var(--cyan);border-radius:50%;animation:fc-spin .8s linear infinite}
+.plan-metadata{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0;color:#8fa4bc;font:8px var(--mono)}
+.plan-metadata span{padding:6px 8px;border:1px solid #26384b;border-radius:5px;background:#070e19}
+.task-index{display:inline-grid;place-items:center;min-width:23px;height:22px;margin-right:9px;border:1px solid #68e4ef44;border-radius:5px;color:var(--cyan);font:8px var(--mono);vertical-align:middle}
+.task-facts{display:flex;flex-wrap:wrap;gap:7px 12px;margin-top:8px;color:#71849f;font:8px var(--mono);line-height:1.5;overflow-wrap:anywhere}
+.task-facts span{max-width:100%;overflow-wrap:anywhere}
+.deferred-tasks li{padding:8px 0}
+.deferred-tasks li p{margin:4px 0;color:#91a2ba}
+.deferred-tasks li small{color:#71849f;font:8px var(--mono);line-height:1.6}
+.api-plan-badge{color:#9fe4b8;border-color:#4ade8050;background:#05231865}
+.demo-plan{border-color:#a78bfa6b;background:linear-gradient(145deg,#201537bb,#0b1220e8)}
+.demo-plan .generated-plan-heading small{color:#c4b5fd}
+.demo-plan .task-index{border-color:#a78bfa55;color:#c4b5fd}
+@keyframes fc-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.loading-indicator{animation:none;border-color:var(--cyan)}}
+@media(max-width:600px){.mode-button{font-size:8px;padding:10px 5px}.generated-task-title{flex-direction:column;gap:6px}.generated-task-title>span{white-space:normal}.task-facts{font-size:7px}}

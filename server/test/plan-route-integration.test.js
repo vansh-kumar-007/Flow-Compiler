@@ -141,6 +141,33 @@ test("missing, invalid, and malformed credentials all return the same safe 401 b
   assert.equal(providerCalls, 0);
 });
 
+test("case and trailing-slash route aliases cannot bypass authentication or parse unauthenticated bodies", async () => {
+  let providerCalls = 0;
+  await withServer({
+    env: { NVIDIA_API_KEY: fakeKey },
+    fetchImpl: async () => {
+      providerCalls += 1;
+      throw new Error("provider must never run for unauthenticated route aliases");
+    }
+  }, async baseUrl => {
+    // Express 5's default routing is case-insensitive and non-strict, so these
+    // spellings can otherwise match the same planning route as /api/plan.
+    for (const path of ["/api/plan/", "/API/PLAN", "/API/PLAN/"]) {
+      const response = await fetch(baseUrl + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{not json"
+      });
+      assert.equal(response.status, 401, path);
+      assert.deepEqual(await response.json(), {
+        error: { code: "UNAUTHORIZED", message: "Valid authorization credentials are required." }
+      }, path);
+      assert.equal(response.headers.get("cache-control"), "no-store", path);
+    }
+  });
+  assert.equal(providerCalls, 0);
+});
+
 test("unauthorized attempts still consume the API rate limit before authentication", async () => {
   let providerCalls = 0;
   await withServer({

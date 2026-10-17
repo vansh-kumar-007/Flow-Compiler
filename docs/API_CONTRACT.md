@@ -1,6 +1,6 @@
 # Flow Compiler — Plan API Contract
 
-**Status:** Phase 2 API security contract and implementation evidence. The isolated provider adapter performs complete JSON parsing (P2-05), plan/task schema validation (P2-06), dependency graph validation (P2-07), and scheduled-budget/deferred-work validation (P2-08), but it is not integrated into the public route; valid requests to `POST /api/plan` still receive HTTP 501 `PLANNING_NOT_IMPLEMENTED`. This is not an end-to-end planning API.
+**Status:** Phase 2 API contract plus route-integration implementation. `POST /api/plan` validates input, builds a bounded prompt from documented request fields, invokes the server-side NVIDIA adapter, and returns only output that passes complete JSON parsing, plan-schema validation, dependency validation, and available-time budget validation. The route uses deterministic mocked-provider tests; real NVIDIA inference and deployment remain unverified until an authorized server-side key is configured.
 
 **Product source:** the Flow Compiler Project source “Flow Compiler — build plan and starter code” (Plan.txt; the project instructions refer to it as Plan.md). This document records the source-compatible contract and the behavior currently implemented in the API foundation and isolated, mock-tested adapter pipeline. It does not claim live provider availability or end-to-end plan generation.
 
@@ -61,7 +61,7 @@ Each blocker object is `{ "taskId": "t2", "description": "Waiting for access app
 - Accept `previousPlan` only when omitted, `null`, or a conforming object. Validate field types and limits at every documented nested level.
 - Reject malformed JSON with `INVALID_JSON` and bodies over the existing 20 KiB limit with `PAYLOAD_TOO_LARGE`.
 - Do not interpolate unchecked `previousPlan` data into a prompt. Validate it first and serialize only documented fields.
-- A well-formed request does not imply that AI planning is currently available. Until the provider integration is implemented, valid requests keep receiving the explicit 501 foundation response.
+- A well-formed request does not imply that the provider is configured or reachable. The integrated route returns `500 AI_NOT_CONFIGURED` when the server-side key is absent, `504 AI_TIMEOUT` on a bounded provider timeout, safe `502` errors for upstream/model-output failures, and `200` only after all validators pass.
 
 ## 3. Plan response schema
 
@@ -180,7 +180,7 @@ Messages should be concise and actionable, with no stack traces, credentials, ra
 | `429` | `RATE_LIMIT_EXCEEDED` | The Flow Compiler API's own request quota was exceeded (P2-09). |
 | `500` | `INTERNAL_ERROR` | Unexpected internal failure; do not return stack details. Existing envelope. |
 | `500` | `AI_NOT_CONFIGURED` | Server-side NVIDIA key/configuration is missing. This preserves the source starter's 500 status while adopting the foundation's structured error envelope. |
-| `501` | `PLANNING_NOT_IMPLEMENTED` | Current foundation behavior while AI planning remains unimplemented. |
+| `501` | `PLANNING_NOT_IMPLEMENTED` | Legacy foundation behavior; the route-integration branch replaces this stub with the validated adapter pipeline. |
 | `502` | `AI_AUTHENTICATION_ERROR` | NVIDIA rejects the server-side API credential (HTTP 401). |
 | `502` | `AI_ACCESS_DENIED` | NVIDIA denies access to the model/resource (HTTP 403). |
 | `502` | `AI_RATE_LIMITED` | NVIDIA reports its upstream quota/rate limit; don't confuse it with Flow Compiler's own 429. |
@@ -242,8 +242,9 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - **P2-07:** validate generated dependency references and reject cycles.
 - **P2-08:** validate scheduled-duration fit against explicitly supplied `availableMinutes` and require bounded meaningful `deferredReason` values. Generated task placement is validated, not silently rearranged; dependency changes require a new model-selected plan.
 - **P2-09:** implement/test API rate limiting and explicit exact-origin CORS policy.
-- **P2-10:** the injectable provider/parser/schema/dependency/schedule pipeline is covered by deterministic mocks. The route regression test asserts invalid input returns 400 while valid input remains 501.
+- **P2-10:** the injectable provider/parser/schema/dependency/schedule pipeline is covered by deterministic mocks. The original route regression asserted the 501 stub; route-integration follow-up P2-13 replaces that expectation with real adapter invocation through mocked fetch.
 - **P2-11 (optional live smoke test):** no authorized connected backend secret environment was available for this session, so no provider request was made. Real NVIDIA inference, account eligibility and quota remain unverified. If the optional test is desired later, configure a key only in ignored `server/.env` or an authorized backend secret store; never paste it into chat or commit it.
 - **P2-12 (final security documentation):** the documented contract was audited against middleware, provider adapter, validators, environment example and tests. Existing baseline Actions run [#71](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029523089) passed 243 tests and production build on `b6657d6a54810a9efc94ff72d6f9c2197e36e368`; final documentation-commit CI is required before merge.
+- **P2-13 (source-plan route integration follow-up):** connect the already validated provider pipeline to the public route, preserving the API contract and using deterministic HTTP-route mocks. Implementation is in PR #4; acceptance remains pending its exact-head CI and review. No live inference is claimed.
 
 This document does not claim a live NVIDIA request, public route-to-provider integration, deployment, or UI completion.

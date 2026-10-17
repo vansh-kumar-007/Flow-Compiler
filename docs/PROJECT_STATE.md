@@ -125,3 +125,7 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - **Not yet verified:** build/CI for P3-01, PR review/merge, live Vercel deployment, browser viewport checks, and any live inference.
 - **Backend status:** Express is separate from the static Vite frontend. No backend deployment is confirmed. `POST /api/plan` remains `501 PLANNING_NOT_IMPLEMENTED`; P2-11 remains unverified.
 - **Next task:** run and inspect CI for P3-01, complete the PR review, and deploy the frontend-only preview without enabling the planner or exposing secrets.
+
+
+- **CI evidence correction:** GitHub Actions [run #96](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39036393828) completed successfully. Its `Install, test, and build` job reports successful dependency installation, backend tests, and frontend production build. This is CI evidence, not a live-browser or deployment test.
+- **Vercel blocker:** project listing shows no Flow Compiler project in the connected team; creating a new project and initiating a deployment returned 403 permission denied. No deployment URL was produced. Existing unrelated Vercel projects were left untouched.

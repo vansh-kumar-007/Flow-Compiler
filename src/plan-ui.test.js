@@ -76,7 +76,7 @@ test("response rejects malformed tasks and unsupported enums", () => {
 
 test("response rejects duplicate IDs, duplicate edges, and oversized node count", () => {
   const good = validPlan();
-  assert.match(validatePlanResponse({ ...good, tasks: [good.tasks[0], { ...good.tasks[1], id: "t1" }] }, 60), /unique/);
+  assert.match(validatePlanResponse({ ...good, tasks: [good.tasks[0], { ...good.tasks[1], id: "t1", dependsOn: [] }] }, 60), /unique/);
   assert.match(validatePlanResponse({ ...good, tasks: [good.tasks[0], { ...good.tasks[1], dependsOn: ["t1", "t1"] }] }, 60), /duplicate/);
   assert.match(validatePlanResponse({ ...good, tasks: good.tasks, deferredTasks: Array.from({length: 19}, (_,i)=>({...good.deferredTasks[0],id:"d"+i,dependsOn:[]})) }, 60), /cannot exceed 20/);
 });

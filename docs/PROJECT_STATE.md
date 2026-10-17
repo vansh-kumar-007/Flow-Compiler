@@ -1,7 +1,47 @@
 # Flow Compiler — Project State
 
-Last updated: 2026-10-17 (Asia/Kolkata; Phase 2 closure verified)
+Last updated: 2026-10-18 (Asia/Kolkata; current main, authentication alias fix and deployment audit verified)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
+
+
+## Current authoritative state — 2026-10-18 Asia/Kolkata
+
+This section supersedes the older dated notes below for current facts only. Earlier sections remain useful as historical audit records, but several accurately described earlier states before route integration, authentication, Render, or Vercel were completed.
+
+### Repository / PR / CI
+
+- **Current `main`:** `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1` — PR #7, “Security: protect planning route aliases”, is merged.
+- PRs #1–#7 are closed/merged; the alias fix uses a small two-file diff limited to `server/src/app.js` and `server/test/plan-route-integration.test.js`.
+- PR-head [Actions #237](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39060733993) passed 259 backend tests and the Vite production build on the exact PR head `4a2c771b659e994333bfaf466275a78499edec58`. Post-merge main [Actions #238](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39060783792) passed on merge SHA `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1`.
+- CI runs clean `npm ci`, `npm test` (Node test runner in the server workspace), and `npm run build` (Vite production build). There is no configured lint/typecheck/browser-test script.
+- The full original Project source `Plan.txt` (1,072 extracted lines) has been recovered and remains authoritative. The matching full, per-task status matrix is at the end of `docs/BUILD_CHECKLIST.md`.
+
+### Current implementation and security audit
+
+- **Phase 2 API route is integrated, not a 501 stub.** PR #4 connected `POST /api/plan` to the mockable server-side NVIDIA adapter. Request, model schema, dependency graph and schedule validation plus bounded provider error handling are implemented. Live provider inference remains unverified.
+- **Single-user auth is on main** from PR #5. `FLOW_COMPILER_ACCESS_TOKEN` is server-only, 43 base64url characters, compared using `timingSafeEqual` after strict format/length checks. Missing/malformed server auth config fails closed with 503; bad/missing caller credentials get a generic 401. Authentication executes before JSON parsing/request validation/provider invocation. `GET /api/health` intentionally remains public and returns only the non-sensitive status/service marker.
+- **New finding and fix:** the former auth gate compared the exact literal `request.path === "/api/plan"`, but Express routing accepts case-insensitive paths and a trailing slash by default. PR #7 now lowercases the request path and strips trailing slash(es) before deciding whether to apply the auth middleware. Regression tests prove unauthenticated `/api/plan/`, `/API/PLAN`, and `/API/PLAN/` requests with malformed JSON receive generic 401 before the JSON parser runs and never call the mocked provider. This fix is merged and deployed.
+- Existing application protections include strict exact-origin `APP_ORIGINS`, Authorization preflight support, a 20 KiB JSON limit, provider timeout/output caps and safe errors. Rate limiting remains an in-memory, per-direct-peer fixed window and is not distributed across instances. CORS is not authentication. This is a targeted implementation review, not an external security certification.
+- **Frontend secret boundary:** the access token remains in React component memory and is sent only as the HTTPS `Authorization: Bearer` header. The app does not store it in `localStorage` or `sessionStorage`, put it in a URL/body, or log it. Page reload clears in-memory state. No credentials have been added to repository source or this audit.
+- Provider tests use fake credentials/fetch. No NVIDIA API call was made, no `NVIDIA_API_KEY` has been configured, and account-specific eligibility/terms/quota remain unverified. Keep it unset unless the owner explicitly approves a later, bounded live-inference check.
+
+### Current hosting / deployment
+
+- **Render:** Free web service **Flow-Compiler**, ID `srv-db9r0sdg1s2s739o3ieg`, URL `https://flow-compiler.onrender.com`. Service integration reports auto-deploy from `main`, repo root, build `npm ci`, start `npm run start --workspace server`, health path `/api/health`. Latest deploy `dep-db9scum1egvs73d4b4cg` is reported `live` on commit `0f78e5a...`; deployment logs/metadata are not a substitute for an owner-side current-response check.
+- **Vercel:** Production deployment is `READY` on commit `0f78e5a...`, with alias `https://flow-compiler-cyan.vercel.app`. Production environment contains `VITE_API_BASE_URL`; the variable value was encrypted and was not decrypted or printed by the integration.
+- Owner last manually confirmed `/api/health` returns `{"status":"ok","service":"flow-compiler-api"}` and Check API says “Backend reachable · flow-compiler-api” before PR #7. This audit's browser fetch could not retrieve a usable external HTTP response, so **the health/Check API re-test against the newest post-PR-#7 deploy remains pending**. Do not treat prior manual success as a newly repeated check.
+- No `FLOW_COMPILER_ACCESS_TOKEN` or `NVIDIA_API_KEY` is configured. The public health route can be checked with no secrets; protected planning cannot be exercised successfully until the owner configures the token directly in Render. With a valid token but no NVIDIA key, the intended safe provider-not-configured response can be tested without inference.
+
+### Exact next task and gates
+
+1. **P7-05/P7-06 — post-fix deployed smoke test:** owner opens `https://flow-compiler.onrender.com/api/health`, verifies the actual current HTTP response/status, opens `https://flow-compiler-cyan.vercel.app`, clicks **Check API**, and confirms it reports backend reachable. Share only the non-secret result.
+2. After that passes, **P7-04 — server auth token setup:** generate the 32-byte base64url token locally (use the command in `docs/SECURITY.md`) and configure it in Render → Flow-Compiler → Environment only. Never paste the token into chat or Vercel. Save/redeploy as required by Render.
+3. Validate authenticated planning safe-failure behavior without an NVIDIA key: invalid token should produce the generic 401; valid token with no `NVIDIA_API_KEY` should return safe `AI_NOT_CONFIGURED` and should not call NVIDIA.
+4. **P7-01/P7-07 — NVIDIA account review and inference:** confirm official terms/account eligibility/quota separately. Do not configure `NVIDIA_API_KEY` or call the provider until the owner explicitly approves that stage.
+5. Resume the original phase sequence for incomplete workflow UI/recompile/persistence/export and final QA work. The complete stable task IDs/statuses are maintained in `docs/BUILD_CHECKLIST.md`.
+
+Budget remains strictly ₹0. Render is Free; no payment method, upgrade or paid dependency has been added.
+
 
 ## Repository and Git state
 
@@ -307,3 +347,12 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 - Render Free service has `autoDeploy=yes` on branch `main`. Latest deployment of the same SHA `f99b0951ad9fbeaa58e1b859e6fd98793f4c8a8d`, deployment ID `dep-db9rdojrjlhs73c0joqg`, status `live`. Runtime logs show `Flow Compiler API listening on 0.0.0.0:10000` and Render's live banner at `https://flow-compiler.onrender.com`.
 - The host-binding incident is resolved in code and deployed logs. An actual external HTTP body for `/api/health` has not been retrieved by this environment; wait for owner confirmation at [`https://flow-compiler.onrender.com/api/health`](https://flow-compiler.onrender.com/api/health).
 - No key/token added for this fix; Free plan remains. Next action is owner report of exact health JSON/HTTP status, then proceed with exact Vercel `VITE_API_BASE_URL` and Render `APP_ORIGINS` configuration.
+
+
+## Latest session update — 2026-10-18 Asia/Kolkata
+
+- Audited the current `main`, the full `Plan.txt` Project source, runtime/auth/frontend/adapter/tests, current PR list, CI run logs, Render deployment metadata and Vercel production deployment.
+- Found and fixed the route-alias auth gap in PR #7. The final PR-head CI #237 passed 259 backend tests and Vite production build; post-merge `main` CI #238 passed the same suite/build. The fix is deployed via Render deploy `dep-db9scum1egvs73d4b4cg` (reported `live`) and Vercel's production deployment is `READY`, both on `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1`.
+- No hosting secrets were read/decrypted or changed. No NVIDIA key, bearer token, real provider request, paid resource or quota-consuming inference was introduced.
+- Current blocker is owner verification against this newest deployment and, only after that succeeds, local generation/configuration of `FLOW_COMPILER_ACCESS_TOKEN` in Render. Live NVIDIA inference remains blocked pending eligibility/terms/quota verification and explicit approval.
+- Current next task: P7-05/P7-06 post-fix health and Check API test; then P7-04 token setup and P7-07 safe no-key failure test. See the full task matrix in `docs/BUILD_CHECKLIST.md`.

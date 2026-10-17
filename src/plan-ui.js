@@ -137,14 +137,12 @@ export function validatePlanResponse(payload, availableMinutes) {
   }
   const deferred = payload.deferredTasks ?? [];
   if (payload.tasks.length + deferred.length > TASK_LIMIT) return "scheduled and deferred tasks cannot exceed 20 combined.";
-  const scheduledIds = new Set();
   const allIds = new Set();
   for (const task of payload.tasks) {
     const error = validateTask(task);
     if (error) return error;
     if (allIds.has(task.id)) return "task IDs must be unique.";
     allIds.add(task.id);
-    scheduledIds.add(task.id);
   }
   for (const task of deferred) {
     const error = validateTask(task, { deferred: true });
@@ -158,6 +156,9 @@ export function validatePlanResponse(payload, availableMinutes) {
   for (const task of [...payload.tasks, ...deferred]) {
     for (const dependencyId of task.dependsOn) {
       if (!allIds.has(dependencyId)) return "task references an unknown dependency ID.";
+      if (deferred.some(candidate => candidate.id === dependencyId) && !deferred.some(candidate => candidate.id === task.id)) {
+        return "scheduled task cannot depend on deferred work.";
+      }
     }
   }
   // This task renders a plan list, not the dependency graph. Verify references but

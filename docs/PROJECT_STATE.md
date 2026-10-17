@@ -4,6 +4,53 @@ Last updated: 2026-10-18 (Asia/Kolkata; current main, authentication alias fix a
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
 
+## Current authentication smoke-test readiness — 2026-10-18 Asia/Kolkata
+
+This update supersedes older narrative entries below that state Render is absent, the Vercel API base is unconfigured, or authentication has not been merged. Those statements describe earlier project states and are retained only for history.
+
+### Refreshed repository and CI facts
+
+- Current `main` at audit start: `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`; latest runtime/security change remains PR #7 commit `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1`. PRs #1–#9 are merged and no open PRs were returned by the refreshed GitHub query.
+- Latest exact-main CI [run #242](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39061261784) passed 259/259 backend tests and Vite production build on `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`. CI test doubles and fake credentials only; no provider call.
+- Source plan `Plan.md` from the Project Library (equivalent to the supplied `Plan.txt`) was materialized/read locally: 1,071 lines. Section 9 calls for deployed endpoint authentication, request limits and bounded provider output, while keeping credentials server-side.
+
+### Code-level authentication audit
+
+- `server/src/app.js` reads one strict `Authorization: Bearer <43 base64url chars>` header and rejects repeated or malformed headers. It validates both configured and supplied token formats and compares equal-length token buffers with `timingSafeEqual`.
+- Missing or malformed `FLOW_COMPILER_ACCESS_TOKEN` yields generic 503 `AUTHENTICATION_NOT_CONFIGURED`; missing/invalid/malformed supplied credentials yield generic 401 `UNAUTHORIZED`. The protected route responses use `Cache-Control: no-store`.
+- Middleware executes before JSON parsing, request validation and provider adapter invocation. Rate-limit middleware runs before CORS/auth; failed auth consumes quota. The fixed-window limiter is in-memory and not distributed.
+- Guarded route matching normalizes path case and removes trailing slashes before testing `POST /api/plan`. Automated regression tests cover `/api/plan/`, `/API/PLAN`, and `/API/PLAN/`; each unauthenticated malformed body must return the same generic 401 before parsing, with the provider mock remaining uncalled.
+- Other tests verify missing/invalid credentials cause zero provider calls (including test servers configured with a fake NVIDIA key), invalid server token configuration fails closed with 503 and zero provider calls, health remains public, Authorization credentials are accepted in CORS preflight, and secrets are absent from logs/responses.
+- `GET /api/health` remains public and returns only the non-sensitive status/service marker.
+
+### Frontend token audit
+
+- `src/App.jsx` contains a password-type access-token field with `autocomplete="off"`, a clear-token button, and a note that the value exists in memory only.
+- The token is stored in React component state and sent only in `Authorization: Bearer ...` on `POST /api/plan`. It is not written to `localStorage` or `sessionStorage`, URL, JSON body or console logs. The value is cleared when the page reloads/unmounts. Do not accept browser prompts to save it.
+- Production requests require an HTTPS API origin. `VITE_API_BASE_URL` is a non-secret backend origin only; never put either credential in a `VITE_*` variable.
+
+### Refreshed deployed state
+
+- Render service ID `srv-db9r0sdg1s2s739o3ieg`, Free plan, auto-deploy from `main`; latest deploy ID `dep-db9sg1942hec73d1p1bg` reports `live` on `11ecaff...`.
+- Vercel Production reports `READY` on the same commit with alias `https://flow-compiler-cyan.vercel.app`. Production environment contains `VITE_API_BASE_URL`; its encrypted value was not decrypted.
+- Owner's latest reported manual check: `/api/health` returns `{"status":"ok","service":"flow-compiler-api"}`; Check API says `Backend reachable · flow-compiler-api`. The current environment has no outbound DNS to these hosts, so no new shell HTTP response could be captured here.
+- No hosting secret values were inspected or changed. The current user state says both `FLOW_COMPILER_ACCESS_TOKEN` and `NVIDIA_API_KEY` are unset. Do not configure the provider key or call NVIDIA during authentication smoke testing.
+
+### Exact next task and staged manual gate
+
+**P7-04 — configure single-user authentication token and smoke-test deployed safe-failure behavior.**
+
+1. Generate a 32-byte token locally with the command in `docs/SECURITY.md`; never paste it into chat, GitHub or source control.
+2. Add only `FLOW_COMPILER_ACCESS_TOKEN` directly in Render → Flow-Compiler → Environment, save/redeploy, and wait for deployment live status. Leave `NVIDIA_API_KEY` blank/unset.
+3. Verify public `/api/health` and the Vercel Check API again.
+4. Enter the same token into the Vercel app’s SESSION ACCESS TOKEN field in the current browser tab.
+5. Test a locally invented invalid token first; expect a generic HTTP 401 `UNAUTHORIZED`. Then enter the correct token and submit valid plan input while the provider key remains absent; expect safe HTTP 500 `AI_NOT_CONFIGURED`. Both paths must consume no provider calls; the valid token/no-provider-key case should fail before outbound NVIDIA fetch.
+6. Confirm outcomes by reporting status/error codes only, never the token. Stop if the observed result differs; do not make real provider calls.
+
+Real NVIDIA inference remains blocked pending account-specific terms/eligibility/quota review and separate explicit approval. ₹0 budget and Render Free remain mandatory.
+
+
+
 ## Current authoritative state — 2026-10-18 Asia/Kolkata
 
 This section supersedes the older dated notes below for current facts only. Earlier sections remain useful as historical audit records, but several accurately described earlier states before route integration, authentication, Render, or Vercel were completed.

@@ -80,7 +80,7 @@ test("oversized JSON is rejected before route handling", async () => {
   const body = JSON.stringify({ content: "x".repeat(22 * 1024) });
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
     body
   });
   assert.equal(response.status, 413);
@@ -122,7 +122,7 @@ test("plan endpoint rejects invalid brain dumps and time budgets", async () => {
   for (const payload of invalidPayloads) {
     const response = await fetch(baseUrl + "/api/plan", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
       body: JSON.stringify(payload)
     });
     assert.equal(response.status, 400, JSON.stringify(payload).slice(0, 100));
@@ -134,7 +134,7 @@ test("plan endpoint accepts both inclusive available-time boundaries", async () 
   for (const availableMinutes of [5, 720]) {
     const response = await fetch(baseUrl + "/api/plan", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
       body: JSON.stringify({ brainDump: "Finish one concrete task.", availableMinutes })
     });
     assert.equal(response.status, 500);
@@ -145,7 +145,7 @@ test("plan endpoint accepts both inclusive available-time boundaries", async () 
 test("plan endpoint accepts the source-compatible previousPlan revision shape", async () => {
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
     body: JSON.stringify({
       brainDump: "Resolve the blocker and continue.",
       availableMinutes: 5,
@@ -238,7 +238,7 @@ test("plan endpoint rejects malformed revision context and dangling prior depend
   for (const payload of invalidPayloads) {
     const response = await fetch(baseUrl + "/api/plan", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
       body: JSON.stringify(payload)
     });
     assert.equal(response.status, 400);
@@ -249,7 +249,7 @@ test("plan endpoint rejects malformed revision context and dangling prior depend
 test("plan endpoint rejects unsupported top-level fields such as client-supplied credentials", async () => {
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
     body: JSON.stringify({
       brainDump: "Plan a task",
       availableMinutes: 30,
@@ -304,7 +304,7 @@ test("rate-limit middleware applies to all API paths but not non-API routes", as
   try {
     assert.equal((await fetch(started.baseUrl + "/not-a-route")).status, 404);
     const plan = await fetch(started.baseUrl + "/api/plan", {
-      method: "POST", headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
       body: JSON.stringify({ brainDump: "a valid input", availableMinutes: 30 })
     });
     assert.equal(plan.status, 500);
@@ -375,7 +375,7 @@ test("disallowed origins are not reflected; allowed and denied preflight behavio
 
     const allowedPreflight = await fetch(started.baseUrl + "/api/plan", {
       method: "OPTIONS",
-      headers: { Origin: "https://app.example.com", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type,accept" }
+      headers: { Origin: "https://app.example.com", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "content-type,accept,authorization" }
     });
     assert.equal(allowedPreflight.status, 204);
     assert.equal(allowedPreflight.headers.get("access-control-allow-origin"), "https://app.example.com");

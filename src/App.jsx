@@ -233,7 +233,7 @@ export default function App() {
         </div>
         {demoMode && <p className="mode-note" role="status">Local demo mode: Compile loads a fixed illustrative plan. No planning API request is made.</p>}
         <label className="field-label" htmlFor="brain-dump">YOUR INPUT</label>
-        <textarea id="brain-dump" value={brainDump} onChange={e=>changeInput(e.target.value)} maxLength={5000} aria-invalid={Boolean(inputError)} aria-describedby="brain-dump-help brain-dump-error" placeholder="I need to finish my portfolio, fix a login bug, learn React Query, and apply for internships…"/>
+        <textarea id="brain-dump" value={brainDump} onChange={e=>changeInput(e.target.value)} maxLength={5000} aria-invalid={Boolean(inputError)} aria-describedby="brain-dump-help brain-dump-error" disabled={demoMode || planState === "loading"} placeholder="I need to finish my portfolio, fix a login bug, learn React Query, and apply for internships…"/>
         <div className="input-footer"><span>{brainDump.length.toLocaleString()} / 5,000 CHARACTERS</span><button className="text-button" type="button" onClick={enterDemoMode}>LOAD EXAMPLE ↗</button></div>
         <p id="brain-dump-help" className="field-help">Whitespace around your thoughts is allowed; the input must contain useful non-whitespace text.</p>
         {inputError && <p id="brain-dump-error" className="field-error" role="alert">{inputError}</p>}
@@ -282,7 +282,7 @@ export default function App() {
             <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayPlan.summary}</h3></div><span>{displayPlan.totalMinutes} MIN</span></div>
             <div className="plan-metadata"><span>{displayPlan.tasks.length} scheduled tasks</span><span>{displayPlan.deferredTasks?.length || 0} deferred</span><span>Time budget: {minutes} min</span></div>
             <ol>{displayPlan.tasks.map((task, index) => <li key={task.id}>
-              <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span>{task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
+              <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span className="scheduled-status">SCHEDULED · {task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
               <p>{task.reason}</p>
               <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{task.dependsOn.length ? "PREREQUISITES: " + task.dependsOn.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
             </li>)}</ol>

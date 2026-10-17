@@ -24,7 +24,7 @@ async function close(instance) {
 }
 
 before(async () => {
-  server = createApp({ allowedOrigin: "http://localhost:5173", rateLimit: { windowMs: 60_000, limit: 1_000 } }).listen(0, "127.0.0.1");
+  server = createApp({ env: { NVIDIA_API_KEY: "" }, allowedOrigin: "http://localhost:5173", rateLimit: { windowMs: 60_000, limit: 1_000 } }).listen(0, "127.0.0.1");
   await new Promise((resolve, reject) => {
     server.once("listening", resolve);
     server.once("error", reject);
@@ -47,16 +47,16 @@ test("health endpoint returns the service status", async () => {
   });
 });
 
-test("plan endpoint is explicit that AI planning is not yet implemented", async () => {
+test("plan endpoint reports missing server-side provider configuration without calling NVIDIA", async () => {
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     // The source starter sends previousPlan: null for initial compilation.
     body: JSON.stringify({ brainDump: "test", availableMinutes: 30, previousPlan: null })
   });
-  assert.equal(response.status, 501);
+  assert.equal(response.status, 500);
   const payload = await response.json();
-  assert.equal(payload.error.code, "PLANNING_NOT_IMPLEMENTED");
+  assert.equal(payload.error.code, "AI_NOT_CONFIGURED");
 });
 
 test("unknown routes return a stable JSON 404", async () => {
@@ -136,8 +136,8 @@ test("plan endpoint accepts both inclusive available-time boundaries", async () 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brainDump: "Finish one concrete task.", availableMinutes })
     });
-    assert.equal(response.status, 501);
-    assert.equal((await response.json()).error.code, "PLANNING_NOT_IMPLEMENTED");
+    assert.equal(response.status, 500);
+    assert.equal((await response.json()).error.code, "AI_NOT_CONFIGURED");
   }
 });
 
@@ -170,8 +170,8 @@ test("plan endpoint accepts the source-compatible previousPlan revision shape", 
       }
     })
   });
-  assert.equal(response.status, 501);
-  assert.equal((await response.json()).error.code, "PLANNING_NOT_IMPLEMENTED");
+  assert.equal(response.status, 500);
+  assert.equal((await response.json()).error.code, "AI_NOT_CONFIGURED");
 });
 
 test("plan endpoint rejects malformed revision context and dangling prior dependencies", async () => {
@@ -306,8 +306,8 @@ test("rate-limit middleware applies to all API paths but not non-API routes", as
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ brainDump: "a valid input", availableMinutes: 30 })
     });
-    assert.equal(plan.status, 501);
-    assert.equal((await plan.json()).error.code, "PLANNING_NOT_IMPLEMENTED");
+    assert.equal(plan.status, 500);
+    assert.equal((await plan.json()).error.code, "AI_NOT_CONFIGURED");
     assert.equal((await fetch(started.baseUrl + "/api/health")).status, 429);
   } finally { await close(started.server); }
 });

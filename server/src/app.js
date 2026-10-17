@@ -109,7 +109,7 @@ function readBearerCredential(request) {
     }
   }
   if (values.length !== 1 || typeof values[0] !== "string") return null;
-  const match = /^Bearer ([A-Za-z0-9_-]{43,128})$/.exec(values[0]);
+  const match = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(values[0]);
   return match ? match[1] : null;
 }
 

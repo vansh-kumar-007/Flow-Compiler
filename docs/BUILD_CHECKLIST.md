@@ -388,3 +388,65 @@ Free-tier caveats from current Render documentation: Free web services spin down
 - **PR #5 retargeted to main after PR #3 merge:** current integration branch no longer relies on a PR as its base. Before this checklist/state-doc update, PR #5 head `fd3e5308deabff58af22ef6a742f55ac021d14dc` passed [Actions #209](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39052506330). Confirm a pull-request CI run for the post-retarget final HEAD before merge.
 - Auth diff review spot-check: one Bearer header, 43-character base64url format, timingSafeEqual, generic unauthorized responses, fail-closed missing server auth configuration, rate-limit-before-auth and auth-before-body-parser/provider, exact-origin CORS with Authorization, public health, no persistent client token, no credential logging/response exposure. No provider key configured and provider behavior only tested with mocks. No formal review on PR #5; do not merge until final exact-head CI and security review are clean.
 - **Next task:** verify post-retarget PR #5 exact-head CI, finish review, merge PR #5 only if safe, then confirm post-merge main CI and update governance files on main. Do not create Render until this is complete. Render config audited: root directory blank/repository root, Node >=24, build `npm ci`, start `npm run start --workspace server`, `HOST=0.0.0.0`, let Render set `PORT`, health path `/api/health`. ₹0; no paid resources.
+
+
+## Authoritative task matrix addendum — post-merge verification, 2026-10-18 Asia/Kolkata
+
+This latest section supersedes older dated narrative snapshots above for *current state only*. The stable P0–P8 task IDs and task names are unchanged.
+
+- **P0-06** — Reconcile governance files and next-task pointer: In progress until this current-state record and its CI evidence are on main.
+- **P2-12** — Finalize API security documentation and verification: implementation/docs merged; hosted verification remains under P7.
+- **P2-13** — Connect validated adapter to `POST /api/plan`: completed on main via PR #4, mocked-provider tests only.
+- **P3-01** — Dark command-center UI frame: implemented on main; owner-reported responsive layout PASS.
+- **P3-02** — Thought input/time controls: In progress; owner manual interaction PASS, full product validation/regression remains.
+- **P3-03** — Demo input/demo plan mode: In progress; Load Example PASS but graph remains illustrative, not an actual generated example plan.
+- **P3-04** — UI/API connection: auth-request path merged to main, deployed URL/connectivity unverified because `VITE_API_BASE_URL` remains unset.
+- **P3-05** — Plan summary/task rendering: basic actual-response rendering merged; full graph UX remains.
+- **P3-06** — Accurate dependency graph: Not started.
+- **P3-07** — Completion tracking/progress: Not started.
+- **P3-08** — Empty/loading/error/invalid-plan states: In progress; basic states/guards exist, UI regression coverage remains.
+- **P3-09** — Accessibility/interaction review: In progress; partial semantics/focus/reduced-motion only.
+- **P4-01** — Stable IDs/recompile contract: In progress, contract only.
+- **P4-02** — Preserve completed tasks during recompile: Not started.
+- **P4-03** — Revalidate IDs/dependencies after recompile: In progress, server validators exist; runtime path absent.
+- **P4-04** — Time-loss/remaining-time changes: Not started.
+- **P4-05** — Early finish/blocker reporting: In progress, contract concepts only.
+- **P4-06** — Countdown/focus mode: Not started.
+- **P4-07** — Next-ready task selection: Not started.
+- **P4-08** — Recompile regression tests/UI verification: Not started.
+- **P5-01** — Local plan/completion persistence: Not started; access token must never be persisted.
+- **P5-02** — Animated dependency links/nodes: Not started.
+- **P5-03** — Focus-mode visual states/responsive completion: In progress; shell responsiveness checked, focus mode absent.
+- **P5-04** — Privacy-preserving export/share: Not started.
+- **P5-05** — Keyboard/screen-reader/reduced-motion checks: In progress, partial support only.
+- **P5-06** — UI smoke/regression tests: Not started.
+- **P5-07** — Feature/privacy docs: In progress; deployment/auth docs now on main, complete feature docs await the remaining product.
+- **P6-01** — Vague/large/conflicting inputs: In progress, mocked fixtures only.
+- **P6-02** — Body/request/response bounds: Completed by automated CI.
+- **P6-03** — Auth/origin/rate-limit assumptions: In progress; automated auth/CORS/rate-limit tests are merged, deployed-origin behavior unverified.
+- **P6-04** — Logging/error disclosure: In progress; targeted tests/review, no deployed log audit.
+- **P6-05** — Dependency validation/recompile preservation review: In progress; graph validation exists but recompile preservation is not implemented.
+- **P6-06** — Complete test/build/lint suite: In progress; CI install/tests/build pass; lint/typecheck scripts and full product QA remain absent.
+- **P6-07** — Final diff/dependency/security inspection: In progress; targeted review completed, not an external audit; deployed QA/secret boundary still to verify.
+- **P7-01** — NVIDIA eligibility/terms/quota: Blocked until the account-specific checks are performed.
+- **P7-02** — Free hosting options research: Completed (research only).
+- **P7-03** — Choose hosting: In progress; Vercel frontend and Render Free backend selected, backend not deployed.
+- **P7-04** — Server-side secrets: Blocked/not configured; no access token or NVIDIA key set.
+- **P7-05** — Frontend deploy: In progress; Vercel preview UI checked; `VITE_API_BASE_URL` missing, connectivity unverified.
+- **P7-06** — Backend deployment/health: Blocked until user creates Render service; no Render resource yet.
+- **P7-07** — Live AI and safe failure paths: Blocked until health/auth/connectivity are tested; live inference separately requires eligibility check and explicit approval.
+- **P7-08** — Deployment/rollback/quota/troubleshooting guide: In progress; repository-specific config verified, operational walkthrough will be documented from actual results.
+- **P7-09** — Final deployed smoke test/CI evidence: Not started.
+- **P8-01** — Trace source-plan requirements to evidence: Not started.
+- **P8-02** — Branch/PR/main state: implementation milestone completed; PR #3 and PR #5 merged, exact main CI run #215 passed.
+- **P8-03** — Setup/security/user docs: current READMЕ/API contract/security/tracking updates merged; deployment-specific docs remain in progress until actual deployment.
+- **P8-04** — Final limitations handoff: Not started; depends on remaining features/deployment.
+
+### Exact repository/merge evidence
+
+- PR #3 merge: [`79e23b7670881a2627cf77da559b8cc3997c5581`](https://github.com/vansh-kumar-007/Flow-Compiler/commit/79e23b7670881a2627cf77da559b8cc3997c5581).
+- PR #5 merge / current main at the time of this record: [`f32b90f75c07d0cf168e88e7cf5482197e3ea127`](https://github.com/vansh-kumar-007/Flow-Compiler/commit/f32b90f75c07d0cf168e88e7cf5482197e3ea127).
+- Post-merge CI: [Actions run #215](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39052797633), success on exact main SHA; clean install, backend tests, Vite production build.
+- API provider behavior tests use mocked credentials/fetch. No NVIDIA key configured; no live inference. No Render service or access token has been created/configured; no Vercel API base origin configured.
+- Verified Render setup values from main: repository root/blank root-directory field, Node >=24, build `npm ci`, start `npm run start --workspace server`, `HOST=0.0.0.0`, Render-supplied `PORT`, health path `/api/health`.
+- **Next manual task:** begin Render Stage 1 only. State explicitly “It is now time to connect Render.” Ask user to open Render and select New + → Web Service, then stop and wait for their report. Do not provide the next dashboard stage until they confirm what screen they see. Keep ₹0; no payment method/paid resource.

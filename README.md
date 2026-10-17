@@ -4,7 +4,7 @@ Flow Compiler is planned as an AI-assisted productivity tool that turns unstruct
 
 ## Current status
 
-This feature branch contains the Phase 1 runtime foundation plus the Phase 2 API contract, request validation, and an isolated NVIDIA provider adapter. The frontend API connection check calls the real Express health endpoint. The `/api/plan` route still returns HTTP 501: prompt/output parsing, generated-task and dependency validation, scheduling, and integration of the provider into the route are not complete. Real NVIDIA inference has not been performed or verified.
+This branch contains the Phase 1 runtime foundation and the Phase 2 secure API foundation: request validation, bounded CORS/rate limiting, and an injectable NVIDIA adapter with strict JSON parsing, plan schema/dependency/schedule validation. The frontend API connection check calls the real Express health endpoint. `POST /api/plan` still returns HTTP 501 `PLANNING_NOT_IMPLEMENTED` for valid requests because the adapter has not been integrated into the public route. Real NVIDIA inference remains unverified; automated tests use local mocks.
 
 ## Requirements
 

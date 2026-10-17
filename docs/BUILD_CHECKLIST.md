@@ -185,7 +185,7 @@ P2-01 through P2-10 have deterministic automated evidence. P2-11 is an optional 
 
 ## Phase 3 — Visual application foundation
 
-- [x] **P3-01 — Dark command-center UI frame.** Implemented on `feat/phase-3-command-center-ui` in `src/App.jsx` and `src/styles.css`. Includes responsive shell, raw-thoughts input, execution-window slider/presets, clearly labeled illustrative dependency nodes, honest disabled compile action, and backend health-check UI. No AI results are fabricated; planning is explicitly marked not connected. Source review only at this point; production build, CI, and live browser checks remain pending until observed.
+- [x] **P3-01 — Dark command-center UI frame.** Implemented on `feat/phase-3-command-center-ui` in `src/App.jsx` and `src/styles.css`. Includes responsive shell, raw-thoughts input, execution-window slider/presets, clearly labeled illustrative dependency nodes, honest disabled compile action, and backend health-check UI. No AI results are fabricated; planning is explicitly marked not connected. Verification: GitHub Actions run #96 completed successfully on commit `55e997f364c0e520882f2b1e42625c872a0e2f09`; its `Install, test, and build` job passed dependency installation, backend tests, and Vite production build. Live browser and deployment checks remain pending.
 - [ ] **P3-02 — Implement actual planning UI integration.** Do not begin until P3-01 is reviewed and merged; follow the exact sequence in Plan.txt and existing API contract.
 - [ ] **P3-03+ — Subsequent visual/product features.** Preserve the stable task IDs and scope in this checklist; do not infer acceptance criteria from the mockup alone.
 

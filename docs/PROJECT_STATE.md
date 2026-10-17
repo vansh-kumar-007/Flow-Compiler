@@ -169,3 +169,27 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - Review of the full supplied Plan.txt surfaced an explicit final security requirement in section 9: add authentication for personal use, plus server-side request limits and maximum output size. The current backend implements input/output bounds, a 90-second timeout, a 1 MiB provider-response cap, exact-origin CORS and a process-local per-IP rate limiter, but it does not implement user authentication. CORS is not authentication; a non-browser client can call a public route directly, and an in-memory per-IP limit is only a basic abuse control.
 - NVIDIA_API_KEY remains unconfigured. Do not configure it or perform live inference on a public endpoint until the auth requirement is implemented and verified. A health-only Render deployment without the key may proceed for connectivity checks.
 - The source plan does not prescribe the auth mechanism. I have not silently added a login/session system or a client-side bearer-token design; choosing one affects the app/API contract. Get user approval for the minimal mechanism before implementing it. This is now a blocker for P7-04/P7-07, not a change to the ₹0 budget or hosting provider.
+
+
+## Approved personal-authentication implementation — 2026-10-17
+
+### Source-plan §9 review
+
+The uploaded Plan.txt §9 says to (1) validate dependencies including circular dependencies and all fields before graph rendering; (2) make recompilation preserve completed tasks/IDs and recheck dependencies; and (3) protect the deployed endpoint with authentication for personal use, server-side request limits, and maximum output size. The proposed single-user bearer token directly implements the authentication requirement. It does not claim to complete the separate recompile requirement. Existing server request limits and provider output-size caps remain in force.
+
+### Dedicated PR #5
+
+- PR: https://github.com/vansh-kumar-007/Flow-Compiler/pull/5
+- Branch: feat/single-user-plan-auth; base initially targets feat/phase-3-command-center-ui so the auth UI can be reviewed without prematurely merging PR #3.
+- Runtime changes: server-only FLOW_COMPILER_ACCESS_TOKEN; exact 43-character base64url format representing 32 random bytes; duplicate/malformed Authorization headers rejected; timingSafeEqual used on valid equal-length ASCII token bytes; generic 401 for missing/invalid/malformed request credentials; generic fail-closed 503 if the server token is absent/malformed.
+- Middleware order: existing per-peer-IP rate limiter -> CORS -> auth on POST /api/plan -> JSON parser -> request validation/provider route. CORS allows Authorization for preflight; health remains public. Auth responses are no-store. Unauthorized requests cannot parse/validate body or invoke the provider.
+- Frontend: password-type token field in React component state only, autocomplete=off and a clear-token control; no localStorage/sessionStorage, URL, logging, analytics or app persistence. Production API calls require an HTTPS origin; loopback HTTP is permitted only for local development. The request sends the token in Authorization: Bearer only. The user-initiated request shows safe errors and renders only an actual API response, not invented AI output.
+- Test changes cover valid request, missing/invalid/malformed/combined credentials, same generic 401, missing/malformed server config, auth before body parsing, no provider calls for unauthorized requests, no token/key in response or captured console output, public health, Authorization preflight, and existing rate-limit tests. Provider interactions remain mocked.
+- Docs: docs/API_CONTRACT.md describes the route contract; new docs/SECURITY.md covers credential generation, environment-only configuration, browser/session boundaries, HTTPS, CORS/rate limiting, rotation, and deployment gates; BUILD_CHECKLIST retains the original task IDs and adds the bounded sequencing deviation.
+- No real token, NVIDIA_API_KEY, Render resource, or live inference was created/configured. ₹0 budget remains.
+
+### Sequencing and merge gates
+
+- P3-04 and minimal actual-plan rendering began ahead of the prior phase order because the approved authentication requirement needs an actual frontend Authorization-header request path. The compile action remains user-triggered and never fabricates a response. Full P3-05 graph integration, P3-06 dependency visualization, and later features remain incomplete.
+- PR #5 initially targets PR #3's branch. Exact-head CI and review must pass. PR #3 still requires manual preview acceptance. After PR #3 is accepted/merged, retarget/reconcile PR #5 to main and rerun CI before merging; do not bypass checks.
+- Next immediate task: wait for/inspect PR #5 exact-head CI, fix any failures, then manually review the code/security diff. After the PR sequence, deploy the backend without secrets, verify /api/health, configure exact APP_ORIGINS and VITE_API_BASE_URL, verify frontend health and deployed auth with no NVIDIA_API_KEY. Only later, after account quota review and explicit authorization, may one controlled live inference be considered.

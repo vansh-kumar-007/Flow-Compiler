@@ -2,7 +2,7 @@
 
 **Status:** Phase 2 API contract plus route-integration implementation. `POST /api/plan` validates input, builds a bounded prompt from documented request fields, invokes the server-side NVIDIA adapter, and returns only output that passes complete JSON parsing, plan-schema validation, dependency validation, and available-time budget validation. The route uses deterministic mocked-provider tests; real NVIDIA inference and deployment remain unverified until an authorized server-side key is configured.
 
-**Product source:** the Flow Compiler Project source “Flow Compiler — build plan and starter code” (Plan.txt; the project instructions refer to it as Plan.md). This document records the source-compatible contract and the behavior currently implemented in the API foundation and isolated, mock-tested adapter pipeline. It does not claim live provider availability or end-to-end plan generation.
+**Product source:** the Flow Compiler Project source “Flow Compiler — build plan and starter code” (Plan.txt; the project instructions refer to it as Plan.md). This document records the source-compatible contract and the integrated route/adapter behavior. Route-to-provider behavior is verified with deterministic mocks; live NVIDIA availability and deployed backend connectivity remain unverified.
 
 ## 1. Endpoint and compatibility decisions
 
@@ -229,7 +229,7 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - The backend reads `NVIDIA_API_KEY` from server-side environment configuration (for local development, `server/.env`; for deployment, the hosting provider's secret store).
 - Never name it `VITE_NVIDIA_API_KEY`, include it in frontend variables, build artifacts, source maps, public logs, or client responses.
 - Validate input before constructing the prompt. Bound the request body, prompt context, model token output, and request duration. Use the specified NVIDIA OpenAI-compatible Chat Completions endpoint and model ID from the source plan.
-- Once a future task connects the provider to `POST /api/plan`, the user must be told that raw thought input and validated revision context are sent to the configured AI provider. As currently implemented, the public route does not send request data to NVIDIA because it returns 501 before adapter invocation. Do not send more context than required.
+- The integrated `POST /api/plan` route sends the raw thought input and validated revision context to the configured NVIDIA provider. The user-facing flow must disclose this data transfer. Send only documented, validated context needed to plan the work; do not log the full brain dump or provider bodies.
 
 ## 8. Relationship to implementation tasks
 
@@ -242,9 +242,9 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - **P2-07:** validate generated dependency references and reject cycles.
 - **P2-08:** validate scheduled-duration fit against explicitly supplied `availableMinutes` and require bounded meaningful `deferredReason` values. Generated task placement is validated, not silently rearranged; dependency changes require a new model-selected plan.
 - **P2-09:** implement/test API rate limiting and explicit exact-origin CORS policy.
-- **P2-10:** the injectable provider/parser/schema/dependency/schedule pipeline is covered by deterministic mocks. The original route regression asserted the 501 stub; route-integration follow-up P2-13 replaces that expectation with real adapter invocation through mocked fetch.
+- **P2-10:** the injectable provider/parser/schema/dependency/schedule pipeline is covered by deterministic mocks. The original route regression asserted the 501 stub; follow-up P2-13 now invokes the adapter through mocked fetch and verifies the public route contract.
 - **P2-11 (optional live smoke test):** no authorized connected backend secret environment was available for this session, so no provider request was made. Real NVIDIA inference, account eligibility and quota remain unverified. If the optional test is desired later, configure a key only in ignored `server/.env` or an authorized backend secret store; never paste it into chat or commit it.
 - **P2-12 (final security documentation):** the documented contract was audited against middleware, provider adapter, validators, environment example and tests. Existing baseline Actions run [#71](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029523089) passed 243 tests and production build on `b6657d6a54810a9efc94ff72d6f9c2197e36e368`; final documentation-commit CI is required before merge.
-- **P2-13 (source-plan route integration follow-up):** connect the already validated provider pipeline to the public route, preserving the API contract and using deterministic HTTP-route mocks. Implementation is in PR #4; acceptance remains pending its exact-head CI and review. No live inference is claimed.
+- **P2-13 (source-plan route integration follow-up):** connected the validated provider pipeline to the public route while preserving the API contract. GitHub Actions [run #121](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39038651587) passed on code/documentation commit `fbc8aa985ed9a3f7496fb12316444c66a098b7b4`: 251 backend tests passed, 0 failed/skipped, and the Vite production build succeeded. Tests use a fake key and mocked fetch only; no live inference is claimed. PR #4 remains open for review.
 
 This document does not claim a live NVIDIA request, public route-to-provider integration, deployment, or UI completion.

@@ -300,7 +300,7 @@ test("rate-limit identity ignores spoofed forwarding headers when proxy trust is
 });
 
 test("rate-limit middleware applies to all API paths but not non-API routes", async () => {
-  const started = await listen(createApp({ allowedOrigins: ["http://localhost:5173"], rateLimit: { windowMs: 60_000, limit: 1 } }));
+  const started = await listen(createApp({ env: { NVIDIA_API_KEY: "", FLOW_COMPILER_ACCESS_TOKEN: testAccessToken }, allowedOrigins: ["http://localhost:5173"], rateLimit: { windowMs: 60_000, limit: 1 } }));
   try {
     assert.equal((await fetch(started.baseUrl + "/not-a-route")).status, 404);
     const plan = await fetch(started.baseUrl + "/api/plan", {

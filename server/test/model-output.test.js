@@ -38,7 +38,7 @@ test("parses a complete JSON document inside an unlabeled fence", () => {
 });
 
 test("accepts an unlabeled fence with trailing horizontal whitespace on the opening line", () => {
-  const input = FENCE + "   \\n" + '{"ok":true}' + "\\n" + FENCE;
+  const input = FENCE + "   " + String.fromCharCode(10) + '{"ok":true}' + String.fromCharCode(10) + FENCE;
   assert.deepEqual(parseModelOutput(input), { ok: true });
 });
 

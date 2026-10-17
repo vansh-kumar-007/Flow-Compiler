@@ -7,7 +7,7 @@ Authoritative product source: the ChatGPT Project source “Flow Compiler — bu
 
 - Repository: https://github.com/vansh-kumar-007/Flow-Compiler
 - Default branch: `main`.
-- Current Phase 2 working branch: `feat/phase-2-api-contract-validation`.
+- Latest/default working branch: `main` at `06d343121a6af5b624e18473fd41fd0bf2827568`. Phase 2 branch `feat/phase-2-api-contract-validation` is merged and closed via PR #2.
 - Foundation branch: `chore/phase-0-audit-and-foundation`.
 - **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`.
 - **PR #2**: [Phase 2: secure plan API contract and validation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `87fd4adc530df9ce437bf3fb55202d4f943e8939`, from reviewed head `55ffa09bcba0e9c64c8274971dd979e209d2d7fc`.
@@ -113,4 +113,4 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - Valid `POST /api/plan` still returns HTTP 501. No Phase 3 task was started.
 
 
-- **Final verification refinement:** the current `main` head `bf16b860489353fc0e6c3bf90e1ed9a77481e14d` was observed directly and passed [Actions run #86](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031806217): clean install, 243/243 backend tests, no skipped tests, and successful frontend production build. PR #2 remains closed and merged at `87fd4adc530df9ce437bf3fb55202d4f943e8939`.
+- **Final verification refinement:** current `main` is `06d343121a6af5b624e18473fd41fd0bf2827568` and passed [Actions run #88](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031951273): clean install, 243/243 backend tests, no skipped tests, and successful frontend production build. PR #2 remains closed and merged at `87fd4adc530df9ce437bf3fb55202d4f943e8939`.

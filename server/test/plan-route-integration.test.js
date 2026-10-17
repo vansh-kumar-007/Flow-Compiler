@@ -329,6 +329,40 @@ test("missing server credential fails safely without making a provider request",
   assert.equal(providerCalls, 0);
 });
 
+test("authenticated planning routes stop at AI_NOT_CONFIGURED without invoking provider fetch", async () => {
+  let providerCalls = 0;
+  await withServer({
+    env: { NVIDIA_API_KEY: "" },
+    fetchImpl: async () => {
+      providerCalls += 1;
+      throw new Error("provider fetch must not run when NVIDIA_API_KEY is absent");
+    }
+  }, async baseUrl => {
+    // Express treats these path spellings as aliases of the same planning route.
+    // A valid access token must pass auth, while the missing provider key must
+    // stop execution before the injected provider/network function is invoked.
+    for (const path of ["/api/plan", "/api/plan/", "/API/PLAN", "/API/PLAN/"]) {
+      const response = await fetch(baseUrl + path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + fakeAccessToken
+        },
+        body: JSON.stringify({
+          brainDump: "Organize my desk and study materials.",
+          availableMinutes: 30,
+          previousPlan: null
+        })
+      });
+      assert.equal(response.status, 500, path);
+      assert.deepEqual(await response.json(), {
+        error: { code: "AI_NOT_CONFIGURED", message: "NVIDIA provider is not configured." }
+      }, path);
+    }
+  });
+  assert.equal(providerCalls, 0, "no planning path may invoke provider fetch without NVIDIA_API_KEY");
+});
+
 test("upstream provider failure maps to a safe gateway error without exposing diagnostics", async () => {
   await withServer({
     env: { NVIDIA_API_KEY: fakeKey },

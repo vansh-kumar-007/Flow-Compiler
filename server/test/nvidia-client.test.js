@@ -499,3 +499,33 @@ test("rejects generated task IDs colliding with explicit completed-task context"
     return true;
   });
 });
+
+
+test("requires explicit available-minute context and enforces schedule fit after dependency validation", async () => {
+  const overBudget = structuredClone(validPlan);
+  overBudget.tasks[0].minutes = 16;
+  overBudget.totalMinutes = 16;
+  const client = clientFor(async () => responseFromBodyText(envelopeText(JSON.stringify(overBudget))));
+
+  await assert.rejects(client.createChatCompletion({ messages, availableMinutes: 15 }), error => {
+    assert.equal(error.code, "INVALID_MODEL_OUTPUT");
+    assert.equal(error.message, "The model returned an invalid plan.");
+    assert.equal(error.message.includes(testSecret), false);
+    return true;
+  });
+});
+
+test("passes availableMinutes and validated revision context as explicit adapter inputs", async () => {
+  const client = clientFor(async (_url, options) => {
+    const sent = JSON.parse(options.body);
+    assert.equal(sent.messages.some(message => message.content.includes("Available time: 15 minutes.")), true);
+    return responseFromBodyText(envelopeText());
+  });
+  const result = await client.createChatCompletion({
+    messages: [{ role: "user", content: "Available time: 15 minutes." }],
+    availableMinutes: 15,
+    completedTaskIds: [],
+    revisionContext: { reason: "time_changed" }
+  });
+  assert.deepEqual(result.output, validPlan);
+});

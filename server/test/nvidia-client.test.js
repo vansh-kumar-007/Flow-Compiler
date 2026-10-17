@@ -117,7 +117,8 @@ test("sends the source-plan endpoint/model and returns mocked message content", 
   assert.equal(sent.max_tokens, 2500);
   assert.deepEqual(sent.chat_template_kwargs, { enable_thinking: false });
   assert.deepEqual(sent.messages, messages);
-  assert.deepEqual(result, { content: "{\"summary\":\"mock plan\"}" });
+  assert.equal(result.content, JSON.stringify({ summary: "mock plan" }));
+  assert.deepEqual(result.output, { summary: "mock plan" });
 });
 
 test("aborts a hung provider request and reports AI_TIMEOUT without transport details", async () => {
@@ -367,6 +368,21 @@ test("rejects missing, non-string, and blank provider message content", async ()
       return true;
     });
   }
+});
+
+
+test("maps invalid model JSON to INVALID_MODEL_OUTPUT without exposing model content", async () => {
+  const secretModelText = "prefix diagnostic " + testSecret + " " + JSON.stringify({ summary: "would-be fragment" });
+  const client = clientFor(async () => responseFromBodyText(envelopeText(secretModelText)));
+
+  await assert.rejects(client.createChatCompletion({ messages }), error => {
+    assert.equal(error.code, "INVALID_MODEL_OUTPUT");
+    assert.equal(error.message, "The model returned invalid JSON.");
+    assert.equal(error.message.includes(testSecret), false);
+    assert.equal(error.message.includes("prefix diagnostic"), false);
+    assert.equal(error.message.includes("would-be fragment"), false);
+    return true;
+  });
 });
 
 test("uses NVIDIA_TIMEOUT_MS from server environment configuration", async () => {

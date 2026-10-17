@@ -1,3 +1,5 @@
+import { parseModelOutput } from "./model-output.js";
+
 export const NVIDIA_API_ENDPOINT =
   "https://integrate.api.nvidia.com/v1/chat/completions";
 export const NVIDIA_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
@@ -18,7 +20,8 @@ const MESSAGES = Object.freeze({
   AI_PROVIDER_UNAVAILABLE: "The AI service is temporarily unavailable.",
   AI_PROVIDER_ERROR: "The AI service could not complete the request.",
   AI_RESPONSE_TOO_LARGE: "The AI service returned a response that was too large.",
-  AI_INVALID_RESPONSE: "The AI service returned an invalid response."
+  AI_INVALID_RESPONSE: "The AI service returned an invalid response.",
+  INVALID_MODEL_OUTPUT: "The model returned invalid JSON."
 });
 
 export class NvidiaProviderError extends Error {
@@ -297,8 +300,16 @@ export function createNvidiaClient({
           throw createError("AI_INVALID_RESPONSE", response.status);
         }
 
-        // Parsing/validation of the model's task-plan JSON is deliberately a later task.
-        return { content };
+        let output;
+        try {
+          output = parseModelOutput(content);
+        } catch {
+          // Model content is distinct from the upstream API envelope; never echo it.
+          throw createError("INVALID_MODEL_OUTPUT", response.status);
+        }
+
+        // P2-05 parses JSON syntax only; semantic plan validation is a later task.
+        return { content, output };
       };
 
       try {

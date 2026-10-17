@@ -1,74 +1,105 @@
 # Flow Compiler — Project State
 
-Last updated: 2026-10-17 (Asia/Kolkata)
-Authoritative source: the ChatGPT Project source titled “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan is the product authority.
+Last updated: 2026-10-17 (Asia/Kolkata; final Phase 2 verification in progress)
+Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
 ## Repository and Git state
 
 - Repository: https://github.com/vansh-kumar-007/Flow-Compiler
 - Default branch: `main`.
-- Active working branch: `chore/phase-0-audit-and-foundation`.
-- Pull request: [#1 — Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), currently a draft PR against `main`.
-- Initial audit: repository contents, branches, commits, and PR searches indicated an empty repository. That was true at the initial audit point; a root governance commit and working branch were then created. Current remote files and history must not be mistaken for the initial empty state.
-- Initial root commit: `3ef22a5998c9f055beae00eaa5e0529dbffd53b5`.
-- Code/config commit with latest recorded successful full CI: `461a344e60b77cb2ea2eb8210f99d26220317c01`.
-- Verified workflow: [GitHub Actions run #16](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/38953685372), conclusion **success**. The verification applies to the runtime/configuration at that commit; governance-document commits can advance the branch head without changing application behavior. At the start of a new session, inspect the actual branch head and current PR/Actions state again rather than assuming this SHA is the newest commit.
-- Durable requirement and task tracking lives in `docs/BUILD_CHECKLIST.md`. Preserve stable IDs and existing completion evidence.
+- Current Phase 2 working branch: `feat/phase-2-api-contract-validation`.
+- Foundation branch: `chore/phase-0-audit-and-foundation`.
+- **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`.
+- **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR targeting `main`. Existing Phase 2 commits are preserved without rewrite or force-push; final documentation-commit CI is required before merge.
+- Historical repository initialization: the initial remote audit found no files/commits; a governance root commit was then created. Do not mistake that initial state for the current repository.
+- Latest verified pre-documentation Phase 2 head was `b6657d6a54810a9efc94ff72d6f9c2197e36e368`; Actions runs [#70](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029520569) and [#71](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029523089) passed on that exact SHA, including clean install, 243/243 backend tests, and frontend production build. CI is being rerun for the final documentation commit.
+- Verified CI for P2-06: [GitHub Actions run #53](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39021806130), conclusion **success** on application/test commit `b2c702b0b2246a015444b3196a97045291a4b09a`. It ran clean `npm ci`, all 173 backend tests (173 passed, 0 failed), and `npm run build`. Parser/schema/provider tests use deterministic local fixtures and mocks only; no real NVIDIA call or paid inference was made. Run #52 exposed one incorrectly specified negative test for contract-permitted `deferredTasks: []`; that fixture was corrected before the passing run #53.
+- Stable requirement IDs and status evidence live in `docs/BUILD_CHECKLIST.md`.
 
-## Product / architecture source of truth
+## Product architecture and source requirements
 
-Flow Compiler converts unstructured thoughts into actionable, time-bounded, dependency-aware work plans. The source plan specifies React + Vite frontend, a separate Express backend, and the NVIDIA Nemotron 3 Ultra model through NVIDIA's OpenAI-compatible Chat Completions API. API credentials must remain server-side.
+Flow Compiler turns unstructured thoughts into actionable, time-bounded, dependency-aware workflows. The source specifies React + Vite frontend, separate Express backend, and NVIDIA Nemotron 3 Ultra via NVIDIA's OpenAI-compatible Chat Completions endpoint. NVIDIA credentials remain server-side.
 
-Planned features not yet implemented unless listed in verified progress below:
-- AI-generated tasks with concrete action titles, durations, priorities, reasons, categories, and dependency IDs.
-- An understandable dependency graph, completion/progress tracking, ready-next-action behavior, and focused execution/countdown mode.
-- Recompilation when remaining time changes, work finishes early, or blockers appear, while preserving completed tasks and valid dependency relationships.
-- Local plan persistence, clear demo input/data, accessible responsive behavior, and share/export that excludes raw private notes by default.
-- Complete request/model-response validation, strict task schema and dependency DAG validation, API timeouts and response limits, rate limiting, trusted-origin configuration, safe errors, and server-side secrets.
-- Free-first deployment only after current official model/hosting limits and architecture constraints have been checked.
+Planned capability set still includes AI-generated tasks (duration, priority, reason, category, dependency IDs), a dependency graph, task completion/progress, next-ready action, focus/countdown, recompilation when time changes/early finish/blockers occur, local persistence, demo data, responsive/accessibility support, privacy-preserving export, request/model validation, cycle rejection, provider timeouts/error mapping, rate limits/origin controls, and free-first deployment. Those capabilities must not be reported complete until their phase acceptance criteria and verification evidence are satisfied.
 
 ## Current implementation verified
 
-The current working branch contains a Phase 1 foundation:
-- Root npm workspace manifests with React/Vite frontend and separate Express API workspace.
-- Committed npm-generated `package-lock.json` (lockfile v3); GitHub Actions uses `npm ci`.
-- React foundation/status screen; its button reaches the backend health endpoint rather than pretending an AI workflow exists.
-- Express API bootstrap with `/api/health`, a stable JSON 404, malformed JSON handling, 20 KB JSON body limit, and safe 400/413 responses.
-- `server/.env.example` contains placeholders only; `.gitignore` excludes real environment files and `node_modules/`.
-- Node.js 24 CI workflow runs install, backend tests, and frontend production build.
-- README has setup and check commands matching the package scripts.
+### Phase 1 foundation
 
-**Explicit current limitation:** `POST /api/plan` returns HTTP 501 with `PLANNING_NOT_IMPLEMENTED`. NVIDIA inference, task schema validation, dependency checking/cycle detection, rate limiting, the actual workflow UI, persistence, execution/focus mode, recompilation, sharing/export, and deployment are not implemented yet. Do not report them as existing.
+- React/Vite frontend and separate Express API workspace.
+- Committed npm-generated lockfile; CI runs clean `npm ci`.
+- Foundation screen tests the real backend health endpoint.
+- `/api/health`, bounded 20 KiB JSON parser, stable JSON errors for malformed JSON, oversized bodies, and unknown routes.
+- Server environment example defaults `NVIDIA_API_KEY` to blank, real `.env` files are ignored, local run/test/build commands are documented, and Node.js 24 CI is configured.
+
+### Phase 2, tasks P2-01 through P2-10 and P2-12
+
+- **P2-01 complete:** `docs/API_CONTRACT.md` documents request fields/limits, source-compatible `previousPlan` revision context, completed IDs, blocker information, response/task fields, priority/category enums, deferred work, dependency invariants, safe errors, and server-side credential boundaries.
+- Contract retains the source names `brainDump`, `availableMinutes`, and `previousPlan`; it adds optional nested `previousPlan.revisionContext` and optional additive response `deferredTasks`. The sample JSON was parsed and the sample `totalMinutes` (40) was checked against task duration sum (15+25).
+- **P2-02 complete:** `server/src/plan-request.js` validates the top-level request shape, non-blank `brainDump` up to 5,000 characters, integer `availableMinutes` from 5 to 720 inclusive, documented nested previous-plan fields, task field shapes, completed/unfinished ID overlap, prior dependency references/self-dependencies, revision reason/note limits, blocker references, and the source-plan limit of 20 combined completed/unfinished prior-task IDs.
+- `server/src/app.js` returns `400 INVALID_REQUEST` for invalid request data before the plan stub. Existing JSON parser errors stay `400 INVALID_JSON` and `413 PAYLOAD_TOO_LARGE`. The source starter's initial `previousPlan: null` request is explicitly tested. Valid requests deliberately return `501 PLANNING_NOT_IMPLEMENTED` until provider integration exists.
+- **P2-03 complete:** `server/src/nvidia-client.js` contains an injectable non-streaming adapter for the source-plan endpoint and model. It reads `NVIDIA_API_KEY` from the server process environment only and sends it only as the authorization header. The isolated adapter returns the message content plus parsed output only after P2-05 syntax parsing and P2-06 plan-schema validation succeed. Configuration/fetch injection keeps tests deterministic; no real key or live call is used.
+- `server/src/server.js` now explicitly loads `server/.env` relative to the module path, independent of the root command's working directory; hosting-provided environment variables retain precedence. `README.md` and `server/.env.example` document the setup. No key is stored in source.
+- **P2-04 complete:** `server/src/nvidia-client.js` enforces a finite provider timeout (90,000 ms default, matching the source-plan starter), aborts the provider request and cancels the active response reader on timeout, and applies a 1,048,576-byte (1 MiB) default response-body cap. It rejects a valid oversized `Content-Length` before reading and counts streamed bytes regardless of whether the header is absent, malformed, or dishonest. It cancels over-limit streams where supported and never buffers beyond the configured response cap.
+- Provider error mapping now uses safe stable codes for timeout, network/stream failure, HTTP 401, HTTP 403, HTTP 429, HTTP 5xx, other non-success status, oversized response, and invalid upstream UTF-8/JSON/content. The API contract documents these codes and defaults. Server environment settings `NVIDIA_TIMEOUT_MS` (1–120,000 ms) and `NVIDIA_MAX_RESPONSE_BYTES` (1–10,485,760 bytes) allow bounded overrides; absent/invalid values fall back to defaults.
+- The adapter remains **not connected to `POST /api/plan`**: valid requests still return `501 PLANNING_NOT_IMPLEMENTED` until later route integration. Model-output syntax parsing (P2-05) and plan/task schema validation (P2-06) run inside the isolated adapter; dependency/edge/cycle validation remains P2-07, and time-budget scheduling remains P2-08.
+- Evidence: [GitHub Actions run #44](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/38961083734) passed `npm ci`, all 29 backend tests (29 passed, 0 failed), and the Vite production build on commit `c4612452bf2c6c98701316fb66afb6318c2a5838`. Deterministic tests include the same coverage plus verification that `NVIDIA_TIMEOUT_MS` is actually read from server environment configuration. No real NVIDIA request was made.
+- **P2-05 complete:** `server/src/model-output.js` parses complete JSON only, accepting plain JSON with surrounding whitespace or one complete Markdown fence labeled `json` or unlabeled. It never extracts arbitrary substrings or repairs malformed JSON. The adapter distinguishes upstream envelope/content-field failures (`AI_INVALID_RESPONSE`) from invalid model content (`INVALID_MODEL_OUTPUT`). Parser syntax acceptance includes scalars and arrays; the separate P2-06 schema validator rejects non-plan values before adapter output is returned.
+- Evidence: [GitHub Actions run #49](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39020228586) passed clean install, 61/61 backend tests (0 failed), and the Vite production build on `f434794f7a26ae95a8030d03f132afc3efca36db`. Tests cover the full parser matrix plus a valid upstream envelope with invalid model content. No real NVIDIA request was made.
+
+- **P2-06 complete:** added `server/src/plan-output.js` as a validator separate from the P2-05 syntax parser. It requires the exact plan object; validates required plan/task/deferred-task fields, types, allowed priority/category enums, task-ID pattern and uniqueness, 1–20 scheduled tasks, optional 0–20 deferred tasks, the 20-node combined cap, text bounds, positive integer durations, and `totalMinutes` equality with scheduled durations only. Unknown fields are rejected. The adapter applies schema validation after parsing and uses safe `INVALID_MODEL_OUTPUT` errors. Dependency/edge/cycle checks (P2-07) and available-time scheduling (P2-08) remain separate.
+- P2-06 evidence: [GitHub Actions run #53](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39021806130) passed clean `npm ci`, 173/173 backend tests, and Vite production build on application/test commit `b2c702b0b2246a015444b3196a97045291a4b09a`. Tests use deterministic fixtures and mocked provider responses; no live inference was performed. No lint/type-check scripts are configured.
+- **P2-07 complete:** `server/src/dependency-graph.js` independently validates generated dependency references, self-links, repeated edges, generated ID uniqueness across scheduled/deferred tasks, collision with explicit completed-task IDs, cycles, and the scheduled-to-deferred prerequisite invariant. It validates graph/context shape defensively and reports the stable safe `INVALID_MODEL_OUTPUT` error contract. Kahn topological sorting is deterministic and O(V+E); the generated graph and each dependency list are bounded by the contract's 20-node/20-edge limits.
+- **P2-07 verification:** [GitHub Actions run #56](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39022539417) passed clean `npm ci`, 202/202 backend tests, and `npm run build` on code/test commit `3e93ee94e985598cbe1512248af56015b0d3df24`. Coverage includes valid DAGs at multiple levels, valid completed-task context, dangling/malformed/self/duplicate edges, two-node and longer cycles, deferred-task cycles, the deferred-prerequisite invariant, generated/completed ID collision, size boundaries, no raw-content disclosure, malformed structures, and explicit P2-06/P2-07 stage separation. The corrected run after one mis-specified context fixture is the passing evidence. Tests use local fixtures and mocks only; no real NVIDIA inference.
+- The NVIDIA adapter runs P2-07 only after P2-05 parsing and P2-06 schema validation. Completed IDs are passed via an explicit `completedTaskIds` argument that must originate from validated `previousPlan.completedTaskIds`; model-generated prose is not used as completed-state context.
+- P2-08 scheduling/deferred selection remains unimplemented. The adapter is not wired to `POST /api/plan`; valid requests still return HTTP 501 `PLANNING_NOT_IMPLEMENTED`. P2-10 through P2-12 and Phases 3–8 remain incomplete.
 
 ## Phase map and acceptance gates
 
-The source's Day 1 / Day 2 / Day 3 sequence remains the baseline, split into small verifiable gates.
-
-1. **Phase 0 — Audit and governance.** Source/remote inspection, risks, stable IDs, phase plan, acceptance criteria, reconciled project state. Gate: checklist and state agree. **Status: complete.**
-2. **Phase 1 — Runtime foundation (source Day 1 foundation).** React/Vite and Express workspaces, scripts/lockfile, safe environment examples, bounded JSON/error behavior, backend tests, setup docs, CI. Gate: clean `npm ci`, all backend tests, and production frontend build pass; secret boundary reviewed. **Status: complete based on source inspection and Actions run #16.** This does not imply production readiness.
-3. **Phase 2 — Secure AI planning API (source Day 1 compiler).** Define request/response contract; validate inputs; implement the NVIDIA adapter; bound timeout/response handling; parse and validate all output fields; reject duplicate/missing/self/cyclic dependencies; rate limit and configure CORS; add deterministic mocked-provider tests. Gate: positive and negative input/output/provider/dependency cases pass; real inference stays unverified until a server-side key-backed call succeeds.
-4. **Phase 3 — Core workflow UI (source Day 1/2).** Raw-thought input and time budget, demo, task/dependency display, priorities, completion/progress, loading/empty/error states. Gate: valid backend contract consumed without frontend secrets and key interactions checked.
-5. **Phase 4 — Recompilation, timing, and focus (source Day 2).** Preserve completed tasks, validate revised dependencies, adapt to time loss/early finish/blockers, countdown/focus, next-ready action. Gate: regressions prove completed work and valid dependencies survive.
-6. **Phase 5 — Persistence, export, responsiveness, and polish (source Day 2/3).** Local persistence, accurate animated dependency graph, responsive/accessibility/reduced-motion behavior, privacy-preserving share/export. Gate: mobile/desktop checks, reload, and export privacy checks pass.
-7. **Phase 6 — QA and security hardening (source Day 3).** Edge/conflict inputs, bounds, provider failures, dependency/recompile invariants, rate/origin policy, privacy/logging, full-suite review. Gate: actual outcomes and gaps are documented.
-8. **Phase 7 — Free-first deployment (source Day 3).** Verify current official service limits, select compatible frontend/backend hosts without creating paid resources, configure server-only secrets, deploy and smoke-test. Gate: deployed behavior independently verified, limits/cost and rollback guidance documented.
-9. **Phase 8 — Final acceptance.** Trace each requirement to implementation and evidence; verify final PR/default-branch state; publish tested capabilities and remaining limitations without unsupported production-readiness claims.
+1. **Phase 0 — Audit/governance:** complete; repository/source baseline, checklist, risk register, and acceptance gates reconciled.
+2. **Phase 1 — Runtime foundation:** complete per code inspection and Actions verification of clean installation, backend tests, and production build.
+3. **Phase 2 — Secure AI planning API:** in progress. P2-01 through P2-09 complete. Next: P2-10 comprehensive route/provider mock tests; P2-11 optional live inference; P2-12 final API security documentation/evidence.
+4. **Phase 3 — Core workflow UI:** raw thoughts, time selector, demo, tasks/dependency view, completion/progress and error states.
+5. **Phase 4 — Recompilation/focus:** preserve completed work and valid dependencies; support time changes, early completion, blockers, focus and countdown.
+6. **Phase 5 — Persistence/export/polish:** local persistence, animated dependency graph, responsive/accessibility/reduced-motion behavior, privacy-preserving export.
+7. **Phase 6 — QA/security:** edge-case coverage, limits, dependency invariants, error/logging/privacy review.
+8. **Phase 7 — Free-first deployment:** verify current official service limits, select compatible hosting, configure server-side secrets, deploy and smoke-test without paid resources unless approved.
+9. **Phase 8 — Final acceptance:** trace requirements to code/test/manual evidence, verify final PR/default-branch state, report tested capability and gaps.
 
 ## Risk register
 
-- **R-01 — Initially empty repository:** resolved for project setup; initial audit is retained as historical context.
-- **R-02 — NVIDIA access/quota:** account eligibility, key validity, and live inference quota are not verified. A real key must be configured only in the server environment when Phase 2 reaches its provider smoke test. Reference: https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b
-- **R-03 — API abuse/security:** the plan endpoint is currently disabled, but API rate limiting and a deliberate auth/deployment strategy must exist before public planning is enabled.
-- **R-04 — Dependency integrity:** enforce schema, unique IDs, reference validation, and acyclic dependency relationships before displaying/acting on model output.
-- **R-05 — Work lost during recompilation:** completed tasks and still-valid dependencies must be preserved and covered by regression tests.
-- **R-06 — Split deployment:** static hosting cannot run Express; choose and verify a separate API/serverless service and matching CORS/API-origin settings.
-- **R-07 — Free-tier drift:** check official limits near deployment; do not assume free plans or account eligibility.
-- **R-08 — Remote verification limits:** no local checkout/npm execution is available through the GitHub connector itself. Use real GitHub Actions runs as CI evidence, and state explicitly if any desired manual/browser behavior is not independently tested.
+- **R-01 — Initially empty repository:** resolved for setup; kept as historical audit context.
+- **R-02 — NVIDIA key/access/quota:** no real key is configured or verified. The isolated adapter is tested with fake injected credentials; optional real inference remains P2-11. Configure a key only in the backend environment/host secret manager if that optional check is approved; never paste it into chat or commit it.
+- **R-03 — API abuse:** request validation and an isolated provider adapter exist, but `/api/plan` remains disabled and no real planning API is exposed. Rate limiting and exact-origin CORS are implemented. In-memory quota state is not distributed, and CORS is not authentication. Keep provider route integration disabled until the source-assigned integration/test tasks.
+- **R-04 — Dependency integrity:** strict model JSON parsing (P2-05) and generated plan/task schema validation (P2-06) are implemented and tested. Generated dependency reference/edge/cycle checks are implemented under P2-07; P2-08 validates scheduled budget fit, scheduled-duration totals, and deferred reasons. P2-09 adds in-memory API quotas and exact-origin CORS with proxy trust disabled; its counters reset on restart and are not shared across instances.
+- **R-05 — Recompile could lose user work:** contract defines completed ID preservation and client merge semantics; runtime/UI regression work remains in Phase 4.
+- **R-06 — Split deployment:** static frontend hosting cannot run Express; verify compatible backend/serverless hosting and origin configuration before deployment.
+- **R-07 — Free-tier drift:** confirm current official usage limits close to deployment and do not create paid services without approval.
+- **R-08 — Remote execution boundary:** use CI run output as evidence; local browser acceptance and any manual interactions must remain explicitly unverified until performed.
 
-## Current progress and next action
+## Current progress and exact next task
 
-- **Phase 0:** complete; tasks P0-01 through P0-07 are checked in `docs/BUILD_CHECKLIST.md`.
-- **Phase 1:** complete; tasks P1-01 through P1-09 are checked with source inspection and CI evidence in the checklist.
-- **Current phase:** Phase 2 — Secure AI planning API.
-- **Next task:** **P2-01 — Define and document the plan request/response schema.** Acceptance: document limits and types for brain dump, available minutes, optional revision context, plan summary, task fields, priorities/categories, and dependencies; contract must be aligned to the source plan and implementation decisions must not overclaim generated/deferred work.
-- **Manual action required now:** none. When real NVIDIA inference is implemented, create/configure the credential directly in the backend environment or hosting secret store; do not paste it into chat or commit it.
+- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03; P2-04; P2-05; P2-06; P2-07; P2-08; P2-09; P2-10.
+- **Current phase:** Phase 2 — Secure AI Planning API.
+- **Next task:** **P2-11 — Optional real NVIDIA inference smoke test.**
+- **Next-task acceptance criteria:** only run one opt-in smoke test after a valid NVIDIA key is configured securely in the server-side environment; record success/failure and provider/quota limitations without logging or exposing the key. No real inference is required for automated tests. P2-12 then closes Phase 2 by aligning final API security documentation and verification evidence.
+- **Manual action required now:** none for P2-10. Live inference remains unverified and must not use a key pasted into chat or committed to source control.
+
+
+- **2026-10-17 — P2-09 rate limiting and CORS implemented and verified:** introduced a dependency-free fixed-window limiter on all `/api/*` traffic (including health, malformed JSON and preflights), default 10 requests/60 seconds per direct socket peer IP, configurable through strictly validated `API_RATE_LIMIT_WINDOW_MS` (1,000–86,400,000) and `API_RATE_LIMIT_MAX` (1–10,000). Exceeded quotas return 429 `RATE_LIMIT_EXCEEDED` with safe error envelope, `Retry-After` and `RateLimit-*` headers. Express proxy trust remains disabled; spoofed `X-Forwarded-For` values do not change the key. `APP_ORIGINS` enforces exact normalized origins, supports local Vite by default, requires HTTPS for remote origins, rejects unsafe wildcard/path/query/credential entries, limits preflight methods/headers, and never enables credentialed CORS. Requests with no Origin remain usable without CORS headers. CORS is not authentication.
+- **P2-09 CI evidence:** [Actions run #63](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39025230364) completed successfully on commit `59b3b46681515b69b656fef26ec547d8df05f11e`; verified steps: clean dependency install, all 25 backend tests passed (0 failed), and Vite frontend production build passed. Tests include controlled-clock rate reset, config range/error checks, allowed/disallowed/no-Origin CORS, explicit preflight, rate-limit security envelope, spoofed forwarding headers, health, invalid request, and unchanged valid-plan HTTP 501. No paid service or real NVIDIA inference was used. Limiter memory resets at process restart and is not shared between processes/instances.
+- **Current next task:** P2-10 — complete the comprehensive deterministic mocked-provider route/provider test matrix.
+
+
+- **2026-10-17 — PR and milestone governance reconciled:** PR #1 merged after its actual head `1aab2cb5f8767d51050459fc3fbbc5bef2e88c86` passed both push run #19 and pull_request run #20. GitHub confirmed merge commit `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`; main push run #65 passed install, backend tests, and production build. PR #2 was retargeted from `chore/phase-0-audit-and-foundation` to `main`; its 43 commits and intended 19-file Phase 2 diff were preserved without rewrite or force-push. It remains draft and unmerged.
+- **2026-10-17 — P2-10 mocked-provider matrix:** added `server/test/plan-provider-matrix.test.js` with nine composed mock tests exercising the existing injectable adapter and parser/schema/dependency/schedule chain. Coverage includes success, missing key/no fetch, HTTP status mapping/body cancellation, network failure, malformed envelope/model JSON, schema invalidity, unknown dependency/cycle, budget/deferred contracts, safe error output, and HTTP route regression. Actions runs #66 and #67 both passed on `1247f7c4efab9551efcc66884d9f3aa072614555`; inspected backend log reports 243 tests passed and 0 failed, and frontend build succeeded. No real NVIDIA request or paid service was used.
+- **P2-10 scope boundary:** the public `POST /api/plan` route continues to validate requests and return 501 for valid input. The provider adapter was not connected to the route; end-to-end plan generation is not claimed. Real NVIDIA inference is P2-11; final API security doc/evidence is P2-12.
+- **Current next task:** P2-11 — optional real NVIDIA inference smoke test, contingent on secure server-side configuration; no key is needed for normal automated testing.
+
+
+## Final Phase 2 session audit — 2026-10-17
+
+- Live audit reviewed the attached Plan.txt, repository refs, PR #1/#2 metadata, latest workflow logs, request/app/provider/output/dependency/schedule source, tests, package manifests, API contract, README, environment example and ignore rules.
+- PR #2 is a 20-file Phase 2 diff with no dependency/lockfile changes; no reviews or review threads were recorded. GitHub reported `mergeable: true`, but no main branch protection or required checks are configured.
+- P2-11 optional real inference was not attempted because no authorized connected backend runtime/secret store was available to inspect. The environment example is blank; live inference/account eligibility/quota stay unverified.
+- P2-12 updates document API bounds, safe error behavior, CORS/rate-limit policy and limitations. The public route remains 501; no deployment or paid services were used. Final CI must be observed on the actual final docs SHA before merge.

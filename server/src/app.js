@@ -1,16 +1,192 @@
 import cors from "cors";
 import express from "express";
+import { validatePlanRequest } from "./plan-request.js";
+
+const DEFAULT_ORIGINS = ["http://localhost:5173"];
+const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_RATE_LIMIT_MAX = 10;
+const MAX_RATE_LIMIT_WINDOW_MS = 86_400_000;
+const MAX_RATE_LIMIT_MAX = 10_000;
+const ORIGIN_PATTERN = /^https?:\/\/[^\s,]+$/i;
+
+function parsePositiveInteger(value, name, { min, max, fallback }) {
+  if (value === undefined || value === null) {
+    if (fallback !== undefined) return fallback;
+    throw new Error(`${name} must be configured.`);
+  }
+  if (typeof value === "number") {
+    if (Number.isSafeInteger(value) && value >= min && value <= max) return value;
+    throw new Error(`${name} is outside its supported range.`);
+  }
+  if (typeof value !== "string" || !/^[0-9]+$/.test(value)) {
+    throw new Error(`${name} must be a positive decimal integer.`);
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) {
+    throw new Error(`${name} is outside its supported range.`);
+  }
+  return parsed;
+}
+
+export function normalizeOrigin(value) {
+  if (typeof value !== "string" || value.length === 0 || value.trim() !== value) {
+    throw new Error("APP_ORIGINS contains an invalid origin.");
+  }
+  if (value === "*" || value.includes("*") || value.includes(",")) {
+    throw new Error("APP_ORIGINS does not allow wildcard or list values within one origin.");
+  }
+  if (!ORIGIN_PATTERN.test(value)) {
+    throw new Error("APP_ORIGINS must contain HTTP(S) origins.");
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("APP_ORIGINS contains an invalid URL.");
+  }
+
+  if (
+    !["http:", "https:"].includes(parsed.protocol) ||
+    parsed.origin === "null" ||
+    parsed.username ||
+    parsed.password ||
+    parsed.pathname !== "/" ||
+    parsed.search ||
+    parsed.hash
+  ) {
+    throw new Error("APP_ORIGINS must contain origins only, without credentials, path, query, or fragment.");
+  }
+  if (parsed.protocol === "http:" && !["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname)) {
+    throw new Error("Non-local APP_ORIGINS must use HTTPS.");
+  }
+
+  return parsed.origin;
+}
+
+export function parseAllowedOrigins(value = process.env.APP_ORIGINS ?? process.env.APP_ORIGIN) {
+  if (value === undefined || value === null) return [...DEFAULT_ORIGINS];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error("APP_ORIGINS must be a non-empty comma-separated string when configured.");
+  }
+  const entries = value.split(",").map(entry => entry.trim());
+  if (entries.some(entry => !entry)) throw new Error("APP_ORIGINS contains an empty origin.");
+  const normalized = entries.map(normalizeOrigin);
+  if (new Set(normalized).size !== normalized.length) {
+    throw new Error("APP_ORIGINS contains duplicate origins after normalization.");
+  }
+  return normalized;
+}
+
+export function readRateLimitConfig(env = process.env) {
+  const windowMs = parsePositiveInteger(env.API_RATE_LIMIT_WINDOW_MS, "API_RATE_LIMIT_WINDOW_MS", {
+    min: 1_000, max: MAX_RATE_LIMIT_WINDOW_MS, fallback: DEFAULT_RATE_LIMIT_WINDOW_MS
+  });
+  const limit = parsePositiveInteger(env.API_RATE_LIMIT_MAX, "API_RATE_LIMIT_MAX", {
+    min: 1, max: MAX_RATE_LIMIT_MAX, fallback: DEFAULT_RATE_LIMIT_MAX
+  });
+  return { windowMs, limit };
+}
+
+function createInMemoryRateLimiter({ windowMs, limit, now = Date.now }) {
+  const buckets = new Map();
+  let sweepAt = 0;
+
+  return function rateLimitMiddleware(request, response, next) {
+    const currentTime = now();
+    if (currentTime >= sweepAt) {
+      for (const [key, bucket] of buckets) {
+        if (bucket.resetAt <= currentTime) buckets.delete(key);
+      }
+      sweepAt = currentTime + Math.min(windowMs, 60_000);
+    }
+
+    // Key by direct socket peer; Express proxy trust is disabled so untrusted
+    // X-Forwarded-For headers cannot be used to manufacture new identities.
+    const identity = request.socket.remoteAddress || "unknown";
+    let bucket = buckets.get(identity);
+    if (!bucket || bucket.resetAt <= currentTime) {
+      bucket = { count: 0, resetAt: currentTime + windowMs };
+      buckets.set(identity, bucket);
+    }
+    bucket.count += 1;
+
+    const remaining = Math.max(0, limit - bucket.count);
+    const resetSeconds = Math.max(0, Math.ceil((bucket.resetAt - currentTime) / 1000));
+    response.set("RateLimit-Policy", `${limit};w=${Math.ceil(windowMs / 1000)}`);
+    response.set("RateLimit-Limit", String(limit));
+    response.set("RateLimit-Remaining", String(remaining));
+    response.set("RateLimit-Reset", String(resetSeconds));
+    response.set("Cache-Control", "no-store");
+
+    if (bucket.count > limit) {
+      response.set("Retry-After", String(resetSeconds));
+      return response.status(429).json({
+        error: {
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "Too many API requests. Please try again later."
+        }
+      });
+    }
+    return next();
+  };
+}
 
 export function createApp(options = {}) {
   const app = express();
-  const allowedOrigin = options.allowedOrigin || process.env.APP_ORIGIN || "http://localhost:5173";
+  const env = options.env ?? process.env;
+  const allowedOrigins = options.allowedOrigins
+    ? options.allowedOrigins.map(normalizeOrigin)
+    : options.allowedOrigin
+      ? [normalizeOrigin(options.allowedOrigin)]
+      : parseAllowedOrigins(env.APP_ORIGINS ?? env.APP_ORIGIN);
+  const rateLimitConfig = options.rateLimit ?? readRateLimitConfig(env);
+  const now = options.now ?? Date.now;
+
+  if (!Array.isArray(allowedOrigins) || allowedOrigins.length === 0) {
+    throw new Error("At least one trusted APP_ORIGINS origin is required.");
+  }
+  if (new Set(allowedOrigins).size !== allowedOrigins.length) {
+    throw new Error("Trusted origins must be unique after normalization.");
+  }
+  if (
+    !rateLimitConfig ||
+    !Number.isSafeInteger(rateLimitConfig.windowMs) ||
+    rateLimitConfig.windowMs < 1_000 ||
+    rateLimitConfig.windowMs > MAX_RATE_LIMIT_WINDOW_MS ||
+    !Number.isSafeInteger(rateLimitConfig.limit) ||
+    rateLimitConfig.limit < 1 ||
+    rateLimitConfig.limit > MAX_RATE_LIMIT_MAX
+  ) {
+    throw new Error("API rate-limit configuration is invalid.");
+  }
 
   app.disable("x-powered-by");
+
+  const rateLimitMiddleware = createInMemoryRateLimiter({ ...rateLimitConfig, now });
+  // Quota all API traffic before CORS preflight handling and JSON parsing.
+  app.use((request, response, next) => {
+    if (request.path.startsWith("/api/")) return rateLimitMiddleware(request, response, next);
+    return next();
+  });
+
   app.use(cors({
-    origin: allowedOrigin,
+    origin(origin, callback) {
+      // Non-browser clients may omit Origin and still use the API, without CORS headers.
+      if (origin === undefined) return callback(null, false);
+      let normalized;
+      try {
+        normalized = normalizeOrigin(origin);
+      } catch {
+        return callback(null, false);
+      }
+      return callback(null, allowedOrigins.includes(normalized));
+    },
     methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Accept"]
+    allowedHeaders: ["Content-Type", "Accept"],
+    optionsSuccessStatus: 204
   }));
+
   app.use(express.json({ limit: "20kb", strict: true }));
 
   app.get("/api/health", (_request, response) => {
@@ -20,12 +196,18 @@ export function createApp(options = {}) {
     });
   });
 
-  // AI planning is deliberately not implemented in this foundation phase.
-  app.post("/api/plan", (_request, response) => {
-    response.status(501).json({
+  // Validate public input now, even while the provider integration remains unavailable.
+  // A well-formed request receives 501 until the AI adapter is implemented.
+  app.post("/api/plan", (request, response) => {
+    const validationError = validatePlanRequest(request.body);
+    if (validationError) {
+      return response.status(400).json({ error: validationError });
+    }
+
+    return response.status(501).json({
       error: {
         code: "PLANNING_NOT_IMPLEMENTED",
-        message: "AI planning is not available in this foundation phase."
+        message: "AI planning is not available yet."
       }
     });
   });
@@ -40,22 +222,17 @@ export function createApp(options = {}) {
   });
 
   app.use((error, _request, response, next) => {
-    if (response.headersSent) {
-      return next(error);
-    }
-
+    if (response.headersSent) return next(error);
     if (error?.type === "entity.too.large") {
       return response.status(413).json({
         error: { code: "PAYLOAD_TOO_LARGE", message: "Request body is too large." }
       });
     }
-
     if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
       return response.status(400).json({
         error: { code: "INVALID_JSON", message: "Request body must be valid JSON." }
       });
     }
-
     return response.status(500).json({
       error: { code: "INTERNAL_ERROR", message: "An unexpected server error occurred." }
     });

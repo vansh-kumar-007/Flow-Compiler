@@ -1,5 +1,6 @@
 import { parseModelOutput } from "./model-output.js";
 import { validateGeneratedPlan } from "./plan-output.js";
+import { validateGeneratedDependencies } from "./dependency-graph.js";
 
 export const NVIDIA_API_ENDPOINT =
   "https://integrate.api.nvidia.com/v1/chat/completions";
@@ -201,7 +202,10 @@ export function createNvidiaClient({
       messages,
       temperature = 0.3,
       maxTokens = 2500,
-      chatTemplateKwargs = { enable_thinking: false }
+      chatTemplateKwargs = { enable_thinking: false },
+      // This must come from validated previousPlan.completedTaskIds request context,
+      // never from model-generated prose.
+      completedTaskIds = []
     } = {}) {
       const apiKey = typeof env.NVIDIA_API_KEY === "string"
         ? env.NVIDIA_API_KEY.trim()
@@ -309,9 +313,12 @@ export function createNvidiaClient({
           throw createError("INVALID_MODEL_OUTPUT", response.status);
         }
 
-        // P2-06 validates plan/task structure after parsing. Dependency semantics
-        // and schedule feasibility remain separate P2-07/P2-08 responsibilities.
+        // Keep the stages explicit: P2-06 schema validation first, then P2-07
+        // dependency integrity. Budget scheduling remains a separate P2-08 task.
         if (validateGeneratedPlan(output)) {
+          throw createError("INVALID_MODEL_OUTPUT", response.status);
+        }
+        if (validateGeneratedDependencies(output, { completedTaskIds })) {
           throw createError("INVALID_MODEL_OUTPUT", response.status);
         }
 

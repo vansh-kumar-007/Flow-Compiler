@@ -462,3 +462,40 @@ test("reads NVIDIA_MAX_RESPONSE_BYTES from server environment configuration", as
     return true;
   });
 });
+
+
+test("rejects model output with dependency graph violations after schema validation", async () => {
+  const invalidPlan = structuredClone(validPlan);
+  invalidPlan.summary = "safe-summary-sentinel";
+  invalidPlan.tasks[0].dependsOn = ["unknown-dependency"];
+  const client = clientFor(async () => responseFromBodyText(envelopeText(JSON.stringify(invalidPlan))));
+
+  await assert.rejects(client.createChatCompletion({ messages }), error => {
+    assert.equal(error.code, "INVALID_MODEL_OUTPUT");
+    assert.equal(error.message, "The model returned an invalid plan.");
+    assert.equal(error.message.includes("safe-summary-sentinel"), false);
+    assert.equal(error.message.includes("unknown-dependency"), false);
+    assert.equal(error.message.includes(testSecret), false);
+    return true;
+  });
+});
+
+test("accepts a completed prerequisite only when supplied explicitly as context", async () => {
+  const revisedPlan = structuredClone(validPlan);
+  revisedPlan.tasks[0].dependsOn = ["done1"];
+  const client = clientFor(async () => responseFromBodyText(envelopeText(JSON.stringify(revisedPlan))));
+
+  const result = await client.createChatCompletion({ messages, completedTaskIds: ["done1"] });
+  assert.deepEqual(result.output, revisedPlan);
+});
+
+test("rejects generated task IDs colliding with explicit completed-task context", async () => {
+  const client = clientFor(async () => responseFromBodyText(envelopeText()));
+
+  await assert.rejects(client.createChatCompletion({ messages, completedTaskIds: ["t1"] }), error => {
+    assert.equal(error.code, "INVALID_MODEL_OUTPUT");
+    assert.equal(error.message, "The model returned an invalid plan.");
+    assert.equal(error.message.includes(testSecret), false);
+    return true;
+  });
+});

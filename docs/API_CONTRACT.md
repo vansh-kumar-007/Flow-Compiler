@@ -177,7 +177,7 @@ Messages should be concise and actionable, with no stack traces, credentials, ra
 | `413` | `PAYLOAD_TOO_LARGE` | Combined JSON body exceeds 20 KiB. Existing behavior. |
 | `404` | `NOT_FOUND` | Unknown route. Existing behavior. |
 | `422` | `NO_ACTIONABLE_TASK` | No truthful executable action can be scheduled safely from the supplied context. |
-| `429` | `RATE_LIMITED` | The Flow Compiler API's own rate limit was exceeded (to be implemented under P2-09). |
+| `429` | `RATE_LIMIT_EXCEEDED` | The Flow Compiler API's own request quota was exceeded (P2-09). |
 | `500` | `INTERNAL_ERROR` | Unexpected internal failure; do not return stack details. Existing envelope. |
 | `500` | `AI_NOT_CONFIGURED` | Server-side NVIDIA key/configuration is missing. This preserves the source starter's 500 status while adopting the foundation's structured error envelope. |
 | `501` | `PLANNING_NOT_IMPLEMENTED` | Current foundation behavior while AI planning remains unimplemented. |
@@ -214,7 +214,16 @@ The server may override these values with positive decimal integer environment s
 
 Missing, malformed, non-integer, or out-of-range settings fall back to the documented defaults. The settings belong only in server-side environment configuration (locally `server/.env`), never in `VITE_*` variables. Provider errors use stable codes and safe messages; raw HTTP error bodies and transport exceptions are not included.
 
-## 6. Credential and data boundary
+## 6. Rate limiting and cross-origin policy (P2-09)
+
+- All `/api/*` paths use an in-memory fixed window. Defaults are 10 requests per 60 seconds per direct socket peer IP. Server-only `API_RATE_LIMIT_WINDOW_MS` (1,000–86,400,000 ms) and `API_RATE_LIMIT_MAX` (1–10,000 requests) are strict decimal integers validated at startup. Unset variables use documented defaults; explicit blanks, malformed strings, non-integers, and out-of-range values fail startup.
+- Exceeding the quota returns HTTP 429 with `{ "error": { "code": "RATE_LIMIT_EXCEEDED", "message": "Too many API requests. Please try again later." } }`, plus `Retry-After` and `RateLimit-*` headers. Health checks and CORS preflights count toward the API quota; limiting runs before CORS handling and JSON parsing.
+- Express proxy trust is disabled by default. The limiter uses the direct socket peer IP and ignores untrusted `X-Forwarded-For`. A reverse-proxy deployment needs narrowly scoped, deliberate proxy trust after proxy topology is confirmed; otherwise requests may share the proxy address.
+- `APP_ORIGINS` is a comma-separated exact allowlist. When unset, only `http://localhost:5173` is allowed for local development. Entries are normalized by URL origin semantics; wildcard entries/patterns, paths, queries, fragments, credentials, invalid protocols, duplicate normalized origins, and non-HTTPS remote origins are rejected.
+- Missing `Origin` headers are allowed and receive no CORS headers. An allowed origin receives explicit `GET, POST, OPTIONS` methods and `Content-Type, Accept` headers; a disallowed origin is not reflected. Credentials are not enabled. CORS is not authentication and cannot block direct non-browser requests; rate limiting operates independently.
+- The limiter is dependency-free and requires no paid service. Counters reset on process restart and are not shared across multiple processes/instances, so this is a basic local-first safeguard rather than distributed abuse protection.
+
+## 7. Credential and data boundary
 
 - Public request data consists only of the fields defined in Section 2. The caller never sends `NVIDIA_API_KEY`.
 - The backend reads `NVIDIA_API_KEY` from server-side environment configuration (for local development, `server/.env`; for deployment, the hosting provider's secret store).
@@ -222,7 +231,7 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - Validate input before constructing the prompt. Bound the request body, prompt context, model token output, and request duration. Use the specified NVIDIA OpenAI-compatible Chat Completions endpoint and model ID from the source plan.
 - The user should be warned that the raw thought dump and valid plan context are sent to the configured AI provider. Do not send more context than required.
 
-## 7. Relationship to implementation tasks
+## 8. Relationship to implementation tasks
 
 - **P2-01:** define/document this contract. This document completes the design decision record for request/response field names, limits, revision semantics, deferral, dependencies, and errors.
 - **P2-02:** implement request validation against Sections 2 and 5, including the existing 20 KiB JSON parser limit and deterministic validation tests.
@@ -232,6 +241,7 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - **P2-06:** validate the generated plan/task schema and task count.
 - **P2-07:** validate generated dependency references and reject cycles.
 - **P2-08:** validate scheduled-duration fit against explicitly supplied `availableMinutes` and require bounded meaningful `deferredReason` values. Generated task placement is validated, not silently rearranged; dependency changes require a new model-selected plan.
-- **P2-09/P2-10:** implement/test API rate limiting and the full deterministic test matrix.
+- **P2-09:** implement/test API rate limiting and explicit exact-origin CORS policy.
+- **P2-10:** complete the full deterministic route/provider test matrix.
 
 This contract describes intended behavior; every behavior must be marked verified in the master checklist only after it exists and has supporting test or inspection evidence.

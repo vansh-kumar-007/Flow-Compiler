@@ -196,34 +196,83 @@ P2-01 through P2-10 have deterministic automated evidence. P2-11 is an optional 
 
 ## Authoritative task status matrix — audit 2026-10-17 19:50 Asia/Kolkata
 
-Status legend: **Completed** = direct implementation/evidence is present; **In progress** = implementation exists but acceptance is incomplete; **Blocked** = awaiting a manual action/decision or unavailable external proof; **Not started** = no implementation/evidence yet. This matrix supersedes older chronological snapshots above, which are retained as history. It does not silently change the source plan's phase order.
+Status legend: **Completed** = verified with evidence; **In progress** = implementation exists but acceptance is incomplete; **Blocked** = awaiting a manual action/decision or unavailable proof; **Not started** = no implementation/evidence yet. This matrix supersedes older chronological snapshots above, which are retained as history. It does not silently change the source plan's phase order.
 
-| Phase / task IDs | Current status | Evidence / blocker |
-|---|---|---|
-| Phase 0: P0-01–P0-07 | Completed | Repository, source plan, governance files and Node 24 CI were established; see per-task evidence above. |
-| Phase 1: P1-01–P1-09 | Completed | React/Vite + separate Express workspace, secure env example, health/parser boundaries and clean install/test/build CI are present. |
-| Phase 2: P2-01–P2-10 | Completed (mocked/local validation only) | Request/response contract, provider adapter, bounded timeout/body, strict parsing, schema, dependency/cycle, budget, CORS/rate limit and mock matrix exist. CI #148 validates the integrated PR #4 branch; this is not live provider evidence. |
-| P2-11 — Optional live NVIDIA inference | Blocked / intentionally not attempted | No key requested or configured; no authenticated quota/account access. Check account eligibility/remaining quota first, then at most one controlled live request only after the user configures the key in the backend host. |
-| P2-12 — Final API security docs | Completed on PR branch; main has prior API security docs | docs/API_CONTRACT.md is updated in PR #4 to describe the integrated route. PR #4 remains unmerged, so main does not yet contain route-integration documentation/code. |
-| P2-13 — Connect validated adapter to POST /api/plan (supplemental source-plan follow-up) | In progress / review pending | Implemented and mocked route tests pass on PR #4 HEAD 2b9a5ea8cd62511b755693cc14b60eda8ddb1fd0, Actions #148 green. Not merged; no live NVIDIA inference. This added tracking ID does not replace original IDs. |
-| P3-01 — Dark command-center frame | In progress | Implemented on PR #3 and CI #144 passes; Vercel preview reports READY. Manual visual/browser acceptance, project-setting confirmation and health-button verification remain outstanding. |
-| P3-02 — Thought input and available-time controls | In progress (partial) | Input and time controls exist in the P3-01 shell, but dedicated validation-feedback acceptance is incomplete; original ID and criteria retained. |
-| P3-03 — Demo input/data | In progress (partial) | Load-example input exists; there is no generated demo-plan mode. |
-| P3-04 — Connect UI to backend plan API | Blocked / not started as user-facing integration | API-origin health check exists, but Compile remains disabled and UI does not POST /api/plan. Depends on route review/merge and backend origin deployment/configuration. |
-| P3-05–P3-09 | Not started | Current graph is explicitly illustrative; no actual plan rendering, completion/progress, full states, or full accessibility/reduced-motion acceptance. |
-| P4-01–P4-08 | Not started | Recompile/focus/timer/next-ready features and regression coverage are not implemented as accepted product features. API revision context alone is not UI/runtime completion. |
-| P5-01–P5-07 | Not started | Persistence, real animated graph, final responsive/accessibility tests, privacy-preserving export, smoke tests and feature/privacy docs remain. |
-| P6-01–P6-07 | In progress | API edge-case/security tests are extensive and pass mocked CI; full product QA, deployed threat-model validation, logging review and final dependency/security inspection remain. |
-| P7-01 — NVIDIA endpoint/terms/quota | Blocked | Public docs can be reviewed, but account eligibility and live quota require the user's NVIDIA account; no key requested. |
-| P7-02 — Hosting comparison | Completed (research only) | Render Free Node web service selected as lowest-change candidate; official constraints documented. No service created. |
-| P7-03 — Choose compatible frontend/backend hosting | In progress | User explicitly requested Render Free for Express; Vercel remains the frontend candidate. No live backend service exists yet. This is a deployment-provider deviation from Plan.txt's initial GitHub Pages/Cloudflare Workers example, while preserving separate frontend/backend architecture and the ₹0 budget. |
-| P7-04 — Configure server-side secret | Blocked / not started | No NVIDIA key configured. Later use Render service Environment settings only, never Vercel, source control or chat. |
-| P7-05 — Deploy/check frontend | In progress | Vercel marks PR #3 Preview READY for the current pre-audit SHA, but live browser/console/responsive acceptance and exact settings were not independently verified. |
-| P7-06 — Deploy/check backend | Blocked / not started | No Render service exists. Manual service creation and live /api/health check required. |
-| P7-07 — Verify live AI/error paths | Blocked | Requires service connectivity and user-configured key after quota check; no inference performed. |
-| P7-08 — Deployment/rollback/quota docs | In progress | Proposed exact Render settings and free-tier caveats documented; operational runbook must be finalized after actual deployment. |
-| P7-09 — Final deployed smoke-test evidence | Not started | No backend deployment or connected frontend/backend test. |
-| P8-01–P8-04 | Not started | Final traceability, merge/default-branch verification, setup-doc check and handoff depend on completed implementation/deployment gates. |
+| Task ID | Original-plan task | Current status | Evidence / blocker |
+|---|---|---|---|
+| P0-01 | Inspect repository metadata and permissions | Completed | Repository metadata and permission checks recorded. |
+| P0-02 | Inspect repository contents, branches, commits, and PRs | Completed | Remote history/branches/PRs inspected; current state refreshed in this audit. |
+| P0-03 | Read the complete supplied build plan | Completed | Plan.txt is present and remains authoritative. |
+| P0-04 | Record baseline and risk register | Completed | docs/PROJECT_STATE.md records architecture, risks and state. |
+| P0-05 | Create granular master checklist | Completed | docs/BUILD_CHECKLIST.md tracks stable task IDs. |
+| P0-06 | Reconcile governance files and next-task pointer | In progress | Latest authoritative matrix and project-state snapshot are on PR #4 branch; main still has older docs because PRs remain unmerged. |
+| P0-07 | Define foundation verification path | Completed | Node 24 CI runs clean install, backend tests and Vite build. |
+| P1-01 | Establish app directory and dependency scripts | Completed | Root/server workspaces and npm lockfile are verified by CI. |
+| P1-02 | Bootstrap React + Vite application | Completed | Frontend entry points exist and production build passes in CI. |
+| P1-03 | Bootstrap separate Express backend | Completed | Separate Express workspace and server start command are present. |
+| P1-04 | Add health endpoint and bounded JSON parsing | Completed | Health route and malformed/oversized JSON handling have automated tests. |
+| P1-05 | Add .gitignore and safe environment example | Completed | Real env files ignored; example key is blank; no frontend key use. |
+| P1-06 | Add backend automated smoke tests | Completed | Automated Node test suite passes in CI. |
+| P1-07 | Add frontend/backend local development guidance | Completed | README scripts correspond to manifests. |
+| P1-08 | Add CI workflow and inspect actual run | Completed | Actions #144/#151 show install, backend tests and frontend build succeed on respective exact heads. |
+| P1-09 | Review source/diff and secret boundary | Completed | Targeted source review found no NVIDIA key in frontend; not a formal external security audit. |
+| P2-01 | Define and document plan request/response schema | Completed | API contract documents source fields, prior plan, output schema and error envelopes. |
+| P2-02 | Validate request fields and payload size | Completed | Request validator enforces brainDump/time/previousPlan bounds before provider call. |
+| P2-03 | Implement NVIDIA adapter using server-side configuration | Completed (mocked only) | Adapter uses server-side NVIDIA_API_KEY, expected endpoint/model and injectable fetch; no live call. |
+| P2-04 | Add timeout, response-size bounds and safe provider errors | Completed (mocked only) | 90,000 ms timeout, 1 MiB default cap, bounded overrides and safe status mapping. |
+| P2-05 | Parse model output robustly | Completed (mocked only) | Complete JSON parsing rejects malformed/prose-wrapped output. |
+| P2-06 | Validate generated plan/task fields and task count | Completed (mocked only) | Strict schema validator is exercised by automated tests. |
+| P2-07 | Validate dependency references, edges, cycles and deferred prerequisites | Completed (mocked only) | Graph validator checks dangling/self/duplicate edges, ID collisions and cycles. |
+| P2-08 | Validate time-budget fit and deferred-work selection | Completed (mocked only) | Schedule validator enforces scheduled sum, totalMinutes and deferred reasons. |
+| P2-09 | Add rate limiting and CORS/origin configuration | Completed (mocked only) | In-memory limiter and exact APP_ORIGINS behavior have automated tests. |
+| P2-10 | Complete deterministic mocked-provider test matrix | Completed (mocked only) | Actions #151 passed 251 tests with fake key/mock fetch; no live inference. |
+| P2-11 | Optional real NVIDIA inference smoke test | Blocked / not attempted | User explicitly said do not request/configure key yet; account quota/eligibility is not available to this connection. |
+| P2-12 | Finalize API security documentation and verification | Completed on PR branch | API contract reflects route integration on PR #4; not yet merged into main. |
+| P2-13 | Connect validated adapter to POST /api/plan (supplemental source-plan follow-up) | In progress / review pending | Route implemented on PR #4; mocked tests pass. No live inference and not merged. |
+| P3-01 | Implement dark command-center frame | In progress | Implemented on PR #3; Actions #144 passes and Vercel preview reports READY, but manual browser acceptance remains. |
+| P3-02 | Implement thought input and available-time controls | In progress (partial) | Input and time controls exist; full validation feedback/acceptance is unfinished. |
+| P3-03 | Add demo input and demo plan mode/data | In progress (partial) | Load-example input exists; there is no generated demo-plan mode. |
+| P3-04 | Connect UI to backend plan API | Blocked / not started as user-facing feature | Health check uses VITE_API_BASE_URL, but Compile remains disabled and the UI does not POST /api/plan. |
+| P3-05 | Render plan summary and task nodes | Not started | Displayed task nodes are illustrative, not API output. |
+| P3-06 | Display accurate dependency links/graph | Not started | Current graph is illustrative only. |
+| P3-07 | Add completion tracking and progress calculation | Not started | No actual task completion state or remaining-time calculation. |
+| P3-08 | Add empty/loading/API-error/invalid-plan states | Not started | Health-check state exists; full planning UI states do not. |
+| P3-09 | Accessibility and interaction review | In progress (partial) | Semantic labels/focus styles exist, but full keyboard/contrast/reduced-motion checks are not evidenced. |
+| P4-01 | Define stable plan/task identity and recompile contract | In progress (contract only) | API contract defines revision context and completed IDs; runtime UI workflow not implemented. |
+| P4-02 | Preserve completed tasks during recompile | Not started | No client recompile behavior or regression tests. |
+| P4-03 | Revalidate IDs/dependencies after recompile | In progress (server validators only) | Generated plan validators exist; recompile-specific UI/runtime integration is absent. |
+| P4-04 | Support time-loss/remaining-time changes | Not started | No recompile action when available time changes. |
+| P4-05 | Support early finish and blocker reporting | In progress (contract only) | API request contract supports revision context; UI workflow is not implemented. |
+| P4-06 | Implement countdown/focus mode | Not started | No focus mode or countdown timer. |
+| P4-07 | Implement next-ready action selection | Not started | No runtime selector for highest-priority unblocked task. |
+| P4-08 | Add recompile regression tests and UI verification | Not started | Recompile behavior not implemented. |
+| P5-01 | Persist active plan/completion state locally | Not started | No local persistence of a real plan. |
+| P5-02 | Add animated dependency links/nodes | Not started | Current visual graph is static and illustrative. |
+| P5-03 | Finalize focus-mode visual states/responsive layout | In progress (partial) | Responsive shell exists; full breakpoint and focus-mode checks are outstanding. |
+| P5-04 | Add privacy-preserving export/share representation | Not started | No export path. |
+| P5-05 | Add keyboard/screen-reader/reduced-motion checks | In progress (partial) | Some semantic labels/focus styles exist; formal acceptance not done. |
+| P5-06 | Add UI smoke/regression tests | Not started | No automated UI test suite evidence. |
+| P5-07 | Update feature/privacy documentation | In progress (partial) | Current docs describe limitations; complete product/privacy docs await features. |
+| P6-01 | Test vague, large and conflicting inputs | In progress (mock fixtures only) | Route/model fixtures test failure cases; no live-model quality test or full UX tests. |
+| P6-02 | Test request/response bounds and malformed bodies | Completed for API boundary (CI) | Body, request, provider output and schema bounds are covered by backend tests. |
+| P6-03 | Test auth/origin/rate-limit assumptions | In progress | CORS/rate-limit automated tests exist; deployed-origin behavior remains unverified and CORS is not authentication. |
+| P6-04 | Review logging and error disclosure | In progress | Targeted review found safe error envelopes; full deployed log/privacy audit remains. |
+| P6-05 | Review dependency validation and recompile preservation | In progress | Graph tests exist; completed-work preservation during actual recompile remains unimplemented. |
+| P6-06 | Run complete test/build/lint suite and resolve failures | In progress | CI install/tests/build pass; no lint/type-check scripts are configured and product QA remains. |
+| P6-07 | Final diff/dependency/security inspection | In progress | Targeted current PR diff/code review performed; formal final audit awaits integration/deployment. |
+| P7-01 | Confirm NVIDIA endpoint terms/availability/limits | Blocked | Public model page lists a free endpoint, but account-specific quota/eligibility cannot be verified without user account access. |
+| P7-02 | Compare free frontend/backend hosting options | Completed (research only) | Render Free official limits reviewed; no resource created. |
+| P7-03 | Choose compatible frontend/backend deployment | In progress | User requested Render Free for Express; existing Vercel preview for frontend. Backend not deployed. |
+| P7-04 | Document/configure server-side secrets | Blocked / not started | No NVIDIA_API_KEY configured; wait until backend health/connectivity and quota check. |
+| P7-05 | Deploy and check frontend | In progress | Vercel Preview READY for PR #3, but manual page/settings/responsive verification remains. |
+| P7-06 | Deploy and check backend | Blocked / not started | No Render service exists; manual creation and health endpoint check required. |
+| P7-07 | Verify live AI and safe failure paths | Blocked | Requires backend, verified connectivity, quota check and explicit authorization for one live call. |
+| P7-08 | Add deployment/rollback/quota/troubleshooting docs | In progress | Proposed Render setup/caveats documented; final runbook depends on real deployment. |
+| P7-09 | Capture final deployed smoke-test and CI evidence | Not started | No connected frontend/backend deployment has been tested. |
+| P8-01 | Trace every source-plan requirement to evidence | Not started | Final traceability depends on feature and deployment acceptance. |
+| P8-02 | Verify final branch/PR merge/default-branch state | In progress | Current PRs audited; both remain open and unmerged pending review/acceptance. |
+| P8-03 | Confirm setup/security/user docs are current | In progress | Updated tracking docs are on PR #4 branch; main remains unchanged. |
+| P8-04 | Publish final verification/limitations handoff | Not started | Final handoff waits on merged implementation and deployment/live-test decisions. |
 
 ## Current PR / CI evidence at audit time
 

@@ -211,7 +211,7 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P1-02 | Bootstrap React + Vite application | Completed | Frontend entry points exist and production build passes in CI. |
 | P1-03 | Bootstrap separate Express backend | Completed | Separate Express workspace and server start command are present. |
 | P1-04 | Add health endpoint and bounded JSON parsing | Completed | Health route and malformed/oversized JSON handling have automated tests. |
-| P1-05 | Add .gitignore and safe environment example | Completed | Real env files ignored; example key is blank; no frontend key use. |
+| P1-05 | Add .gitignore and safe environment example | Completed | Real env files ignored; NVIDIA_API_KEY and FLOW_COMPILER_ACCESS_TOKEN are blank placeholders; no frontend provider key use. |
 | P1-06 | Add backend automated smoke tests | Completed | Automated Node test suite passes in CI. |
 | P1-07 | Add frontend/backend local development guidance | Completed | README scripts correspond to manifests. |
 | P1-08 | Add CI workflow and inspect actual run | Completed | Actions #144/#151 show install, backend tests and frontend build succeed on respective exact heads. |
@@ -227,16 +227,16 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P2-09 | Add rate limiting and CORS/origin configuration | Completed (mocked only) | In-memory limiter and exact APP_ORIGINS behavior have automated tests. |
 | P2-10 | Complete deterministic mocked-provider test matrix | Completed (mocked only) | Actions #151 passed 251 tests with fake key/mock fetch; no live inference. |
 | P2-11 | Optional real NVIDIA inference smoke test | Blocked / not attempted | User explicitly said do not request/configure key yet; account quota/eligibility is not available to this connection. |
-| P2-12 | Finalize API security documentation and verification | Completed on PR branch | API contract reflects route integration on PR #4; not yet merged into main. |
-| P2-13 | Connect validated adapter to POST /api/plan (supplemental source-plan follow-up) | In progress / review pending | Route implemented on PR #4; mocked tests pass. No live inference and not merged. |
+| P2-12 | Finalize API security documentation and verification | In progress on PR #5 branch | API contract plus new docs/SECURITY.md document personal bearer authentication; waiting for exact-head CI/review/merge. Live inference remains unverified. |
+| P2-13 | Connect validated adapter to POST /api/plan (supplemental source-plan follow-up) | Completed on main (mocked only) | Merged via PR #4 as f0c67d478876547c753b539a78f06039c79ef88f; Actions #157/#158 passed 251 tests and build. Provider behavior is mocked; no live inference. |
 | P3-01 | Implement dark command-center frame | In progress | Implemented on PR #3; Actions #144 passes and Vercel preview reports READY, but manual browser acceptance remains. |
 | P3-02 | Implement thought input and available-time controls | In progress (partial) | Input and time controls exist; full validation feedback/acceptance is unfinished. |
 | P3-03 | Add demo input and demo plan mode/data | In progress (partial) | Load-example input exists; there is no generated demo-plan mode. |
-| P3-04 | Connect UI to backend plan API | Blocked / not started as user-facing feature | Health check uses VITE_API_BASE_URL, but Compile remains disabled and the UI does not POST /api/plan. |
-| P3-05 | Render plan summary and task nodes | Not started | Displayed task nodes are illustrative, not API output. |
+| P3-04 | Connect UI to backend plan API | In progress — auth path implemented ahead of order | PR #5 adds a session-token field and real POST /api/plan request with Authorization header, HTTPS enforcement, safe errors and actual response display. No deployed backend test; no live inference performed by this work. |
+| P3-05 | Render plan summary and task nodes | In progress (minimal rendering) | PR #5 displays actual API-returned summary/tasks/deferred tasks when present; polished graph/dependency layout and full acceptance remain. |
 | P3-06 | Display accurate dependency links/graph | Not started | Current graph is illustrative only. |
 | P3-07 | Add completion tracking and progress calculation | Not started | No actual task completion state or remaining-time calculation. |
-| P3-08 | Add empty/loading/API-error/invalid-plan states | Not started | Health-check state exists; full planning UI states do not. |
+| P3-08 | Add empty/loading/API-error/invalid-plan states | In progress (partial) | PR #5 adds pending/success/error feedback and a minimal response-shape guard; comprehensive invalid-plan/UI regression coverage remains. |
 | P3-09 | Accessibility and interaction review | In progress (partial) | Semantic labels/focus styles exist, but full keyboard/contrast/reduced-motion checks are not evidenced. |
 | P4-01 | Define stable plan/task identity and recompile contract | In progress (contract only) | API contract defines revision context and completed IDs; runtime UI workflow not implemented. |
 | P4-02 | Preserve completed tasks during recompile | Not started | No client recompile behavior or regression tests. |
@@ -255,23 +255,23 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P5-07 | Update feature/privacy documentation | In progress (partial) | Current docs describe limitations; complete product/privacy docs await features. |
 | P6-01 | Test vague, large and conflicting inputs | In progress (mock fixtures only) | Route/model fixtures test failure cases; no live-model quality test or full UX tests. |
 | P6-02 | Test request/response bounds and malformed bodies | Completed for API boundary (CI) | Body, request, provider output and schema bounds are covered by backend tests. |
-| P6-03 | Test auth/origin/rate-limit assumptions | In progress / security gate | CORS and in-memory per-IP rate-limit tests pass, but the backend has no user authentication; CORS is not authentication. Plan.txt §9 calls for authentication for personal use. Obtain approval for a minimal auth design before configuring NVIDIA_API_KEY. |
-| P6-04 | Review logging and error disclosure | In progress | Targeted review found safe error envelopes; full deployed log/privacy audit remains. |
+| P6-03 | Test auth/origin/rate-limit assumptions | In progress — implementation/tests added | PR #5 adds strict 32-byte base64url bearer auth, timingSafeEqual comparison, generic 401, fail-closed 503 for missing server config, auth-before-body-parse, no provider call on unauthorized requests, public health, Authorization CORS preflight, and secret/log assertions. Exact-head CI/review pending; deployed auth not tested. |
+| P6-04 | Review logging and error disclosure | In progress | PR #5 adds a deterministic test that captured console logs and HTTP responses contain no submitted/configured token or fake provider key. Full deployed log/privacy audit remains. |
 | P6-05 | Review dependency validation and recompile preservation | In progress | Graph tests exist; completed-work preservation during actual recompile remains unimplemented. |
 | P6-06 | Run complete test/build/lint suite and resolve failures | In progress | CI install/tests/build pass; no lint/type-check scripts are configured and product QA remains. |
-| P6-07 | Final diff/dependency/security inspection | In progress | Targeted current PR diff/code review performed; formal final audit awaits integration/deployment. |
+| P6-07 | Final diff/dependency/security inspection | In progress | Targeted auth/API/frontend diff reviewed; exact-head CI, formal PR review, and deployed verification remain gates. No dependencies added. |
 | P7-01 | Confirm NVIDIA endpoint terms/availability/limits | Blocked | Public model page lists a free endpoint, but account-specific quota/eligibility cannot be verified without user account access. |
 | P7-02 | Compare free frontend/backend hosting options | Completed (research only) | Render Free official limits reviewed; no resource created. |
 | P7-03 | Choose compatible frontend/backend deployment | In progress | User requested Render Free for Express; existing Vercel preview for frontend. Backend not deployed. |
-| P7-04 | Document/configure server-side secrets | Blocked / not started | No NVIDIA_API_KEY configured. Before live use, add the authentication required by Plan.txt §9, then verify connectivity and account quota. Never configure a key on an unauthenticated public endpoint. |
+| P7-04 | Document/configure server-side secrets | Blocked / not started | FLOW_COMPILER_ACCESS_TOKEN is implemented but not configured; no Render backend exists. NVIDIA_API_KEY remains blank/unconfigured by explicit instruction. Deploy health-only first; configure the auth token server-side after deployment, and never add the NVIDIA key before auth/connectivity/quota gates. |
 | P7-05 | Deploy and check frontend | In progress | Vercel Preview READY for PR #3, but manual page/settings/responsive verification remains. |
 | P7-06 | Deploy and check backend | Blocked / not started | No Render service exists; manual creation and health endpoint check required. |
 | P7-07 | Verify live AI and safe failure paths | Blocked | Requires backend, verified connectivity, quota check and explicit authorization for one live call. |
 | P7-08 | Add deployment/rollback/quota/troubleshooting docs | In progress | Proposed Render setup/caveats documented; final runbook depends on real deployment. |
 | P7-09 | Capture final deployed smoke-test and CI evidence | Not started | No connected frontend/backend deployment has been tested. |
 | P8-01 | Trace every source-plan requirement to evidence | Not started | Final traceability depends on feature and deployment acceptance. |
-| P8-02 | Verify final branch/PR merge/default-branch state | In progress | Current PRs audited; both remain open and unmerged pending review/acceptance. |
-| P8-03 | Confirm setup/security/user docs are current | In progress | Updated tracking docs are on PR #4 branch; main remains unchanged. |
+| P8-02 | Verify final branch/PR merge/default-branch state | In progress | PR #4 is merged; PR #3 remains open for manual UI acceptance; dedicated PR #5 targets the PR #3 branch and must be retargeted/reconciled after PR #3 merges. |
+| P8-03 | Confirm setup/security/user docs are current | In progress | API contract, docs/SECURITY.md, checklist and project state are updated on PR #5 branch; merge to main is pending. |
 | P8-04 | Publish final verification/limitations handoff | Not started | Final handoff waits on merged implementation and deployment/live-test decisions. |
 
 ## Current PR / CI evidence at audit time
@@ -317,3 +317,14 @@ Free-tier caveats from current Render documentation: Free web services spin down
 
 - Plan.txt section 9 explicitly says to add authentication for personal use, in addition to server-side request limits and maximum output size. Current backend has request validation, an in-memory per-source-IP limiter, exact-origin CORS, a 90-second provider timeout and a 1 MiB default provider response cap, but **no user authentication**. CORS does not stop curl or other non-browser clients, and the in-memory per-IP limiter is not a durable/distributed abuse control.
 - This is a source-plan requirement, not an approved scope expansion. The implementation mechanism is not specified. No auth mechanism was silently chosen. Before configuring NVIDIA_API_KEY or performing live inference, obtain user approval for a minimal auth design and implement/test it. Deploying the backend without a secret is safe for the health-check stage, but do not add the NVIDIA key until this gate is resolved.
+
+
+## Authentication implementation — dedicated PR #5 (2026-10-17)
+
+- Source review: Plan.txt §9 explicitly requires (1) proper dependency validation, (2) recompilation that preserves completed work, and (3) protection of the deployed endpoint with personal-use authentication, server-side request limits and maximum output size. The approved single-user bearer token directly satisfies the authentication part; it does not by itself complete the separate recompilation requirements. Existing request limits and output-size bounds remain in place.
+- Dedicated PR: https://github.com/vansh-kumar-007/Flow-Compiler/pull/5, branch feat/single-user-plan-auth, based on feat/phase-3-command-center-ui so the approved session token UI is included without prematurely merging PR #3. Keep open until exact-head CI and review pass; then merge PR #3 first after manual acceptance, retarget/reconcile PR #5 to main, rerun CI, and only merge with passing checks.
+- Server code: FLOW_COMPILER_ACCESS_TOKEN must be exactly 43 base64url characters from 32 cryptographically random bytes. It is not present as a real value in the repository. One strict Authorization: Bearer header is accepted; timingSafeEqual compares valid equal-length token buffers. Missing/invalid/malformed request credentials get identical 401 UNAUTHORIZED responses with Cache-Control: no-store. Missing/malformed server token configuration yields generic 503 AUTHENTICATION_NOT_CONFIGURED; health remains public.
+- Ordering: rate limiting remains before CORS/auth; CORS allows Authorization preflight; auth runs before JSON parsing, validation and provider calls. Unauthorized/malformed requests cannot invoke the provider. The API tests capture console output and check response bodies for token/key leakage.
+- Frontend: the access token is a password input held only in React state, uses autocomplete=off, has a clear-token control, and is never written to localStorage/sessionStorage or URL/log/analytics. Production requests require an HTTPS origin (plain HTTP is allowed only for loopback local development) and send Authorization: Bearer only in the header. The UI now makes a real user-initiated POST /api/plan and renders the actual API result; it does not fabricate an AI response.
+- Deviation: P3-04 (and minimal P3-05 rendering) began ahead of the prior phase checklist sequence because an actual frontend Authorization-header path was necessary to verify the approved authentication design. Original task IDs/order are retained; this is a bounded, documented sequencing deviation. No other feature scope or architecture changed.
+- Verification status at this documentation snapshot: exact-head CI/review for PR #5 is pending. Tests use fake access tokens and fake NVIDIA credentials with mocked fetch. No NVIDIA_API_KEY configured, no live inference, no Render resource, and no deployed auth/connectivity proof. ₹0 budget remains.

@@ -89,6 +89,7 @@ export default function App() {
   }
 
   function changeMinutes(value) {
+    if (demoMode) return;
     setMinutes(value);
     if (planState === "success" || planState === "error") {
       setPlanState("idle");
@@ -276,10 +277,10 @@ export default function App() {
         {inputError && <p id="brain-dump-error" className="field-error" role="alert">{inputError}</p>}
         <div className="rule"/>
         <div className="time-heading"><label className="field-label" htmlFor="available-minutes">EXECUTION WINDOW</label><strong>{minutes} <small>MIN</small></strong></div>
-        <input id="available-minutes" className="time-slider" aria-label="Available time in minutes" type="range" min="5" max="720" step="5" value={minutes} aria-describedby="available-minutes-help available-minutes-error" aria-invalid={Boolean(timeError)} onChange={e=>changeMinutes(Number(e.target.value))}/>
+        <input id="available-minutes" className="time-slider" aria-label="Available time in minutes" type="range" min="5" max="720" step="5" value={minutes} aria-describedby="available-minutes-help available-minutes-error" aria-invalid={Boolean(timeError)} disabled={demoMode} onChange={e=>changeMinutes(Number(e.target.value))}/>
         <div className="range-labels"><span>5 MIN</span><span>12 HOURS</span></div>
-        <div className="time-presets">{[15,30,60,120,240,480,720].map(v=><button type="button" key={v} className={minutes===v?"preset active":"preset"} aria-pressed={minutes===v} onClick={()=>changeMinutes(v)}>{v>=60?v/60+"H":v+"M"}</button>)}</div>
-        <p id="available-minutes-help" className="field-help">Choose an integer from 5 to 720 minutes, matching the planning API contract.</p>
+        <div className="time-presets">{[15,30,60,120,240,480,720].map(v=><button type="button" key={v} className={minutes===v?"preset active":"preset"} aria-pressed={minutes===v} disabled={demoMode} onClick={()=>changeMinutes(v)}>{v>=60?v/60+"H":v+"M"}</button>)}</div>
+        <p id="available-minutes-help" className="field-help">{demoMode ? "The fixed sample is designed for a 120-minute window. Switch back to API Planning to change available time." : "Choose an integer from 5 to 720 minutes, matching the planning API contract."}</p>
         {timeError && <p id="available-minutes-error" className="field-error" role="alert">{timeError}</p>}
         <div className="rule"/>
         { !demoMode && <>

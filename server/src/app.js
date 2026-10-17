@@ -256,7 +256,7 @@ export function createApp(options = {}) {
     // Express matches routes case-insensitively and permits a trailing slash by
     // default. Normalize those equivalent path spellings here as well, or a
     // route alias could reach POST /api/plan without passing this auth gate.
-    const normalizedPath = request.path.toLowerCase().replace(/\\/+$/, "");
+    const normalizedPath = request.path.toLowerCase().replace(/\/+$/, "");
     if (request.method === "POST" && normalizedPath === "/api/plan") {
       return requirePlanAuthentication(request, response, next);
     }

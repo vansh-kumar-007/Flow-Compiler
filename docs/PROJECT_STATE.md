@@ -10,7 +10,7 @@ This section supersedes the older dated notes below for current facts only. Earl
 
 ### Repository / PR / CI
 
-- **Current `main`:** `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1` — PR #7, “Security: protect planning route aliases”, is merged.
+- **Latest application-code/security revision audited:** `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1` — PR #7, “Security: protect planning route aliases”, is merged. Documentation-only PR #8 subsequently merged into `main` as `b05742825930aac12c0e8328bf4a2226a445a44e`; post-merge [Actions #240](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39061138836) passed on that exact SHA. The app/runtime code is unchanged by that documentation merge.
 - PRs #1–#7 are closed/merged; the alias fix uses a small two-file diff limited to `server/src/app.js` and `server/test/plan-route-integration.test.js`.
 - PR-head [Actions #237](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39060733993) passed 259 backend tests and the Vite production build on the exact PR head `4a2c771b659e994333bfaf466275a78499edec58`. Post-merge main [Actions #238](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39060783792) passed on merge SHA `0f78e5a5d91ed60c2aafa9485629ebba0e572cd1`.
 - CI runs clean `npm ci`, `npm test` (Node test runner in the server workspace), and `npm run build` (Vite production build). There is no configured lint/typecheck/browser-test script.

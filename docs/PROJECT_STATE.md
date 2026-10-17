@@ -299,3 +299,11 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 - GitHub main CI on merged code passed: [run #226](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39055667562). Governance follow-up CI passed before this addendum on [run #228](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39055744210); this current documentation commit itself creates a new CI run.
 - Budget/service constraints: Render Free confirmed; no paid plan/payment method added for the fix. No `NVIDIA_API_KEY` or `FLOW_COMPILER_ACCESS_TOKEN` was requested or configured for this incident. Live inference not attempted.
 - Next task: owner confirms actual `/api/health` response. Then verify/record it, continue P7-05 to configure the exact Vercel `VITE_API_BASE_URL` and Render `APP_ORIGINS` in the planned order, and test Check API. Do not configure an NVIDIA key or run inference without eligibility/quota/terms verification and explicit approval.
+
+
+## Final verification snapshot after Render auto-deploy — 2026-10-18 Asia/Kolkata
+
+- Latest main at snapshot start: `f99b0951ad9fbeaa58e1b859e6fd98793f4c8a8d`; exact-main [Actions run #230 passed](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39055949063) (Node 24 install, backend tests, Vite build).
+- Render Free service has `autoDeploy=yes` on branch `main`. Latest deployment of the same SHA `f99b0951ad9fbeaa58e1b859e6fd98793f4c8a8d`, deployment ID `dep-db9rdojrjlhs73c0joqg`, status `live`. Runtime logs show `Flow Compiler API listening on 0.0.0.0:10000` and Render's live banner at `https://flow-compiler.onrender.com`.
+- The host-binding incident is resolved in code and deployed logs. An actual external HTTP body for `/api/health` has not been retrieved by this environment; wait for owner confirmation at [`https://flow-compiler.onrender.com/api/health`](https://flow-compiler.onrender.com/api/health).
+- No key/token added for this fix; Free plan remains. Next action is owner report of exact health JSON/HTTP status, then proceed with exact Vercel `VITE_API_BASE_URL` and Render `APP_ORIGINS` configuration.

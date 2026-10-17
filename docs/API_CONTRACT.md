@@ -1,6 +1,6 @@
 # Flow Compiler — Plan API Contract
 
-**Status:** Contract for Phase 2 implementation. The endpoint is not implemented yet; until P2-03, a valid request to `POST /api/plan` receives the existing HTTP 501 `PLANNING_NOT_IMPLEMENTED` response.
+**Status:** Contract for Phase 2 implementation. The provider adapter parses and schema-validates model output in isolation, but it is not integrated with the route; valid requests to `POST /api/plan` still receive HTTP 501 `PLANNING_NOT_IMPLEMENTED` until later route integration.
 
 **Product source:** the Flow Compiler Project source “Flow Compiler — build plan and starter code” (Plan.txt; the project instructions refer to it as Plan.md). This document formalizes the source plan's existing field names and limits for upcoming implementation. It does not claim that AI planning currently works.
 

@@ -253,7 +253,11 @@ export function createApp(options = {}) {
   // by CORS and do not require the application token.
   const requirePlanAuthentication = createPlanAuthenticationMiddleware(env);
   app.use((request, response, next) => {
-    if (request.method === "POST" && request.path === "/api/plan") {
+    // Express matches routes case-insensitively and permits a trailing slash by
+    // default. Normalize those equivalent path spellings here as well, or a
+    // route alias could reach POST /api/plan without passing this auth gate.
+    const normalizedPath = request.path.toLowerCase().replace(/\/+$/, "");
+    if (request.method === "POST" && normalizedPath === "/api/plan") {
       return requirePlanAuthentication(request, response, next);
     }
     return next();

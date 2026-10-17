@@ -1,6 +1,6 @@
 # Flow Compiler — Project State
 
-Last updated: 2026-10-17 (Asia/Kolkata; final Phase 2 verification in progress)
+Last updated: 2026-10-17 (Asia/Kolkata; Phase 2 closure verified)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
 ## Repository and Git state
@@ -10,9 +10,9 @@ Authoritative product source: the ChatGPT Project source “Flow Compiler — bu
 - Current Phase 2 working branch: `feat/phase-2-api-contract-validation`.
 - Foundation branch: `chore/phase-0-audit-and-foundation`.
 - **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`.
-- **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR targeting `main`. Existing Phase 2 commits are preserved without rewrite or force-push; final documentation-commit CI is required before merge.
+- **PR #2**: [Phase 2: secure plan API contract and validation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `87fd4adc530df9ce437bf3fb55202d4f943e8939`, from reviewed head `55ffa09bcba0e9c64c8274971dd979e209d2d7fc`.
 - Historical repository initialization: the initial remote audit found no files/commits; a governance root commit was then created. Do not mistake that initial state for the current repository.
-- Latest verified pre-documentation Phase 2 head was `b6657d6a54810a9efc94ff72d6f9c2197e36e368`; Actions runs [#70](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029520569) and [#71](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029523089) passed on that exact SHA, including clean install, 243/243 backend tests, and frontend production build. CI is being rerun for the final documentation commit.
+- Latest verified pre-documentation Phase 2 head was `b6657d6a54810a9efc94ff72d6f9c2197e36e368`; Actions runs [#70](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029520569) and [#71](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029523089) passed on that exact SHA, including clean install, 243/243 backend tests, and frontend production build. The final docs commit passed [Actions #80](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031455686) and [#81](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031458533); merge commit `87fd4adc530df9ce437bf3fb55202d4f943e8939` passed post-merge `main` [run #82](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031608596).
 - Verified CI for P2-06: [GitHub Actions run #53](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39021806130), conclusion **success** on application/test commit `b2c702b0b2246a015444b3196a97045291a4b09a`. It ran clean `npm ci`, all 173 backend tests (173 passed, 0 failed), and `npm run build`. Parser/schema/provider tests use deterministic local fixtures and mocks only; no real NVIDIA call or paid inference was made. Run #52 exposed one incorrectly specified negative test for contract-permitted `deferredTasks: []`; that fixture was corrected before the passing run #53.
 - Stable requirement IDs and status evidence live in `docs/BUILD_CHECKLIST.md`.
 
@@ -102,4 +102,12 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - Live audit reviewed the attached Plan.txt, repository refs, PR #1/#2 metadata, latest workflow logs, request/app/provider/output/dependency/schedule source, tests, package manifests, API contract, README, environment example and ignore rules.
 - PR #2 is a 20-file Phase 2 diff with no dependency/lockfile changes; no reviews or review threads were recorded. GitHub reported `mergeable: true`, but no main branch protection or required checks are configured.
 - P2-11 optional real inference was not attempted because no authorized connected backend runtime/secret store was available to inspect. The environment example is blank; live inference/account eligibility/quota stay unverified.
-- P2-12 updates document API bounds, safe error behavior, CORS/rate-limit policy and limitations. The public route remains 501; no deployment or paid services were used. Final CI must be observed on the actual final docs SHA before merge.
+- P2-12 updates document API bounds, safe error behavior, CORS/rate-limit policy and limitations. The public route remains 501; no deployment or paid services were used. Verified: docs head `55ffa09bcba0e9c64c8274971dd979e209d2d7fc` passed #80/#81 and merge commit `87fd4adc530df9ce437bf3fb55202d4f943e8939` passed post-merge #82.
+
+
+## Verified Phase 2 milestone closure — 2026-10-17
+
+- PR #2 [merged successfully](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2) into `main` as `87fd4adc530df9ce437bf3fb55202d4f943e8939`, from reviewed branch head `55ffa09bcba0e9c64c8274971dd979e209d2d7fc`.
+- Documentation-head CI runs [#80](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031455686) and [#81](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031458533) passed. Post-merge `main` run [#82](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39031608596) passed 243/243 backend tests (0 failed) and the frontend production build.
+- P2-11 live NVIDIA inference was skipped; no authorized connected backend secret environment was available to inspect, so no live request was sent. Live inference/account quota remain unverified.
+- Valid `POST /api/plan` still returns HTTP 501. No Phase 3 task was started.

@@ -96,7 +96,7 @@ test("health response includes configured CORS origin without credentials", asyn
 });
 
 test("server bootstrap binds a port and serves the health route", async () => {
-  const started = startServer({ port: 0, host: "127.0.0.1" });
+  const started = startServer({ env: { NODE_ENV: "test" }, port: 0, host: "127.0.0.1" });
   await once(started, "listening");
   try {
     const response = await fetch("http://127.0.0.1:" + started.address().port + "/api/health");
@@ -104,6 +104,39 @@ test("server bootstrap binds a port and serves the health route", async () => {
     assert.equal((await response.json()).status, "ok");
   } finally {
     await new Promise((resolve, reject) => started.close(error => error ? reject(error) : resolve()));
+  }
+});
+
+test("server bootstrap honors PORT and HOST environment overrides", async () => {
+  const started = startServer({ env: { NODE_ENV: "production", PORT: "0", HOST: "127.0.0.1" } });
+  await once(started, "listening");
+  try {
+    assert.equal(started.address().address, "127.0.0.1");
+    assert.ok(started.address().port > 0);
+    const response = await fetch("http://127.0.0.1:" + started.address().port + "/api/health");
+    assert.equal(response.status, 200);
+  } finally {
+    await new Promise((resolve, reject) => started.close(error => error ? reject(error) : resolve()));
+  }
+});
+
+test("server defaults to a public bind in production and loopback in development", async () => {
+  const production = startServer({ env: { NODE_ENV: "production", PORT: "0" } });
+  await once(production, "listening");
+  try {
+    assert.equal(production.address().address, "0.0.0.0");
+    assert.ok(production.address().port > 0);
+  } finally {
+    await new Promise((resolve, reject) => production.close(error => error ? reject(error) : resolve()));
+  }
+
+  const development = startServer({ env: { NODE_ENV: "development", PORT: "0" } });
+  await once(development, "listening");
+  try {
+    assert.equal(development.address().address, "127.0.0.1");
+    assert.ok(development.address().port > 0);
+  } finally {
+    await new Promise((resolve, reject) => development.close(error => error ? reject(error) : resolve()));
   }
 });
 

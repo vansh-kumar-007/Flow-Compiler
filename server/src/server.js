@@ -12,7 +12,10 @@ export function startServer(options = {}) {
   const rateLimit = readRateLimitConfig(env);
   const allowedOrigins = parseAllowedOrigins(env.APP_ORIGINS ?? env.APP_ORIGIN);
   const port = options.port ?? Number.parseInt(env.PORT || "8787", 10);
-  const host = options.host || env.HOST || "127.0.0.1";
+  // Preserve loopback for local development, but bind publicly by default in
+  // production container hosting (e.g. Render). An explicit HOST always wins.
+  const defaultHost = env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
+  const host = options.host || env.HOST || defaultHost;
 
   if (!Number.isInteger(port) || port < 0 || port > 65535) {
     throw new Error("PORT must be a valid TCP port number.");

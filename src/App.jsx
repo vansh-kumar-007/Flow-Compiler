@@ -6,6 +6,10 @@ const exampleTasks = [
   ["03", "Deploy portfolio", "30 MIN · DEPENDS ON 02", "QUEUED"]
 ];
 
+// Public, non-secret API origin. Production fails closed when it is not configured;
+// local Vite development continues to use the dev-server /api proxy.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\\/+$/, "");
+
 export default function App() {
   const [brainDump, setBrainDump] = useState("");
   const [minutes, setMinutes] = useState(120);
@@ -13,17 +17,25 @@ export default function App() {
   const [apiMessage, setApiMessage] = useState("Backend connection has not been checked.");
 
   async function checkApi() {
+    if (!import.meta.env.DEV && !API_BASE_URL) {
+      setApiState("error");
+      setApiMessage("Production API URL is not configured. Set VITE_API_BASE_URL to the Express backend origin.");
+      return;
+    }
+
     setApiState("loading");
     setApiMessage("Checking the Express health endpoint…");
     try {
-      const response = await fetch("/api/health", { headers: { Accept: "application/json" } });
+      const response = await fetch(API_BASE_URL + "/api/health", { headers: { Accept: "application/json" } });
       const payload = await response.json();
-      if (!response.ok || payload.status !== "ok") throw new Error("Unexpected health response");
+      if (!response.ok || payload.status !== "ok" || payload.service !== "flow-compiler-api") {
+        throw new Error("Unexpected health response");
+      }
       setApiState("success");
       setApiMessage("Backend reachable · " + payload.service);
     } catch {
       setApiState("error");
-      setApiMessage("Backend unavailable from this preview. AI planning is not enabled.");
+      setApiMessage("Express backend unavailable at the configured API origin. AI planning is not enabled.");
     }
   }
 

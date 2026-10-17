@@ -43,7 +43,8 @@ function validateTask(task, index, deferred = false) {
     return invalid(label + ".dependsOn");
   }
   // P2-06 validates dependency field shape and ID syntax only. Reference, edge,
-  // ordering, and cycle semantics belong to P2-07.
+  // ordering, deferred-prerequisite, and cycle semantics are checked by the
+  // separate P2-07 dependency-graph validator after this schema stage.
   for (const dependencyId of task.dependsOn) {
     if (typeof dependencyId !== "string" || !TASK_ID.test(dependencyId)) {
       return invalid(label + ".dependsOn");
@@ -59,8 +60,8 @@ function validateTask(task, index, deferred = false) {
 /**
  * Validate a parsed model value against the documented plan/task response schema.
  * Return null when valid, otherwise a stable safe INVALID_MODEL_OUTPUT error.
- * Does not coerce or mutate data; dependency graph checks are P2-07 and budget
- * scheduling/deferred-work selection are P2-08.
+ * Does not coerce or mutate data. P2-07 dependency graph checks run as a separate
+ * stage; budget scheduling/deferred-work selection remain P2-08.
  */
 export function validateGeneratedPlan(plan) {
   if (!isRecord(plan) || !hasOnlyFields(plan, PLAN_FIELDS)) return invalid("$");

@@ -96,8 +96,22 @@ export default function App() {
         setPlanMessage(messages[code] || ("Planning request failed (HTTP " + response.status + (typeof code === "string" ? " · " + code : "") + ")."));
         return;
       }
+      const validTask = task => task && typeof task === "object" && !Array.isArray(task)
+        && typeof task.id === "string" && typeof task.title === "string"
+        && Number.isInteger(task.minutes) && task.minutes > 0
+        && typeof task.priority === "string" && typeof task.reason === "string"
+        && typeof task.category === "string" && Array.isArray(task.dependsOn)
+        && task.dependsOn.every(id => typeof id === "string");
+      const validDeferredTasks = payload && (payload.deferredTasks === undefined
+        || (Array.isArray(payload.deferredTasks) && payload.deferredTasks.every(task =>
+          task && typeof task === "object" && !Array.isArray(task)
+          && typeof task.id === "string" && typeof task.title === "string"
+          && typeof task.deferredReason === "string")));
       if (!payload || typeof payload !== "object" || Array.isArray(payload)
-          || typeof payload.summary !== "string" || !Array.isArray(payload.tasks)) {
+          || typeof payload.summary !== "string"
+          || !Number.isInteger(payload.totalMinutes) || payload.totalMinutes < 0
+          || !Array.isArray(payload.tasks) || payload.tasks.length === 0
+          || !payload.tasks.every(validTask) || !validDeferredTasks) {
         setPlanState("error");
         setPlanMessage("The backend returned a response that did not match the plan contract.");
         return;

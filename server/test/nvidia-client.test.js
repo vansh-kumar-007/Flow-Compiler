@@ -15,7 +15,21 @@ const messages = [
 ];
 const testSecret = "unit-test-secret-sentinel";
 
-function envelopeText(content = "{\"summary\":\"mock plan\"}") {
+const validPlan = {
+  summary: "Mock plan",
+  totalMinutes: 15,
+  tasks: [{
+    id: "t1",
+    title: "Complete a small task",
+    minutes: 15,
+    priority: "normal",
+    reason: "It is the next concrete action.",
+    dependsOn: [],
+    category: "build"
+  }]
+};
+
+function envelopeText(content = JSON.stringify(validPlan)) {
   return JSON.stringify({ model: NVIDIA_MODEL, choices: [{ message: { content } }] });
 }
 
@@ -117,8 +131,8 @@ test("sends the source-plan endpoint/model and returns mocked message content", 
   assert.equal(sent.max_tokens, 2500);
   assert.deepEqual(sent.chat_template_kwargs, { enable_thinking: false });
   assert.deepEqual(sent.messages, messages);
-  assert.equal(result.content, JSON.stringify({ summary: "mock plan" }));
-  assert.deepEqual(result.output, { summary: "mock plan" });
+  assert.equal(result.content, JSON.stringify(validPlan));
+  assert.deepEqual(result.output, validPlan);
 });
 
 test("aborts a hung provider request and reports AI_TIMEOUT without transport details", async () => {
@@ -250,7 +264,7 @@ test("enforces a streamed response limit when Content-Length is dishonest", asyn
 });
 
 test("accepts a valid response exactly at the configured byte limit", async () => {
-  const bodyText = envelopeText(JSON.stringify("exactly at the limit"));
+  const bodyText = envelopeText(JSON.stringify(validPlan));
   const byteLength = new TextEncoder().encode(bodyText).byteLength;
   const client = clientFor(async () => responseFromBodyText(bodyText, {
     contentLength: String(byteLength),
@@ -258,11 +272,11 @@ test("accepts a valid response exactly at the configured byte limit", async () =
   }), { maxResponseBytes: byteLength });
 
   const result = await client.createChatCompletion({ messages });
-  assert.equal(result.output, "exactly at the limit");
+  assert.deepEqual(result.output, validPlan);
 });
 
 test("ignores malformed Content-Length and still enforces the streamed limit", async () => {
-  const bodyText = envelopeText(JSON.stringify("small response"));
+  const bodyText = envelopeText(JSON.stringify(validPlan));
   const byteLength = new TextEncoder().encode(bodyText).byteLength;
   const client = clientFor(async () => responseFromBodyText(bodyText, {
     contentLength: "not-a-number",
@@ -270,7 +284,7 @@ test("ignores malformed Content-Length and still enforces the streamed limit", a
   }), { maxResponseBytes: byteLength });
 
   const result = await client.createChatCompletion({ messages });
-  assert.equal(result.output, "small response");
+  assert.deepEqual(result.output, validPlan);
 
   const oversized = responseFromBodyText("x".repeat(32), {
     contentLength: "12, 12",
@@ -377,10 +391,28 @@ test("maps invalid model JSON to INVALID_MODEL_OUTPUT without exposing model con
 
   await assert.rejects(client.createChatCompletion({ messages }), error => {
     assert.equal(error.code, "INVALID_MODEL_OUTPUT");
-    assert.equal(error.message, "The model returned invalid JSON.");
+    assert.equal(error.message, "The model returned an invalid plan.");
     assert.equal(error.message.includes(testSecret), false);
     assert.equal(error.message.includes("prefix diagnostic"), false);
     assert.equal(error.message.includes("would-be fragment"), false);
+    return true;
+  });
+});
+
+test("rejects syntactically valid schema-invalid plans without exposing model output", async () => {
+  const privateModelText = JSON.stringify({
+    summary: "private-model-note",
+    totalMinutes: 1,
+    tasks: [],
+    credentialSentinel: testSecret
+  });
+  const client = clientFor(async () => responseFromBodyText(envelopeText(privateModelText)));
+  await assert.rejects(client.createChatCompletion({ messages }), error => {
+    assert.equal(error.code, "INVALID_MODEL_OUTPUT");
+    assert.equal(error.message, "The model returned an invalid plan.");
+    assert.equal(error.message.includes(testSecret), false);
+    assert.equal(error.message.includes("private-model-note"), false);
+    assert.equal(error.message.includes("credentialSentinel"), false);
     return true;
   });
 });

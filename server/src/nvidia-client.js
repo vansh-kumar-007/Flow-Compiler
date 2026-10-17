@@ -1,4 +1,5 @@
 import { parseModelOutput } from "./model-output.js";
+import { validateGeneratedPlan } from "./plan-output.js";
 
 export const NVIDIA_API_ENDPOINT =
   "https://integrate.api.nvidia.com/v1/chat/completions";
@@ -21,7 +22,7 @@ const MESSAGES = Object.freeze({
   AI_PROVIDER_ERROR: "The AI service could not complete the request.",
   AI_RESPONSE_TOO_LARGE: "The AI service returned a response that was too large.",
   AI_INVALID_RESPONSE: "The AI service returned an invalid response.",
-  INVALID_MODEL_OUTPUT: "The model returned invalid JSON."
+  INVALID_MODEL_OUTPUT: "The model returned an invalid plan."
 });
 
 export class NvidiaProviderError extends Error {
@@ -308,7 +309,12 @@ export function createNvidiaClient({
           throw createError("INVALID_MODEL_OUTPUT", response.status);
         }
 
-        // P2-05 parses JSON syntax only; semantic plan validation is a later task.
+        // P2-06 validates plan/task structure after parsing. Dependency semantics
+        // and schedule feasibility remain separate P2-07/P2-08 responsibilities.
+        if (validateGeneratedPlan(output)) {
+          throw createError("INVALID_MODEL_OUTPUT", response.status);
+        }
+
         return { content, output };
       };
 

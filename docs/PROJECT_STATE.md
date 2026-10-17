@@ -1,6 +1,6 @@
 # Flow Compiler — Project State
 
-Last updated: 2026-10-17 (Asia/Kolkata)
+Last updated: 2026-10-17 (Asia/Kolkata; final Phase 2 verification in progress)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
 ## Repository and Git state
@@ -10,9 +10,9 @@ Authoritative product source: the ChatGPT Project source “Flow Compiler — bu
 - Current Phase 2 working branch: `feat/phase-2-api-contract-validation`.
 - Foundation branch: `chore/phase-0-audit-and-foundation`.
 - **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`.
-- **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR retargeted to `main` after PR #1 merged. Existing Phase 2 commits were preserved; do not force-push or merge until Phase 2 is complete.
+- **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR targeting `main`. Existing Phase 2 commits are preserved without rewrite or force-push; final documentation-commit CI is required before merge.
 - Historical repository initialization: the initial remote audit found no files/commits; a governance root commit was then created. Do not mistake that initial state for the current repository.
-- P2-10 test-matrix implementation commit: `1247f7c4efab9551efcc66884d9f3aa072614555`; CI was green on this test commit. The final docs-updated head still requires its own verification run.
+- Latest verified pre-documentation Phase 2 head was `b6657d6a54810a9efc94ff72d6f9c2197e36e368`; Actions runs [#70](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029520569) and [#71](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39029523089) passed on that exact SHA, including clean install, 243/243 backend tests, and frontend production build. CI is being rerun for the final documentation commit.
 - Verified CI for P2-06: [GitHub Actions run #53](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39021806130), conclusion **success** on application/test commit `b2c702b0b2246a015444b3196a97045291a4b09a`. It ran clean `npm ci`, all 173 backend tests (173 passed, 0 failed), and `npm run build`. Parser/schema/provider tests use deterministic local fixtures and mocks only; no real NVIDIA call or paid inference was made. Run #52 exposed one incorrectly specified negative test for contract-permitted `deferredTasks: []`; that fixture was corrected before the passing run #53.
 - Stable requirement IDs and status evidence live in `docs/BUILD_CHECKLIST.md`.
 
@@ -32,9 +32,9 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - `/api/health`, bounded 20 KiB JSON parser, stable JSON errors for malformed JSON, oversized bodies, and unknown routes.
 - Server environment example defaults `NVIDIA_API_KEY` to blank, real `.env` files are ignored, local run/test/build commands are documented, and Node.js 24 CI is configured.
 
-### Phase 2, tasks P2-01 through P2-09
+### Phase 2, tasks P2-01 through P2-10 and P2-12
 
-- **P2-01 complete:** `docs/API_CONTRACT.md` documents public request fields/limits, source-compatible `previousPlan` revision context, completed IDs, blocker information, response and task fields, allowed priorities/categories, deferred work, dependency invariants, safe errors, and server-side credential boundaries.
+- **P2-01 complete:** `docs/API_CONTRACT.md` documents request fields/limits, source-compatible `previousPlan` revision context, completed IDs, blocker information, response/task fields, priority/category enums, deferred work, dependency invariants, safe errors, and server-side credential boundaries.
 - Contract retains the source names `brainDump`, `availableMinutes`, and `previousPlan`; it adds optional nested `previousPlan.revisionContext` and optional additive response `deferredTasks`. The sample JSON was parsed and the sample `totalMinutes` (40) was checked against task duration sum (15+25).
 - **P2-02 complete:** `server/src/plan-request.js` validates the top-level request shape, non-blank `brainDump` up to 5,000 characters, integer `availableMinutes` from 5 to 720 inclusive, documented nested previous-plan fields, task field shapes, completed/unfinished ID overlap, prior dependency references/self-dependencies, revision reason/note limits, blocker references, and the source-plan limit of 20 combined completed/unfinished prior-task IDs.
 - `server/src/app.js` returns `400 INVALID_REQUEST` for invalid request data before the plan stub. Existing JSON parser errors stay `400 INVALID_JSON` and `413 PAYLOAD_TOO_LARGE`. The source starter's initial `previousPlan: null` request is explicitly tested. Valid requests deliberately return `501 PLANNING_NOT_IMPLEMENTED` until provider integration exists.
@@ -95,3 +95,11 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - **2026-10-17 — P2-10 mocked-provider matrix:** added `server/test/plan-provider-matrix.test.js` with nine composed mock tests exercising the existing injectable adapter and parser/schema/dependency/schedule chain. Coverage includes success, missing key/no fetch, HTTP status mapping/body cancellation, network failure, malformed envelope/model JSON, schema invalidity, unknown dependency/cycle, budget/deferred contracts, safe error output, and HTTP route regression. Actions runs #66 and #67 both passed on `1247f7c4efab9551efcc66884d9f3aa072614555`; inspected backend log reports 243 tests passed and 0 failed, and frontend build succeeded. No real NVIDIA request or paid service was used.
 - **P2-10 scope boundary:** the public `POST /api/plan` route continues to validate requests and return 501 for valid input. The provider adapter was not connected to the route; end-to-end plan generation is not claimed. Real NVIDIA inference is P2-11; final API security doc/evidence is P2-12.
 - **Current next task:** P2-11 — optional real NVIDIA inference smoke test, contingent on secure server-side configuration; no key is needed for normal automated testing.
+
+
+## Final Phase 2 session audit — 2026-10-17
+
+- Live audit reviewed the attached Plan.txt, repository refs, PR #1/#2 metadata, latest workflow logs, request/app/provider/output/dependency/schedule source, tests, package manifests, API contract, README, environment example and ignore rules.
+- PR #2 is a 20-file Phase 2 diff with no dependency/lockfile changes; no reviews or review threads were recorded. GitHub reported `mergeable: true`, but no main branch protection or required checks are configured.
+- P2-11 optional real inference was not attempted because no authorized connected backend runtime/secret store was available to inspect. The environment example is blank; live inference/account eligibility/quota stay unverified.
+- P2-12 updates document API bounds, safe error behavior, CORS/rate-limit policy and limitations. The public route remains 501; no deployment or paid services were used. Final CI must be observed on the actual final docs SHA before merge.

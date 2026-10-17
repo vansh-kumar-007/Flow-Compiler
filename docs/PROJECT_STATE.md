@@ -9,10 +9,10 @@ Authoritative product source: the ChatGPT Project source “Flow Compiler — bu
 - Default branch: `main`.
 - Current Phase 2 working branch: `feat/phase-2-api-contract-validation`.
 - Foundation branch: `chore/phase-0-audit-and-foundation`.
-- **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), open draft PR to `main`; intentionally not merged.
-- **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR stacked on `chore/phase-0-audit-and-foundation` while PR #1 remains unmerged; intentionally not merged.
+- **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), closed and merged into `main` on 2026-10-17. GitHub-confirmed merge commit: `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`.
+- **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR retargeted to `main` after PR #1 merged. Existing Phase 2 commits were preserved; do not force-push or merge until Phase 2 is complete.
 - Historical repository initialization: the initial remote audit found no files/commits; a governance root commit was then created. Do not mistake that initial state for the current repository.
-- Last verified application-code/test commit for P2-08: `6b7fe8eea351c9fe7a90da9d41bb5874b27475df`.
+- P2-10 test-matrix implementation commit: `1247f7c4efab9551efcc66884d9f3aa072614555`; CI was green on this test commit. The final docs-updated head still requires its own verification run.
 - Verified CI for P2-06: [GitHub Actions run #53](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39021806130), conclusion **success** on application/test commit `b2c702b0b2246a015444b3196a97045291a4b09a`. It ran clean `npm ci`, all 173 backend tests (173 passed, 0 failed), and `npm run build`. Parser/schema/provider tests use deterministic local fixtures and mocks only; no real NVIDIA call or paid inference was made. Run #52 exposed one incorrectly specified negative test for contract-permitted `deferredTasks: []`; that fixture was corrected before the passing run #53.
 - Stable requirement IDs and status evidence live in `docs/BUILD_CHECKLIST.md`.
 
@@ -79,13 +79,19 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 
 ## Current progress and exact next task
 
-- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03; P2-04; P2-05; P2-06; P2-07; P2-08; P2-09.
+- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03; P2-04; P2-05; P2-06; P2-07; P2-08; P2-09; P2-10.
 - **Current phase:** Phase 2 — Secure AI Planning API.
-- **Next task:** **P2-10 — Complete deterministic mocked-provider test matrix.**
-- **Next-task acceptance criteria:** implement a conservative configurable API request rate limit and explicit configurable allowed-origin CORS policy, with deterministic tests for allowed/rejected origins and rate-limit behavior; never use wildcard credentials or introduce paid requirements. Keep the full route/provider mock matrix (P2-10), optional live inference (P2-11), final API security documentation (P2-12), and Phases 3–8 separate.
-- **Manual action required now:** none. Adapter/parser tests remain fully mocked; optional real inference is P2-11 and has not been performed.
+- **Next task:** **P2-11 — Optional real NVIDIA inference smoke test.**
+- **Next-task acceptance criteria:** only run one opt-in smoke test after a valid NVIDIA key is configured securely in the server-side environment; record success/failure and provider/quota limitations without logging or exposing the key. No real inference is required for automated tests. P2-12 then closes Phase 2 by aligning final API security documentation and verification evidence.
+- **Manual action required now:** none for P2-10. Live inference remains unverified and must not use a key pasted into chat or committed to source control.
 
 
 - **2026-10-17 — P2-09 rate limiting and CORS implemented and verified:** introduced a dependency-free fixed-window limiter on all `/api/*` traffic (including health, malformed JSON and preflights), default 10 requests/60 seconds per direct socket peer IP, configurable through strictly validated `API_RATE_LIMIT_WINDOW_MS` (1,000–86,400,000) and `API_RATE_LIMIT_MAX` (1–10,000). Exceeded quotas return 429 `RATE_LIMIT_EXCEEDED` with safe error envelope, `Retry-After` and `RateLimit-*` headers. Express proxy trust remains disabled; spoofed `X-Forwarded-For` values do not change the key. `APP_ORIGINS` enforces exact normalized origins, supports local Vite by default, requires HTTPS for remote origins, rejects unsafe wildcard/path/query/credential entries, limits preflight methods/headers, and never enables credentialed CORS. Requests with no Origin remain usable without CORS headers. CORS is not authentication.
 - **P2-09 CI evidence:** [Actions run #63](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39025230364) completed successfully on commit `59b3b46681515b69b656fef26ec547d8df05f11e`; verified steps: clean dependency install, all 25 backend tests passed (0 failed), and Vite frontend production build passed. Tests include controlled-clock rate reset, config range/error checks, allowed/disallowed/no-Origin CORS, explicit preflight, rate-limit security envelope, spoofed forwarding headers, health, invalid request, and unchanged valid-plan HTTP 501. No paid service or real NVIDIA inference was used. Limiter memory resets at process restart and is not shared between processes/instances.
 - **Current next task:** P2-10 — complete the comprehensive deterministic mocked-provider route/provider test matrix.
+
+
+- **2026-10-17 — PR and milestone governance reconciled:** PR #1 merged after its actual head `1aab2cb5f8767d51050459fc3fbbc5bef2e88c86` passed both push run #19 and pull_request run #20. GitHub confirmed merge commit `3c3ab5bf5b5b0cb1b5e15b2d043caf5a1f91e8c5`; main push run #65 passed install, backend tests, and production build. PR #2 was retargeted from `chore/phase-0-audit-and-foundation` to `main`; its 43 commits and intended 19-file Phase 2 diff were preserved without rewrite or force-push. It remains draft and unmerged.
+- **2026-10-17 — P2-10 mocked-provider matrix:** added `server/test/plan-provider-matrix.test.js` with nine composed mock tests exercising the existing injectable adapter and parser/schema/dependency/schedule chain. Coverage includes success, missing key/no fetch, HTTP status mapping/body cancellation, network failure, malformed envelope/model JSON, schema invalidity, unknown dependency/cycle, budget/deferred contracts, safe error output, and HTTP route regression. Actions runs #66 and #67 both passed on `1247f7c4efab9551efcc66884d9f3aa072614555`; inspected backend log reports 243 tests passed and 0 failed, and frontend build succeeded. No real NVIDIA request or paid service was used.
+- **P2-10 scope boundary:** the public `POST /api/plan` route continues to validate requests and return 501 for valid input. The provider adapter was not connected to the route; end-to-end plan generation is not claimed. Real NVIDIA inference is P2-11; final API security doc/evidence is P2-12.
+- **Current next task:** P2-11 — optional real NVIDIA inference smoke test, contingent on secure server-side configuration; no key is needed for normal automated testing.

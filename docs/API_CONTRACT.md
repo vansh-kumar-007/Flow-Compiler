@@ -242,6 +242,6 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - **P2-07:** validate generated dependency references and reject cycles.
 - **P2-08:** validate scheduled-duration fit against explicitly supplied `availableMinutes` and require bounded meaningful `deferredReason` values. Generated task placement is validated, not silently rearranged; dependency changes require a new model-selected plan.
 - **P2-09:** implement/test API rate limiting and explicit exact-origin CORS policy.
-- **P2-10:** complete the full deterministic route/provider test matrix.
+- **P2-10:** comprehensively test the injectable provider/parser/schema/dependency/schedule pipeline with deterministic mocks; the public route still returns 501 until route integration is explicitly assigned and separately implemented.
 
 This contract describes intended behavior; every behavior must be marked verified in the master checklist only after it exists and has supporting test or inspection evidence.

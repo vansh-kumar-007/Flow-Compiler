@@ -32,7 +32,7 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - `/api/health`, bounded 20 KiB JSON parser, stable JSON errors for malformed JSON, oversized bodies, and unknown routes.
 - Server environment example defaults `NVIDIA_API_KEY` to blank, real `.env` files are ignored, local run/test/build commands are documented, and Node.js 24 CI is configured.
 
-### Phase 2, tasks P2-01 through P2-08
+### Phase 2, tasks P2-01 through P2-09
 
 - **P2-01 complete:** `docs/API_CONTRACT.md` documents public request fields/limits, source-compatible `previousPlan` revision context, completed IDs, blocker information, response and task fields, allowed priorities/categories, deferred work, dependency invariants, safe errors, and server-side credential boundaries.
 - Contract retains the source names `brainDump`, `availableMinutes`, and `previousPlan`; it adds optional nested `previousPlan.revisionContext` and optional additive response `deferredTasks`. The sample JSON was parsed and the sample `totalMinutes` (40) was checked against task duration sum (15+25).
@@ -52,13 +52,13 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - **P2-07 complete:** `server/src/dependency-graph.js` independently validates generated dependency references, self-links, repeated edges, generated ID uniqueness across scheduled/deferred tasks, collision with explicit completed-task IDs, cycles, and the scheduled-to-deferred prerequisite invariant. It validates graph/context shape defensively and reports the stable safe `INVALID_MODEL_OUTPUT` error contract. Kahn topological sorting is deterministic and O(V+E); the generated graph and each dependency list are bounded by the contract's 20-node/20-edge limits.
 - **P2-07 verification:** [GitHub Actions run #56](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39022539417) passed clean `npm ci`, 202/202 backend tests, and `npm run build` on code/test commit `3e93ee94e985598cbe1512248af56015b0d3df24`. Coverage includes valid DAGs at multiple levels, valid completed-task context, dangling/malformed/self/duplicate edges, two-node and longer cycles, deferred-task cycles, the deferred-prerequisite invariant, generated/completed ID collision, size boundaries, no raw-content disclosure, malformed structures, and explicit P2-06/P2-07 stage separation. The corrected run after one mis-specified context fixture is the passing evidence. Tests use local fixtures and mocks only; no real NVIDIA inference.
 - The NVIDIA adapter runs P2-07 only after P2-05 parsing and P2-06 schema validation. Completed IDs are passed via an explicit `completedTaskIds` argument that must originate from validated `previousPlan.completedTaskIds`; model-generated prose is not used as completed-state context.
-- P2-08 scheduling/deferred selection remains unimplemented. The adapter is not wired to `POST /api/plan`; valid requests still return HTTP 501 `PLANNING_NOT_IMPLEMENTED`. P2-09 through P2-12 and Phases 3–8 remain incomplete.
+- P2-08 scheduling/deferred selection remains unimplemented. The adapter is not wired to `POST /api/plan`; valid requests still return HTTP 501 `PLANNING_NOT_IMPLEMENTED`. P2-10 through P2-12 and Phases 3–8 remain incomplete.
 
 ## Phase map and acceptance gates
 
 1. **Phase 0 — Audit/governance:** complete; repository/source baseline, checklist, risk register, and acceptance gates reconciled.
 2. **Phase 1 — Runtime foundation:** complete per code inspection and Actions verification of clean installation, backend tests, and production build.
-3. **Phase 2 — Secure AI planning API:** in progress. P2-01 through P2-08 complete. Next: P2-07 dependency references/edges/cycles; P2-08 budget and deferred scheduling; P2-09 rate limiting/CORS; P2-10 comprehensive route/provider mock tests; P2-11 optional live inference; P2-12 final API security documentation/evidence.
+3. **Phase 2 — Secure AI planning API:** in progress. P2-01 through P2-09 complete. Next: P2-10 comprehensive route/provider mock tests; P2-11 optional live inference; P2-12 final API security documentation/evidence.
 4. **Phase 3 — Core workflow UI:** raw thoughts, time selector, demo, tasks/dependency view, completion/progress and error states.
 5. **Phase 4 — Recompilation/focus:** preserve completed work and valid dependencies; support time changes, early completion, blockers, focus and countdown.
 6. **Phase 5 — Persistence/export/polish:** local persistence, animated dependency graph, responsive/accessibility/reduced-motion behavior, privacy-preserving export.
@@ -70,8 +70,8 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 
 - **R-01 — Initially empty repository:** resolved for setup; kept as historical audit context.
 - **R-02 — NVIDIA key/access/quota:** no real key is configured or verified. The isolated adapter is tested with fake injected credentials; optional real inference remains P2-11. Configure a key only in the backend environment/host secret manager if that optional check is approved; never paste it into chat or commit it.
-- **R-03 — API abuse:** request validation and an isolated provider adapter exist, but `/api/plan` remains disabled and no real planning API is exposed. Add rate limiting and explicit deployment/auth assumptions before connecting provider calls or exposing planning publicly.
-- **R-04 — Dependency integrity:** strict model JSON parsing (P2-05) and generated plan/task schema validation (P2-06) are implemented and tested. Generated dependency reference/edge/cycle checks are implemented under P2-07; P2-08 now validates scheduled budget fit, scheduled-duration totals, and deferred reasons. It does not autonomously optimize/reorder the task graph.
+- **R-03 — API abuse:** request validation and an isolated provider adapter exist, but `/api/plan` remains disabled and no real planning API is exposed. Rate limiting and exact-origin CORS are implemented. In-memory quota state is not distributed, and CORS is not authentication. Keep provider route integration disabled until the source-assigned integration/test tasks.
+- **R-04 — Dependency integrity:** strict model JSON parsing (P2-05) and generated plan/task schema validation (P2-06) are implemented and tested. Generated dependency reference/edge/cycle checks are implemented under P2-07; P2-08 validates scheduled budget fit, scheduled-duration totals, and deferred reasons. P2-09 adds in-memory API quotas and exact-origin CORS with proxy trust disabled; its counters reset on restart and are not shared across instances.
 - **R-05 — Recompile could lose user work:** contract defines completed ID preservation and client merge semantics; runtime/UI regression work remains in Phase 4.
 - **R-06 — Split deployment:** static frontend hosting cannot run Express; verify compatible backend/serverless hosting and origin configuration before deployment.
 - **R-07 — Free-tier drift:** confirm current official usage limits close to deployment and do not create paid services without approval.
@@ -79,8 +79,13 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 
 ## Current progress and exact next task
 
-- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03; P2-04; P2-05; P2-06; P2-07; P2-08.
+- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03; P2-04; P2-05; P2-06; P2-07; P2-08; P2-09.
 - **Current phase:** Phase 2 — Secure AI Planning API.
-- **Next task:** **P2-09 — Add rate limiting and CORS/origin configuration.**
+- **Next task:** **P2-10 — Complete deterministic mocked-provider test matrix.**
 - **Next-task acceptance criteria:** implement a conservative configurable API request rate limit and explicit configurable allowed-origin CORS policy, with deterministic tests for allowed/rejected origins and rate-limit behavior; never use wildcard credentials or introduce paid requirements. Keep the full route/provider mock matrix (P2-10), optional live inference (P2-11), final API security documentation (P2-12), and Phases 3–8 separate.
 - **Manual action required now:** none. Adapter/parser tests remain fully mocked; optional real inference is P2-11 and has not been performed.
+
+
+- **2026-10-17 — P2-09 rate limiting and CORS implemented and verified:** introduced a dependency-free fixed-window limiter on all `/api/*` traffic (including health, malformed JSON and preflights), default 10 requests/60 seconds per direct socket peer IP, configurable through strictly validated `API_RATE_LIMIT_WINDOW_MS` (1,000–86,400,000) and `API_RATE_LIMIT_MAX` (1–10,000). Exceeded quotas return 429 `RATE_LIMIT_EXCEEDED` with safe error envelope, `Retry-After` and `RateLimit-*` headers. Express proxy trust remains disabled; spoofed `X-Forwarded-For` values do not change the key. `APP_ORIGINS` enforces exact normalized origins, supports local Vite by default, requires HTTPS for remote origins, rejects unsafe wildcard/path/query/credential entries, limits preflight methods/headers, and never enables credentialed CORS. Requests with no Origin remain usable without CORS headers. CORS is not authentication.
+- **P2-09 CI evidence:** [Actions run #63](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39025230364) completed successfully on commit `59b3b46681515b69b656fef26ec547d8df05f11e`; verified steps: clean dependency install, all 25 backend tests passed (0 failed), and Vite frontend production build passed. Tests include controlled-clock rate reset, config range/error checks, allowed/disallowed/no-Origin CORS, explicit preflight, rate-limit security envelope, spoofed forwarding headers, health, invalid request, and unchanged valid-plan HTTP 501. No paid service or real NVIDIA inference was used. Limiter memory resets at process restart and is not shared between processes/instances.
+- **Current next task:** P2-10 — complete the comprehensive deterministic mocked-provider route/provider test matrix.

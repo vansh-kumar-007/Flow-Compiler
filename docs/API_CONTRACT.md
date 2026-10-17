@@ -212,7 +212,7 @@ The server may override these values with positive decimal integer environment s
 - `NVIDIA_TIMEOUT_MS`: default `90000`; supported range 1–120000 milliseconds.
 - `NVIDIA_MAX_RESPONSE_BYTES`: default `1048576`; supported range 1–10485760 bytes.
 
-Missing, malformed, non-integer, or out-of-range settings fall back to the documented defaults. The settings belong only in server-side environment configuration (locally `server/.env), never `VITE_*` variables. Provider errors use stable codes and safe messages; raw HTTP error bodies and transport exceptions are not included.
+Missing, malformed, non-integer, or out-of-range settings fall back to the documented defaults. The settings belong only in server-side environment configuration (locally `server/.env`), never in `VITE_*` variables. Provider errors use stable codes and safe messages; raw HTTP error bodies and transport exceptions are not included.
 
 ## 6. Credential and data boundary
 

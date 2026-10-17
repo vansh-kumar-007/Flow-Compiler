@@ -245,7 +245,7 @@ test("P2-10 mocked pipeline enforces budget and deferred-work contracts", async 
 test("public HTTP route validates requests and returns a safe configuration error without a key", async () => {
   const { createApp } = await import("../src/app.js");
   const server = createApp({
-    env: { NVIDIA_API_KEY: "" },
+    env: { NVIDIA_API_KEY: "", FLOW_COMPILER_ACCESS_TOKEN: "a".repeat(43) },
     allowedOrigins: ["http://localhost:5173"],
     rateLimit: { windowMs: 60_000, limit: 100 }
   }).listen(0, "127.0.0.1");
@@ -257,7 +257,7 @@ test("public HTTP route validates requests and returns a safe configuration erro
     const url = "http://127.0.0.1:" + server.address().port;
     const invalid = await fetch(url + "/api/plan", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + "a".repeat(43) },
       body: JSON.stringify({ brainDump: "", availableMinutes: 15 })
     });
     assert.equal(invalid.status, 400);
@@ -265,7 +265,7 @@ test("public HTTP route validates requests and returns a safe configuration erro
 
     const valid = await fetch(url + "/api/plan", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + "a".repeat(43) },
       body: JSON.stringify({ brainDump: "complete one task", availableMinutes: 15, previousPlan: null })
     });
     assert.equal(valid.status, 500);

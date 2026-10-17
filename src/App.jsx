@@ -43,21 +43,27 @@ export default function App() {
       return;
     }
 
-    const requestUrl = API_BASE_URL + "/api/plan";
-    if (!import.meta.env.DEV) {
-      try {
-        if (new URL(requestUrl, window.location.origin).protocol !== "https:") {
-          setPlanState("error");
-          setPlanMessage("The planning API must use HTTPS outside local development.");
-          setGeneratedPlan(null);
-          return;
-        }
-      } catch {
+    let requestUrl;
+    try {
+      const localHosts = ["localhost", "127.0.0.1", "[::1]"];
+      const frontendIsLocal = localHosts.includes(window.location.hostname);
+      const backendUrl = API_BASE_URL ? new URL(API_BASE_URL) : new URL(window.location.origin);
+      const backendIsLocal = localHosts.includes(backendUrl.hostname);
+      const isLocalDevelopment = import.meta.env.DEV && frontendIsLocal && backendIsLocal;
+      const isOriginOnly = backendUrl.pathname === "/" && !backendUrl.search && !backendUrl.hash
+        && !backendUrl.username && !backendUrl.password;
+      if (!isOriginOnly || (backendUrl.protocol !== "https:" && !isLocalDevelopment)) {
         setPlanState("error");
-        setPlanMessage("The configured planning API URL is invalid.");
+        setPlanMessage("The planning API must be a valid HTTPS origin. HTTP is allowed only for local development.");
         setGeneratedPlan(null);
         return;
       }
+      requestUrl = (API_BASE_URL ? backendUrl.origin : "") + "/api/plan";
+    } catch {
+      setPlanState("error");
+      setPlanMessage("The configured planning API URL is invalid.");
+      setGeneratedPlan(null);
+      return;
     }
 
     setPlanState("loading");
@@ -155,7 +161,7 @@ export default function App() {
           id="session-access-token"
           className="token-input"
           type="password"
-          autoComplete="new-password"
+          autoComplete="off"
           spellCheck={false}
           value={accessToken}
           onChange={event => setAccessToken(event.target.value)}

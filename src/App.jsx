@@ -8,7 +8,7 @@ const exampleTasks = [
 
 // Public, non-secret API origin. Production fails closed when it is not configured;
 // local Vite development continues to use the dev-server /api proxy.
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\\/+$/, "");
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
 export default function App() {
   const [brainDump, setBrainDump] = useState("");

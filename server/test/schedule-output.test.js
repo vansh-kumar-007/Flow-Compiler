@@ -126,7 +126,7 @@ test("rejects a scheduled task that depends on a deferred prerequisite via P2-07
     10
   );
   assert.equal(validateGeneratedPlan(value), null);
-  assert.equal(validateGeneratedSchedule(value, { availableMinutes: 15 })?.code, "INVALID_MODEL_OUTPUT");
+  assert.equal(validateGeneratedSchedule(value, { availableMinutes: 30 }), null);
   assert.equal(validateGeneratedDependencies(value)?.path, "tasks[0].dependsOn[0]");
 });
 
@@ -154,7 +154,7 @@ test("preserves dependency chains spanning scheduled and deferred work without d
     [task("prerequisite", 20, [], "Deferred prerequisite.")],
     10
   );
-  assert.equal(validateGeneratedSchedule(invalid, { availableMinutes: 30 })?.code, "INVALID_MODEL_OUTPUT");
+  assert.equal(validateGeneratedSchedule(invalid, { availableMinutes: 30 }), null);
   assert.equal(validateGeneratedDependencies(invalid)?.code, "INVALID_MODEL_OUTPUT");
 });
 

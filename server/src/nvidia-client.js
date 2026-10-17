@@ -324,7 +324,8 @@ export function createNvidiaClient({
         if (validateGeneratedDependencies(output, { completedTaskIds })) {
           throw createError("INVALID_MODEL_OUTPUT", response.status);
         }
-        if (validateGeneratedSchedule(output, { availableMinutes, revisionContext })) {
+        if (availableMinutes !== undefined
+            && validateGeneratedSchedule(output, { availableMinutes, revisionContext })) {
           throw createError("INVALID_MODEL_OUTPUT", response.status);
         }
 

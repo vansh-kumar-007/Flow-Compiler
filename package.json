@@ -14,7 +14,7 @@
     "dev:api": "npm run dev --workspace server",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "npm test --workspace server"
+    "test": "npm test --workspace server && node --test src/*.test.js"
   },
   "dependencies": {
     "react": "^19.3.1",

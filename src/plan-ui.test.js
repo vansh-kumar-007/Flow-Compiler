@@ -81,8 +81,17 @@ test("response rejects duplicate IDs, duplicate edges, and oversized node count"
   assert.match(validatePlanResponse({ ...good, tasks: good.tasks, deferredTasks: Array.from({length: 19}, (_,i)=>({...good.deferredTasks[0],id:"d"+i,dependsOn:[]})) }, 60), /cannot exceed 20/);
 });
 
-test("scheduled time excludes deferred work and dependency graph remains outside this UI batch", () => {
+test("response rejects a cycle without implementing the dependency graph UI", () => {
   const good = validPlan();
+  const cyclic = {
+    summary: "Cycle test.",
+    totalMinutes: 40,
+    tasks: [
+      { id: "t1", title: "Start first step", minutes: 15, priority: "high", reason: "Start.", dependsOn: ["t2"], category: "build" },
+      { id: "t2", title: "Finish second step", minutes: 25, priority: "normal", reason: "Finish.", dependsOn: ["t1"], category: "build" }
+    ]
+  };
+  assert.match(validatePlanResponse(cyclic, 60), /circular/);
   assert.equal(validatePlanResponse(good, 60), null);
   assert.equal(good.totalMinutes, 40);
   assert.equal(good.deferredTasks[0].minutes, 45);

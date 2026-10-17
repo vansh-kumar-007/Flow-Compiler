@@ -418,3 +418,14 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 
 
 - **Focused regression CI:** Actions [run #245](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39070672366) ran the new test and reported 260 tests, 260 pass, 0 fail, 0 skipped; the frontend production build completed successfully on head `97547df575e0362f3dee299a84e10af35856803e`. The follow-up checklist/state commit is documentation-only; verify its own run before merging.
+
+
+## Final safe authentication verification handoff — 2026-10-18 Asia/Kolkata
+
+- **Merged PR:** [#11](https://github.com/vansh-kumar-007/Flow-Compiler/pull/11) merged by squash as `3fc5bffc7fddef81c066b081486e204db9d82555`. Changed files are `server/test/plan-route-integration.test.js`, `docs/BUILD_CHECKLIST.md`, and `docs/PROJECT_STATE.md`; no runtime source was changed.
+- **Regression test:** the new test uses a fake valid bearer token, empty `NVIDIA_API_KEY`, a valid minimal request and an injected fetch spy. It covers `/api/plan`, `/api/plan/`, `/API/PLAN`, `/API/PLAN/`, expects HTTP 500 `AI_NOT_CONFIGURED`, and asserts zero provider fetch calls. The adapter's existing blank-key test independently asserts no fetch.
+- **CI evidence:** exact PR-head [Actions run #247](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39070720916) passed 260/260 backend tests, zero failures/skips, and Vite production build on `e6dae38ac2ab7249d3d377785af5387d9688c304`. The post-merge main Actions result was not visible at last refresh; don't equate a Vercel success status with GitHub Actions CI.
+- **Deployment metadata:** Vercel Production deployment `dpl_Ce535Eybhrsn29tJXAiuDTkSMvKi` is `READY` on main SHA `3fc5bffc7fddef81c066b081486e204db9d82555`. Render deployment `dep-db9ueohsrm7s739us38g` for the same SHA was `build_in_progress` at last refresh; the preceding deployment on `bd3745510cf405759909b2101ca1db9cc55c6669` was `live`. No runtime code changed in PR #11.
+- **Owner-reported live smoke test:** invalid token -> HTTP 401; valid token accepted; no provider key -> HTTP 500 `AI_NOT_CONFIGURED`, no plan generated. Exact UI message was: “Access was accepted, but the backend has no NVIDIA API key configured. No plan was generated.” The connected tools did not independently capture this authenticated live response.
+- **Safety:** `FLOW_COMPILER_ACCESS_TOKEN` remains privately configured according to the owner. No token value was accessed, exposed or changed. `NVIDIA_API_KEY` remains unset. The automated tests use local servers and mocks; no NVIDIA request, inference, paid service, or dependency was added.
+- **Remaining manual action:** none for the safe-auth/no-provider-key test unless post-merge CI or Render deployment fails. Next verify main CI and Render live status; do not repeat the browser test absent a failure. Live inference is outside scope and requires separate explicit approval after eligibility/terms/quota review.

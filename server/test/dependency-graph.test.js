@@ -207,13 +207,14 @@ test("malformed plans and task objects never throw unhandled TypeError exception
     "not a plan",
     { tasks: {} },
     { tasks: [null] },
-    { tasks: [task("a")], deferredTasks: {} },
-    { tasks: [task("a")], completedTaskIds: null }
+    { tasks: [task("a")], deferredTasks: {} }
   ];
   for (const candidate of malformed) {
     assert.doesNotThrow(() => validateGeneratedDependencies(candidate));
     assertInvalid(candidate);
   }
+  assert.doesNotThrow(() => validateGeneratedDependencies(plan([task("a")]), { completedTaskIds: null }));
+  assertInvalid(plan([task("a")]), { completedTaskIds: null });
 
   const hostile = Object.defineProperty({}, "tasks", {
     get() { throw new TypeError(SECRET); }

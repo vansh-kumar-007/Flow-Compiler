@@ -124,6 +124,18 @@ test("missing, invalid, and malformed credentials all return the same safe 401 b
       responses.push(JSON.stringify(payload));
     }
     assert.equal(new Set(responses).size, 1, "credential failures must be indistinguishable");
+
+    // Auth runs before JSON parsing: malformed unauthenticated bodies still
+    // receive the same generic 401 and cannot reach validation/provider code.
+    const malformedUnauthenticated = await fetch(baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{not json"
+    });
+    assert.equal(malformedUnauthenticated.status, 401);
+    assert.deepEqual(await malformedUnauthenticated.json(), {
+      error: { code: "UNAUTHORIZED", message: "Valid authorization credentials are required." }
+    });
   });
 
   assert.equal(providerCalls, 0);

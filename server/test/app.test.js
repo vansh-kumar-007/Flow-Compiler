@@ -6,6 +6,7 @@ import { startServer } from "../src/server.js";
 
 let server;
 let baseUrl;
+const testAccessToken = "a".repeat(43);
 
 async function listen(app) {
   const instance = app.listen(0, "127.0.0.1");
@@ -24,7 +25,7 @@ async function close(instance) {
 }
 
 before(async () => {
-  server = createApp({ env: { NVIDIA_API_KEY: "" }, allowedOrigin: "http://localhost:5173", rateLimit: { windowMs: 60_000, limit: 1_000 } }).listen(0, "127.0.0.1");
+  server = createApp({ env: { NVIDIA_API_KEY: "", FLOW_COMPILER_ACCESS_TOKEN: testAccessToken }, allowedOrigin: "http://localhost:5173", rateLimit: { windowMs: 60_000, limit: 1_000 } }).listen(0, "127.0.0.1");
   await new Promise((resolve, reject) => {
     server.once("listening", resolve);
     server.once("error", reject);
@@ -50,7 +51,7 @@ test("health endpoint returns the service status", async () => {
 test("plan endpoint reports missing server-side provider configuration without calling NVIDIA", async () => {
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
     // The source starter sends previousPlan: null for initial compilation.
     body: JSON.stringify({ brainDump: "test", availableMinutes: 30, previousPlan: null })
   });
@@ -68,7 +69,7 @@ test("unknown routes return a stable JSON 404", async () => {
 test("malformed JSON returns a safe 400 response", async () => {
   const response = await fetch(baseUrl + "/api/plan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
     body: "{invalid json"
   });
   assert.equal(response.status, 400);
@@ -380,6 +381,7 @@ test("disallowed origins are not reflected; allowed and denied preflight behavio
     assert.equal(allowedPreflight.headers.get("access-control-allow-origin"), "https://app.example.com");
     assert.match(allowedPreflight.headers.get("access-control-allow-methods"), /POST/);
     assert.match(allowedPreflight.headers.get("access-control-allow-headers"), /Content-Type/i);
+    assert.match(allowedPreflight.headers.get("access-control-allow-headers"), /Authorization/i);
     assert.equal(allowedPreflight.headers.get("access-control-allow-credentials"), null);
 
     const deniedPreflight = await fetch(started.baseUrl + "/api/plan", {

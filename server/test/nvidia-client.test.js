@@ -250,7 +250,7 @@ test("enforces a streamed response limit when Content-Length is dishonest", asyn
 });
 
 test("accepts a valid response exactly at the configured byte limit", async () => {
-  const bodyText = envelopeText("exactly at the limit");
+  const bodyText = envelopeText(JSON.stringify("exactly at the limit"));
   const byteLength = new TextEncoder().encode(bodyText).byteLength;
   const client = clientFor(async () => responseFromBodyText(bodyText, {
     contentLength: String(byteLength),
@@ -258,11 +258,11 @@ test("accepts a valid response exactly at the configured byte limit", async () =
   }), { maxResponseBytes: byteLength });
 
   const result = await client.createChatCompletion({ messages });
-  assert.equal(result.content, "exactly at the limit");
+  assert.equal(result.output, "exactly at the limit");
 });
 
 test("ignores malformed Content-Length and still enforces the streamed limit", async () => {
-  const bodyText = envelopeText("small response");
+  const bodyText = envelopeText(JSON.stringify("small response"));
   const byteLength = new TextEncoder().encode(bodyText).byteLength;
   const client = clientFor(async () => responseFromBodyText(bodyText, {
     contentLength: "not-a-number",
@@ -270,7 +270,7 @@ test("ignores malformed Content-Length and still enforces the streamed limit", a
   }), { maxResponseBytes: byteLength });
 
   const result = await client.createChatCompletion({ messages });
-  assert.equal(result.content, "small response");
+  assert.equal(result.output, "small response");
 
   const oversized = responseFromBodyText("x".repeat(32), {
     contentLength: "12, 12",

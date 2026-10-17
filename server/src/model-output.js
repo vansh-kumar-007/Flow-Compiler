@@ -63,8 +63,7 @@ export function parseModelOutput(content) {
   }
 
   const closingLine = trimmed.slice(closingLineStart);
-  if (!closingLine.startsWith(FENCE)
-      || !/^[ \t]*$/.test(closingLine.slice(FENCE.length))) {
+  if (closingLine.trim() !== FENCE) {
     throw invalidOutput();
   }
 

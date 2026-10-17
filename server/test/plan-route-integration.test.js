@@ -141,6 +141,31 @@ test("missing, invalid, and malformed credentials all return the same safe 401 b
   assert.equal(providerCalls, 0);
 });
 
+test("unauthorized attempts still consume the API rate limit before authentication", async () => {
+  let providerCalls = 0;
+  await withServer({
+    env: { FLOW_COMPILER_ACCESS_TOKEN: "f".repeat(43), NVIDIA_API_KEY: fakeKey },
+    rateLimit: { windowMs: 60_000, limit: 1 },
+    fetchImpl: async () => {
+      providerCalls += 1;
+      throw new Error("provider must not be called");
+    }
+  }, async baseUrl => {
+    const request = () => fetch(baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brainDump: "A valid request", availableMinutes: 15 })
+    });
+    const first = await request();
+    assert.equal(first.status, 401);
+    assert.equal((await first.json()).error.code, "UNAUTHORIZED");
+    const second = await request();
+    assert.equal(second.status, 429);
+    assert.equal((await second.json()).error.code, "RATE_LIMIT_EXCEEDED");
+  });
+  assert.equal(providerCalls, 0);
+});
+
 test("missing or malformed server token configuration fails closed without exposing configuration or calling provider", async () => {
   let providerCalls = 0;
   for (const configuredToken of ["", "short", "token with spaces"]) {

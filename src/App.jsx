@@ -1,30 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  DEMO_PLAN,
-  DEMO_INPUT,
-  getInputError,
-  getTimeError,
-  validatePlanResponse
-} from "./plan-ui.js";
+import { DEMO_PLAN, DEMO_INPUT, getInputError, getTimeError } from "./plan-ui.js";
+import { requestPlan } from "./plan-api.js";
 
 // Public, non-secret API origin. Production fails closed when it is not configured;
 // local Vite development continues to use the dev-server /api proxy.
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
-
-function readApiError(payload, status) {
-  const code = payload?.error?.code;
-  const messages = {
-    UNAUTHORIZED: "Access token rejected. Check it and try again.",
-    AUTHENTICATION_NOT_CONFIGURED: "Backend access-token authentication is not configured yet.",
-    AI_NOT_CONFIGURED: "Access was accepted, but the backend has no NVIDIA API key configured. No plan was generated.",
-    RATE_LIMIT_EXCEEDED: "Too many requests. Wait before trying again.",
-    AI_TIMEOUT: "The AI request timed out. No plan was accepted; you can retry.",
-    AI_RATE_LIMITED: "The AI provider is rate-limited. Wait before trying again.",
-    AI_NETWORK_ERROR: "The AI provider could not be reached. No plan was generated.",
-    INVALID_MODEL_OUTPUT: "The AI provider returned a plan that failed validation."
-  };
-  return messages[code] || ("Planning request failed (HTTP " + status + (typeof code === "string" ? " · " + code : "") + ").");
-}
 
 function planningUrl() {
   if (!import.meta.env.DEV && !API_BASE_URL) {
@@ -170,45 +150,27 @@ export default function App() {
     setPlanKind(null);
 
     try {
-      const response = await fetch(requestUrl, {
-        method: "POST",
-        signal: controller.signal,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + credential
-        },
-        body: JSON.stringify({
-          brainDump: brainDump.trim(),
-          availableMinutes: minutes,
-          previousPlan: null
-        })
+      const payload = await requestPlan({
+        fetchImpl: fetch,
+        url: requestUrl,
+        token: credential,
+        brainDump,
+        availableMinutes: minutes,
+        signal: controller.signal
       });
-
-      const payload = await response.json().catch(() => null);
       if (requestId !== planRequestId.current || !mounted.current) return;
-      if (!response.ok) {
-        setPlanState("error");
-        setPlanMessage(readApiError(payload, response.status));
-        return;
-      }
-
-      const validationError = validatePlanResponse(payload, minutes);
-      if (validationError) {
-        setPlanState("error");
-        setPlanMessage("The backend returned a response that did not match the plan contract: " + validationError);
-        return;
-      }
 
       setGeneratedPlan(payload);
       setPlanKind("api");
       setPlanState("success");
       setPlanMessage("Authenticated request succeeded. The plan below is the validated backend response.");
-    } catch {
+    } catch (error) {
       if (requestId !== planRequestId.current || !mounted.current) return;
       if (controller.signal.aborted) return;
       setPlanState("error");
-      setPlanMessage("Could not reach the planning API. Check the backend URL and allowed origin.");
+      setGeneratedPlan(null);
+      setPlanKind(null);
+      setPlanMessage(error instanceof Error ? error.message : "Could not reach the planning API. Check the backend URL and allowed origin.");
     } finally {
       if (requestId === planRequestId.current && abortController.current === controller) {
         abortController.current = null;
@@ -277,9 +239,9 @@ export default function App() {
         {inputError && <p id="brain-dump-error" className="field-error" role="alert">{inputError}</p>}
         <div className="rule"/>
         <div className="time-heading"><label className="field-label" htmlFor="available-minutes">EXECUTION WINDOW</label><strong>{minutes} <small>MIN</small></strong></div>
-        <input id="available-minutes" className="time-slider" aria-label="Available time in minutes" type="range" min="5" max="720" step="5" value={minutes} aria-describedby="available-minutes-help available-minutes-error" aria-invalid={Boolean(timeError)} disabled={demoMode} onChange={e=>changeMinutes(Number(e.target.value))}/>
+        <input id="available-minutes" className="time-slider" aria-label="Available time in minutes" type="range" min="5" max="720" step="5" value={minutes} aria-describedby="available-minutes-help available-minutes-error" aria-invalid={Boolean(timeError)} disabled={demoMode || planState === "loading"} onChange={e=>changeMinutes(Number(e.target.value))}/>
         <div className="range-labels"><span>5 MIN</span><span>12 HOURS</span></div>
-        <div className="time-presets">{[15,30,60,120,240,480,720].map(v=><button type="button" key={v} className={minutes===v?"preset active":"preset"} aria-pressed={minutes===v} disabled={demoMode} onClick={()=>changeMinutes(v)}>{v>=60?v/60+"H":v+"M"}</button>)}</div>
+        <div className="time-presets">{[15,30,60,120,240,480,720].map(v=><button type="button" key={v} className={minutes===v?"preset active":"preset"} aria-pressed={minutes===v} disabled={demoMode || planState === "loading"} onClick={()=>changeMinutes(v)}>{v>=60?v/60+"H":v+"M"}</button>)}</div>
         <p id="available-minutes-help" className="field-help">{demoMode ? "The fixed sample is designed for a 120-minute window. Switch back to API Planning to change available time." : "Choose an integer from 5 to 720 minutes, matching the planning API contract."}</p>
         {timeError && <p id="available-minutes-error" className="field-error" role="alert">{timeError}</p>}
         <div className="rule"/>

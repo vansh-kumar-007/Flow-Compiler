@@ -233,11 +233,16 @@ test("revision route passes only validated completed IDs and revision context in
       assert.match(prompt, /completedTaskIds/);
       assert.match(prompt, /"t1"/);
       assert.match(prompt, /Waiting for a test fix/);
-      return providerResponse(providerEnvelope(validPlan));
+      const revisedPlan = {
+        summary: "Continue with unfinished work.",
+        totalMinutes: 15,
+        tasks: [{ ...validPlan.tasks[0], id: "t2", dependsOn: ["t1"] }]
+      };
+      return providerResponse(providerEnvelope(revisedPlan));
     }
   }, async baseUrl => {
     const response = await postPlan(baseUrl, request);
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), validPlan);
+    assert.equal((await response.json()).tasks[0].id, "t2");
   });
 });

@@ -4,6 +4,7 @@ import { createApp } from "../src/app.js";
 import { NVIDIA_MODEL } from "../src/nvidia-client.js";
 
 const fakeKey = "route-test-fake-key-never-real";
+const fakeAccessToken = "a".repeat(43);
 const secretSentinel = "upstream-private-diagnostic-sentinel";
 
 const validPlan = {
@@ -57,7 +58,11 @@ async function withServer(options, run) {
   const server = createApp({
     allowedOrigins: ["http://localhost:5173"],
     rateLimit: { windowMs: 60_000, limit: 100 },
-    ...options
+    ...options,
+    env: {
+      FLOW_COMPILER_ACCESS_TOKEN: fakeAccessToken,
+      ...(options.env ?? {})
+    }
   }).listen(0, "127.0.0.1");
   await new Promise((resolve, reject) => {
     server.once("listening", resolve);
@@ -73,10 +78,88 @@ async function withServer(options, run) {
 async function postPlan(baseUrl, payload = { brainDump: "Reproduce and fix the login bug.", availableMinutes: 15, previousPlan: null }) {
   return fetch(baseUrl + "/api/plan", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + fakeAccessToken
+    },
     body: JSON.stringify(payload)
   });
 }
+
+test("missing, invalid, and malformed credentials all return the same safe 401 before provider invocation", async () => {
+  let providerCalls = 0;
+  const configuredToken = "b".repeat(43);
+  const cases = [
+    { name: "missing", authorization: undefined },
+    { name: "wrong token", authorization: "Bearer " + "c".repeat(43) },
+    { name: "wrong scheme", authorization: "Basic " + configuredToken },
+    { name: "malformed bearer", authorization: "Bearer short.token" },
+    { name: "ambiguous combined credentials", authorization: "Bearer " + configuredToken + ", Bearer " + configuredToken }
+  ];
+
+  await withServer({
+    env: { NVIDIA_API_KEY: fakeKey, FLOW_COMPILER_ACCESS_TOKEN: configuredToken },
+    fetchImpl: async () => {
+      providerCalls += 1;
+      throw new Error("provider must not be called for unauthorized requests");
+    }
+  }, async baseUrl => {
+    const responses = [];
+    for (const item of cases) {
+      const headers = { "Content-Type": "application/json" };
+      if (item.authorization !== undefined) headers.Authorization = item.authorization;
+      const response = await fetch(baseUrl + "/api/plan", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ brainDump: "A valid request", availableMinutes: 15 })
+      });
+      const payload = await response.json();
+      assert.equal(response.status, 401, item.name);
+      assert.deepEqual(payload, {
+        error: { code: "UNAUTHORIZED", message: "Valid authorization credentials are required." }
+      }, item.name);
+      assert.equal(response.headers.get("cache-control"), "no-store");
+      assert.equal(JSON.stringify(payload).includes(configuredToken), false);
+      assert.equal(JSON.stringify(payload).includes(fakeKey), false);
+      responses.push(JSON.stringify(payload));
+    }
+    assert.equal(new Set(responses).size, 1, "credential failures must be indistinguishable");
+  });
+
+  assert.equal(providerCalls, 0);
+});
+
+test("missing or malformed server token configuration fails closed without exposing configuration or calling provider", async () => {
+  let providerCalls = 0;
+  for (const configuredToken of ["", "short", "token with spaces"]) {
+    await withServer({
+      env: { NVIDIA_API_KEY: fakeKey, FLOW_COMPILER_ACCESS_TOKEN: configuredToken },
+      fetchImpl: async () => {
+        providerCalls += 1;
+        throw new Error("provider must not be called without a valid server token");
+      }
+    }, async baseUrl => {
+      const response = await fetch(baseUrl + "/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + "a".repeat(43) },
+        body: JSON.stringify({ brainDump: "A valid request", availableMinutes: 15 })
+      });
+      assert.equal(response.status, 503);
+      assert.deepEqual(await response.json(), {
+        error: { code: "AUTHENTICATION_NOT_CONFIGURED", message: "Plan API authentication is not configured." }
+      });
+    });
+  }
+  assert.equal(providerCalls, 0);
+});
+
+test("public health remains available without an access token", async () => {
+  await withServer({ env: { FLOW_COMPILER_ACCESS_TOKEN: "" } }, async baseUrl => {
+    const response = await fetch(baseUrl + "/api/health");
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "ok", service: "flow-compiler-api" });
+  });
+});
 
 test("POST /api/plan calls the existing adapter and returns a validated plan", async () => {
   let providerCalls = 0;

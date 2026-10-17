@@ -1,14 +1,30 @@
 import assert from "node:assert/strict";
 import { once } from "node:events";
 import { after, before, test } from "node:test";
-import { createApp } from "../src/app.js";
+import { createApp, normalizeOrigin, parseAllowedOrigins, readRateLimitConfig } from "../src/app.js";
 import { startServer } from "../src/server.js";
 
 let server;
 let baseUrl;
 
+async function listen(app) {
+  const instance = app.listen(0, "127.0.0.1");
+  await new Promise((resolve, reject) => {
+    instance.once("listening", resolve);
+    instance.once("error", reject);
+  });
+  return { server: instance, baseUrl: "http://127.0.0.1:" + instance.address().port };
+}
+
+async function close(instance) {
+  if (!instance) return;
+  await new Promise((resolve, reject) => {
+    instance.close(error => error ? reject(error) : resolve());
+  });
+}
+
 before(async () => {
-  server = createApp({ allowedOrigin: "http://localhost:5173" }).listen(0, "127.0.0.1");
+  server = createApp({ allowedOrigin: "http://localhost:5173", rateLimit: { windowMs: 60_000, limit: 1_000 } }).listen(0, "127.0.0.1");
   await new Promise((resolve, reject) => {
     server.once("listening", resolve);
     server.once("error", reject);

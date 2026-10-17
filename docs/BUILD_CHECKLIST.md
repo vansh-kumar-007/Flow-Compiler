@@ -394,7 +394,7 @@ Free-tier caveats from current Render documentation: Free web services spin down
 
 This latest section supersedes older dated narrative snapshots above for *current state only*. The stable P0–P8 task IDs and task names are unchanged.
 
-- **P0-06** — Reconcile governance files and next-task pointer: In progress until this current-state record and its CI evidence are on main.
+- **P0-06** — Reconcile governance files and next-task pointer: Completed for this milestone; current-state docs and CI evidence are on main (latest tracked CI #230 passed). Continue updating after future milestones.
 - **P2-12** — Finalize API security documentation and verification: implementation/docs merged; hosted verification remains under P7.
 - **P2-13** — Connect validated adapter to `POST /api/plan`: completed on main via PR #4, mocked-provider tests only.
 - **P3-01** — Dark command-center UI frame: implemented on main; owner-reported responsive layout PASS.
@@ -484,3 +484,11 @@ This latest section supersedes older dated narrative snapshots above for *curren
 - **P7-05 remains in progress:** frontend `VITE_API_BASE_URL` and Render `APP_ORIGINS` must next be configured to exact origins and Check API tested. Follow existing planned stage order, one dashboard step at a time.
 - Free plan confirmed; no paid resource/payment method. No auth token, NVIDIA key, or live inference for this incident.
 - **Exact next user action:** open the health URL above in a browser and paste the exact JSON/error and HTTP status. Do not paste any tokens or keys. After health is confirmed, proceed to Stage 3 Vercel ↔ Render origin configuration.
+
+
+## Latest verification follow-up — 2026-10-18 Asia/Kolkata
+
+- `main` before this checklist-only correction: `d46fdf009e44ae49ababb4bb3626b4ea272faad6`; earlier state/checklist bundle at `f99b0951ad9fbeaa58e1b859e6fd98793f4c8a8d` had passing [CI #230](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39055949063).
+- Render service has autoDeploy enabled from `main`; deployed commit `f99b0951ad9fbeaa58e1b859e6fd98793f4c8a8d` is live under deploy `dep-db9rdojrjlhs73c0joqg`; logs confirm `0.0.0.0:10000`.
+- Health endpoint response remains a manual verification step: open [`https://flow-compiler.onrender.com/api/health`](https://flow-compiler.onrender.com/api/health) and provide the exact response/status. The expected contract is `{"status":"ok","service":"flow-compiler-api"}` based on automated tests, but it is not marked live-confirmed until the owner reports it.
+- The next technical milestone remains the Stage 3 frontend/backend origin configuration after health confirmation. No NVIDIA key/auth token for this fix; ₹0 Free plan.

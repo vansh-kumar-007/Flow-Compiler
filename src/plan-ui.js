@@ -137,6 +137,7 @@ export function validatePlanResponse(payload, availableMinutes) {
   }
   const deferred = payload.deferredTasks ?? [];
   if (payload.tasks.length + deferred.length > TASK_LIMIT) return "scheduled and deferred tasks cannot exceed 20 combined.";
+
   const allIds = new Set();
   for (const task of payload.tasks) {
     const error = validateTask(task);
@@ -153,15 +154,39 @@ export function validatePlanResponse(payload, availableMinutes) {
   if (payload.totalMinutes !== payload.tasks.reduce((sum, task) => sum + task.minutes, 0)) {
     return "totalMinutes must equal the sum of scheduled task minutes.";
   }
+
+  const deferredIds = new Set(deferred.map(task => task.id));
+  const tasksById = new Map([...payload.tasks, ...deferred].map(task => [task.id, task]));
   for (const task of [...payload.tasks, ...deferred]) {
     for (const dependencyId of task.dependsOn) {
       if (!allIds.has(dependencyId)) return "task references an unknown dependency ID.";
-      if (deferred.some(candidate => candidate.id === dependencyId) && !deferred.some(candidate => candidate.id === task.id)) {
+      if (deferredIds.has(dependencyId) && !deferredIds.has(task.id)) {
         return "scheduled task cannot depend on deferred work.";
       }
     }
   }
-  // This task renders a plan list, not the dependency graph. Verify references but
-  // leave edge drawing/readiness visualization to P3-06.
+
+  // Validate acyclicity without drawing or otherwise implementing the dependency
+  // graph UI. The actual graph visualization and readiness UX remain P3-06.
+  const indegree = new Map([...tasksById.keys()].map(id => [id, 0]));
+  const dependents = new Map([...tasksById.keys()].map(id => [id, []]));
+  for (const task of tasksById.values()) {
+    for (const dependencyId of task.dependsOn) {
+      indegree.set(task.id, indegree.get(task.id) + 1);
+      dependents.get(dependencyId).push(task.id);
+    }
+  }
+  const ready = [...indegree.entries()].filter(([, degree]) => degree === 0).map(([id]) => id);
+  let visited = 0;
+  while (ready.length) {
+    const id = ready.pop();
+    visited += 1;
+    for (const dependentId of dependents.get(id)) {
+      const next = indegree.get(dependentId) - 1;
+      indegree.set(dependentId, next);
+      if (next === 0) ready.push(dependentId);
+    }
+  }
+  if (visited !== tasksById.size) return "task dependencies contain a circular reference.";
   return null;
 }

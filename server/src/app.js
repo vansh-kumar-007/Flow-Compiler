@@ -14,7 +14,7 @@ const DEFAULT_RATE_LIMIT_MAX = 10;
 const MAX_RATE_LIMIT_WINDOW_MS = 86_400_000;
 const MAX_RATE_LIMIT_MAX = 10_000;
 const ORIGIN_PATTERN = /^https?:\/\/[^\s,]+$/i;
-const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
+const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const UNAUTHORIZED_BODY = Object.freeze({
   error: { code: "UNAUTHORIZED", message: "Valid authorization credentials are required." }
 });
@@ -115,8 +115,8 @@ function readBearerCredential(request) {
 
 function constantTimeCredentialMatch(supplied, configured) {
   if (typeof supplied !== "string" || typeof configured !== "string") return false;
-  // The configured token is required to be a 32-byte base64url token (43 chars)
-  // or longer. Compare equal-length ASCII buffers with Node's constant-time API.
+  // The configured token is exactly a 32-byte base64url token (43 chars).
+  // Compare equal-length ASCII buffers with Node's constant-time API.
   if (!ACCESS_TOKEN_PATTERN.test(configured) || !ACCESS_TOKEN_PATTERN.test(supplied)) return false;
   const suppliedBytes = Buffer.from(supplied, "ascii");
   const configuredBytes = Buffer.from(configured, "ascii");

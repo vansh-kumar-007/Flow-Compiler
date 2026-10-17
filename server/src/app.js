@@ -1,6 +1,11 @@
 import cors from "cors";
 import express from "express";
 import { validatePlanRequest } from "./plan-request.js";
+import { createNvidiaClient, NvidiaProviderError } from "./nvidia-client.js";
+import { createPlanMessages } from "./plan-prompt.js";
+import { validateGeneratedPlan } from "./plan-output.js";
+import { validateGeneratedDependencies } from "./dependency-graph.js";
+import { validateGeneratedSchedule } from "./schedule-output.js";
 
 const DEFAULT_ORIGINS = ["http://localhost:5173"];
 const DEFAULT_RATE_LIMIT_WINDOW_MS = 60_000;
@@ -135,6 +140,7 @@ function createInMemoryRateLimiter({ windowMs, limit, now = Date.now }) {
 export function createApp(options = {}) {
   const app = express();
   const env = options.env ?? process.env;
+  const planClient = options.planClient ?? createNvidiaClient({ env, fetchImpl: options.fetchImpl });
   const allowedOrigins = options.allowedOrigins
     ? options.allowedOrigins.map(normalizeOrigin)
     : options.allowedOrigin
@@ -196,20 +202,64 @@ export function createApp(options = {}) {
     });
   });
 
-  // Validate public input now, even while the provider integration remains unavailable.
-  // A well-formed request receives 501 until the AI adapter is implemented.
-  app.post("/api/plan", (request, response) => {
+  // Validate public input before any provider call. The provider adapter performs
+  // bounded I/O and ordered model/schema/dependency/schedule validation.
+  app.post("/api/plan", async (request, response) => {
     const validationError = validatePlanRequest(request.body);
     if (validationError) {
       return response.status(400).json({ error: validationError });
     }
 
-    return response.status(501).json({
-      error: {
-        code: "PLANNING_NOT_IMPLEMENTED",
-        message: "AI planning is not available yet."
+    const previousPlan = request.body.previousPlan ?? null;
+    const completedTaskIds = previousPlan?.completedTaskIds ?? [];
+    const revisionContext = previousPlan?.revisionContext ?? null;
+
+    try {
+      const result = await planClient.createChatCompletion({
+        messages: createPlanMessages({
+          brainDump: request.body.brainDump,
+          availableMinutes: request.body.availableMinutes,
+          previousPlan
+        }),
+        completedTaskIds,
+        availableMinutes: request.body.availableMinutes,
+        revisionContext
+      });
+
+      const plan = result?.output;
+      // Defense in depth: injected clients and future adapter changes must not
+      // bypass the same validators enforced inside the NVIDIA adapter.
+      if (
+        validateGeneratedPlan(plan) ||
+        validateGeneratedDependencies(plan, { completedTaskIds }) ||
+        validateGeneratedSchedule(plan, {
+          availableMinutes: request.body.availableMinutes,
+          revisionContext
+        })
+      ) {
+        throw new NvidiaProviderError("INVALID_MODEL_OUTPUT");
       }
-    });
+
+      return response.status(200).json(plan);
+    } catch (error) {
+      if (error instanceof NvidiaProviderError) {
+        const status = error.code === "AI_NOT_CONFIGURED"
+          ? 500
+          : error.code === "AI_TIMEOUT"
+            ? 504
+            : 502;
+        return response.status(status).json({
+          error: { code: error.code, message: error.message }
+        });
+      }
+
+      return response.status(500).json({
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "An unexpected server error occurred."
+        }
+      });
+    }
   });
 
   app.use((_request, response) => {

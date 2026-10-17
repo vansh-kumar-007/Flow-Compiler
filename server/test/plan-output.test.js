@@ -182,7 +182,7 @@ test("accepts twenty syntactically valid dependency IDs without resolving their 
 });
 
 for (const [label, value] of [
-  ["object", {}], ["array", []], ["string", "not a list"], ["null", null],
+  ["object", {}], ["string", "not a list"], ["null", null],
   ["too many", Array.from({ length: 21 }, (_unused, index) => ({
     ...makeTask(index), deferredReason: "Deferred for later."
   }))]

@@ -255,7 +255,7 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P5-07 | Update feature/privacy documentation | In progress (partial) | Current docs describe limitations; complete product/privacy docs await features. |
 | P6-01 | Test vague, large and conflicting inputs | In progress (mock fixtures only) | Route/model fixtures test failure cases; no live-model quality test or full UX tests. |
 | P6-02 | Test request/response bounds and malformed bodies | Completed for API boundary (CI) | Body, request, provider output and schema bounds are covered by backend tests. |
-| P6-03 | Test auth/origin/rate-limit assumptions | In progress | CORS/rate-limit automated tests exist; deployed-origin behavior remains unverified and CORS is not authentication. |
+| P6-03 | Test auth/origin/rate-limit assumptions | In progress / security gate | CORS and in-memory per-IP rate-limit tests pass, but the backend has no user authentication; CORS is not authentication. Plan.txt §9 calls for authentication for personal use. Obtain approval for a minimal auth design before configuring NVIDIA_API_KEY. |
 | P6-04 | Review logging and error disclosure | In progress | Targeted review found safe error envelopes; full deployed log/privacy audit remains. |
 | P6-05 | Review dependency validation and recompile preservation | In progress | Graph tests exist; completed-work preservation during actual recompile remains unimplemented. |
 | P6-06 | Run complete test/build/lint suite and resolve failures | In progress | CI install/tests/build pass; no lint/type-check scripts are configured and product QA remains. |
@@ -263,7 +263,7 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P7-01 | Confirm NVIDIA endpoint terms/availability/limits | Blocked | Public model page lists a free endpoint, but account-specific quota/eligibility cannot be verified without user account access. |
 | P7-02 | Compare free frontend/backend hosting options | Completed (research only) | Render Free official limits reviewed; no resource created. |
 | P7-03 | Choose compatible frontend/backend deployment | In progress | User requested Render Free for Express; existing Vercel preview for frontend. Backend not deployed. |
-| P7-04 | Document/configure server-side secrets | Blocked / not started | No NVIDIA_API_KEY configured; wait until backend health/connectivity and quota check. |
+| P7-04 | Document/configure server-side secrets | Blocked / not started | No NVIDIA_API_KEY configured. Before live use, add the authentication required by Plan.txt §9, then verify connectivity and account quota. Never configure a key on an unauthenticated public endpoint. |
 | P7-05 | Deploy and check frontend | In progress | Vercel Preview READY for PR #3, but manual page/settings/responsive verification remains. |
 | P7-06 | Deploy and check backend | Blocked / not started | No Render service exists; manual creation and health endpoint check required. |
 | P7-07 | Verify live AI and safe failure paths | Blocked | Requires backend, verified connectivity, quota check and explicit authorization for one live call. |
@@ -312,3 +312,8 @@ Free-tier caveats from current Render documentation: Free web services spin down
 - src/App.jsx keeps Compile Workflow disabled, labels graph nodes illustrative, and requires non-secret VITE_API_BASE_URL for production health checks. Health success requires status=ok and service=flow-compiler-api. No API key is present in frontend code.
 - PR #4 route integration has now merged to main as f0c67d478876547c753b539a78f06039c79ef88f. PR #3 still needs its branch/docs updated against this main before it can be considered mergeable; do not bypass checks or merge until manual P3-01 acceptance is recorded.
 - Next gate: open the Preview URL, confirm the visual shell at desktop and mobile sizes, click CHECK API, and record the exact result. Before backend deployment, an unset VITE_API_BASE_URL should show the explicit not-configured error; this is expected and is not a connected-health success.
+
+## Security gate from original Plan.txt — 2026-10-17
+
+- Plan.txt section 9 explicitly says to add authentication for personal use, in addition to server-side request limits and maximum output size. Current backend has request validation, an in-memory per-source-IP limiter, exact-origin CORS, a 90-second provider timeout and a 1 MiB default provider response cap, but **no user authentication**. CORS does not stop curl or other non-browser clients, and the in-memory per-IP limiter is not a durable/distributed abuse control.
+- This is a source-plan requirement, not an approved scope expansion. The implementation mechanism is not specified. No auth mechanism was silently chosen. Before configuring NVIDIA_API_KEY or performing live inference, obtain user approval for a minimal auth design and implement/test it. Deploying the backend without a secret is safe for the health-check stage, but do not add the NVIDIA key until this gate is resolved.

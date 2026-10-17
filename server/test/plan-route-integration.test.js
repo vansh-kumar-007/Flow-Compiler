@@ -153,6 +153,51 @@ test("missing or malformed server token configuration fails closed without expos
   assert.equal(providerCalls, 0);
 });
 
+test("credential values are not written to console logs or HTTP responses", async () => {
+  const configuredToken = "d".repeat(43);
+  const submittedToken = "e".repeat(43);
+  const observedLogs = [];
+  const originals = {
+    log: console.log,
+    info: console.info,
+    warn: console.warn,
+    error: console.error
+  };
+  for (const method of Object.keys(originals)) {
+    console[method] = (...args) => observedLogs.push(args.map(String).join(" "));
+  }
+
+  try {
+    await withServer({
+      env: { FLOW_COMPILER_ACCESS_TOKEN: configuredToken, NVIDIA_API_KEY: fakeKey },
+      fetchImpl: async () => {
+        throw new Error("provider must not be called");
+      }
+    }, async baseUrl => {
+      const response = await fetch(baseUrl + "/api/plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + submittedToken
+        },
+        body: JSON.stringify({ brainDump: "Test", availableMinutes: 15 })
+      });
+      const responseText = await response.text();
+      assert.equal(response.status, 401);
+      assert.equal(responseText.includes(configuredToken), false);
+      assert.equal(responseText.includes(submittedToken), false);
+      assert.equal(responseText.includes(fakeKey), false);
+    });
+  } finally {
+    for (const method of Object.keys(originals)) console[method] = originals[method];
+  }
+
+  assert.equal(observedLogs.some(line =>
+    line.includes(configuredToken) || line.includes(submittedToken) || line.includes(fakeKey)
+  ), false);
+  assert.deepEqual(observedLogs, []);
+});
+
 test("public health remains available without an access token", async () => {
   await withServer({ env: { FLOW_COMPILER_ACCESS_TOKEN: "" } }, async baseUrl => {
     const response = await fetch(baseUrl + "/api/health");

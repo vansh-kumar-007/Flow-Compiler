@@ -12,8 +12,8 @@ Authoritative product source: the ChatGPT Project source “Flow Compiler — bu
 - **PR #1**: [Phase 0 baseline and Phase 1 runtime foundation](https://github.com/vansh-kumar-007/Flow-Compiler/pull/1), open draft PR to `main`; intentionally not merged.
 - **PR #2**: [Phase 2: define API contract and validate plan requests](https://github.com/vansh-kumar-007/Flow-Compiler/pull/2), open draft PR stacked on `chore/phase-0-audit-and-foundation` while PR #1 remains unmerged; intentionally not merged.
 - Historical repository initialization: the initial remote audit found no files/commits; a governance root commit was then created. Do not mistake that initial state for the current repository.
-- Last verified application-code/test commit: `c4612452bf2c6c98701316fb66afb6318c2a5838`.
-- Verified CI for P2-04: [GitHub Actions run #44](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/38961083734), conclusion **success** on `c4612452bf2c6c98701316fb66afb6318c2a5838`. It ran clean `npm ci`, all 29 backend tests (29 passed, 0 failed), and `npm run build`. Deterministic tests cover configured timeout/abort, response-size enforcement while streaming, HTTP mapping, invalid responses, and safe non-disclosure; all use mock responses and no real NVIDIA request or paid inference was made.
+- Last verified application-code/test commit: `f434794f7a26ae95a8030d03f132afc3efca36db`.
+- Verified CI for P2-05: [GitHub Actions run #49](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39020228586), conclusion **success** on `f434794f7a26ae95a8030d03f132afc3efca36db`. It ran clean `npm ci`, all 61 backend tests (61 passed, 0 failed), and `npm run build`. Parser tests use local strings and provider mocks only; no real NVIDIA call or paid inference was made. Earlier parser iterations had failing Actions runs, which were corrected before this successful run.
 - Stable requirement IDs and status evidence live in `docs/BUILD_CHECKLIST.md`.
 
 ## Product architecture and source requirements
@@ -32,7 +32,7 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - `/api/health`, bounded 20 KiB JSON parser, stable JSON errors for malformed JSON, oversized bodies, and unknown routes.
 - Server environment example defaults `NVIDIA_API_KEY` to blank, real `.env` files are ignored, local run/test/build commands are documented, and Node.js 24 CI is configured.
 
-### Phase 2, tasks P2-01 through P2-04
+### Phase 2, tasks P2-01 through P2-05
 
 - **P2-01 complete:** `docs/API_CONTRACT.md` documents public request fields/limits, source-compatible `previousPlan` revision context, completed IDs, blocker information, response and task fields, allowed priorities/categories, deferred work, dependency invariants, safe errors, and server-side credential boundaries.
 - Contract retains the source names `brainDump`, `availableMinutes`, and `previousPlan`; it adds optional nested `previousPlan.revisionContext` and optional additive response `deferredTasks`. The sample JSON was parsed and the sample `totalMinutes` (40) was checked against task duration sum (15+25).
@@ -44,12 +44,14 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - Provider error mapping now uses safe stable codes for timeout, network/stream failure, HTTP 401, HTTP 403, HTTP 429, HTTP 5xx, other non-success status, oversized response, and invalid upstream UTF-8/JSON/content. The API contract documents these codes and defaults. Server environment settings `NVIDIA_TIMEOUT_MS` (1–120,000 ms) and `NVIDIA_MAX_RESPONSE_BYTES` (1–10,485,760 bytes) allow bounded overrides; absent/invalid values fall back to defaults.
 - The adapter is deliberately **not connected to `POST /api/plan` yet**: valid requests still return `501 PLANNING_NOT_IMPLEMENTED` until output parsing/validation and route integration are ready. Model-output parsing/validation, generated dependency/cycle checks, and scheduling remain P2-05 through P2-08.
 - Evidence: [GitHub Actions run #44](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/38961083734) passed `npm ci`, all 29 backend tests (29 passed, 0 failed), and the Vite production build on commit `c4612452bf2c6c98701316fb66afb6318c2a5838`. Deterministic tests include the same coverage plus verification that `NVIDIA_TIMEOUT_MS` is actually read from server environment configuration. No real NVIDIA request was made.
+- **P2-05 complete:** `server/src/model-output.js` parses complete JSON only, accepting plain JSON with surrounding whitespace or one complete Markdown fence labeled `json` or unlabeled. It never extracts arbitrary substrings or repairs malformed JSON. `server/src/nvidia-client.js` invokes the parser after checking the upstream API envelope and returns `{ content, output }`; invalid upstream JSON/envelope or missing/non-string/blank content stays `AI_INVALID_RESPONSE`, while invalid model message JSON becomes `INVALID_MODEL_OUTPUT`. Parser syntax acceptance includes valid scalars and arrays; semantic plan/task validation is not claimed.
+- Evidence: [GitHub Actions run #49](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39020228586) passed clean install, 61/61 backend tests (0 failed), and the Vite production build on `f434794f7a26ae95a8030d03f132afc3efca36db`. Tests cover the full parser matrix plus a valid upstream envelope with invalid model content. No real NVIDIA request was made.
 
 ## Phase map and acceptance gates
 
 1. **Phase 0 — Audit/governance:** complete; repository/source baseline, checklist, risk register, and acceptance gates reconciled.
 2. **Phase 1 — Runtime foundation:** complete per code inspection and Actions verification of clean installation, backend tests, and production build.
-3. **Phase 2 — Secure AI planning API:** in progress. P2-01 through P2-04 complete. Next: P2-05 model output parsing; then P2-06 task schema validation, P2-07 dependency/cycle validation, P2-08 budget/deferred-task behavior, P2-09 rate limit/CORS policy, P2-10 comprehensive deterministic provider-mock tests, P2-11 optional live inference, P2-12 final API security docs/evidence.
+3. **Phase 2 — Secure AI planning API:** in progress. P2-01 through P2-05 complete. Next: P2-06 generated plan/task schema validation; then P2-07 dependency/cycle validation, P2-08 budget/deferred-task behavior, P2-09 rate limit/CORS policy, P2-10 comprehensive deterministic provider-mock tests, P2-11 optional live inference, P2-12 final API security docs/evidence.
 4. **Phase 3 — Core workflow UI:** raw thoughts, time selector, demo, tasks/dependency view, completion/progress and error states.
 5. **Phase 4 — Recompilation/focus:** preserve completed work and valid dependencies; support time changes, early completion, blockers, focus and countdown.
 6. **Phase 5 — Persistence/export/polish:** local persistence, animated dependency graph, responsive/accessibility/reduced-motion behavior, privacy-preserving export.
@@ -62,7 +64,7 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 - **R-01 — Initially empty repository:** resolved for setup; kept as historical audit context.
 - **R-02 — NVIDIA key/access/quota:** no real key is configured or verified. The isolated adapter is tested with fake injected credentials; optional real inference remains P2-11. Configure a key only in the backend environment/host secret manager if that optional check is approved; never paste it into chat or commit it.
 - **R-03 — API abuse:** request validation and an isolated provider adapter exist, but `/api/plan` remains disabled and no real planning API is exposed. Add rate limiting and explicit deployment/auth assumptions before connecting provider calls or exposing planning publicly.
-- **R-04 — Dependency integrity:** the request validator checks prior-context task shape and references, but generated-output schema validation and cycle detection are still outstanding.
+- **R-04 — Dependency integrity:** strict model JSON syntax parsing is now implemented; generated plan/task schema validation (P2-06) and generated dependency/cycle checks (P2-07) are still outstanding.
 - **R-05 — Recompile could lose user work:** contract defines completed ID preservation and client merge semantics; runtime/UI regression work remains in Phase 4.
 - **R-06 — Split deployment:** static frontend hosting cannot run Express; verify compatible backend/serverless hosting and origin configuration before deployment.
 - **R-07 — Free-tier drift:** confirm current official usage limits close to deployment and do not create paid services without approval.
@@ -70,8 +72,8 @@ Planned capability set still includes AI-generated tasks (duration, priority, re
 
 ## Current progress and exact next task
 
-- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03.
+- **Completed:** Phase 0; Phase 1; P2-01; P2-02; P2-03; P2-04; P2-05.
 - **Current phase:** Phase 2 — Secure AI Planning API.
-- **Next task:** **P2-05 — Parse model output robustly.**
-- **Acceptance criteria:** accept JSON-only output and an optional well-formed JSON code fence without extracting arbitrary prose; reject malformed or partial content safely and preserve the distinct `AI_INVALID_RESPONSE` (upstream API envelope) versus `INVALID_MODEL_OUTPUT` (model message content) error semantics.
-- **Manual action required now:** none. Adapter tests remain fully mocked; optional real inference is P2-11 and has not been performed.
+- **Next task:** **P2-06 — Validate every generated plan/task field and task count.**
+- **Acceptance criteria:** validate the parsed value as a plan object; enforce required plan fields, task count limits, non-empty unique IDs/titles, positive integer minutes, bounded text fields, allowed priorities/categories, arrays and other required types. Add deterministic tests without conflating schema validation with P2-05 JSON parsing. Do not add dependency cycle detection (P2-07) or scheduling (P2-08) to P2-06.
+- **Manual action required now:** none. Adapter/parser tests remain fully mocked; optional real inference is P2-11 and has not been performed.

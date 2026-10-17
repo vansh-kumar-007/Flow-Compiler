@@ -187,12 +187,20 @@ Messages should be concise and actionable, with no stack traces, credentials, ra
 | `502` | `AI_PROVIDER_UNAVAILABLE` | NVIDIA returns an HTTP 5xx response. |
 | `502` | `AI_NETWORK_ERROR` | A non-timeout fetch or response-stream transport failure prevents reaching/reading NVIDIA. |
 | `502` | `AI_RESPONSE_TOO_LARGE` | The declared or streamed upstream response exceeds the configured byte limit. |
-| `502` | `AI_INVALID_RESPONSE` | The upstream body is invalid UTF-8/JSON or lacks non-empty string message content. |
+| `502` | `AI_INVALID_RESPONSE` | The upstream response body/envelope is invalid UTF-8 or JSON, or message content is missing, non-string, or blank. |
 | `502` | `AI_PROVIDER_ERROR` | Other non-success NVIDIA HTTP status or an otherwise unexpected provider failure. |
-| `502` | `INVALID_MODEL_OUTPUT` | Model response cannot be parsed or fails output schema/dependency validation. |
+| `502` | `INVALID_MODEL_OUTPUT` | A valid upstream envelope contains model message content that is not an accepted complete JSON document, or later generated-output schema/dependency validation fails. |
 | `504` | `AI_TIMEOUT` | NVIDIA request exceeded the bounded provider timeout. |
 
 Do not expose the provider's raw response body or the API key in the HTTP error. Log only what is operationally needed and avoid recording the user's full brain dump by default.
+
+### Model message content parsing
+
+P2-05 accepts either one complete JSON document with optional surrounding whitespace, or one complete Markdown code fence whose language label is absent or exactly `json`. Horizontal whitespace around fence lines is allowed. The entire enclosed content must parse as JSON.
+
+Surrounding prose, multiple fences, unsupported fence labels, unclosed/malformed fences, partial JSON, and extra content after the JSON/fence are rejected with `INVALID_MODEL_OUTPUT`. The parser does not extract a JSON-looking substring, repair incomplete output, or coerce unexpected types. It returns any syntactically valid JSON value (including scalars and arrays); this does not prove that the value is a valid plan. Full task/plan schema validation remains P2-06 and generated dependency/cycle validation remains P2-07.
+
+A malformed upstream HTTP JSON/envelope, or missing/non-string/blank `choices[0].message.content`, maps to `AI_INVALID_RESPONSE`. When the upstream envelope is valid but its message content violates these JSON parsing rules, the adapter maps the error to `INVALID_MODEL_OUTPUT`.
 
 ### Provider request and response bounds
 
@@ -220,7 +228,9 @@ Missing, malformed, non-integer, or out-of-range settings fall back to the docum
 - **P2-02:** implement request validation against Sections 2 and 5, including the existing 20 KiB JSON parser limit and deterministic validation tests.
 - **P2-03:** implement the isolated server-only NVIDIA adapter.
 - **P2-04:** bound provider request duration and response size, and map upstream errors to stable safe codes.
-- **P2-05/P2-06/P2-07:** parse and validate generated JSON, task schema, IDs, dependency references, and acyclic graph.
+- **P2-05:** parse only a complete JSON document, optionally within one properly formed unlabeled or `json` fence; never extract from surrounding prose.
+- **P2-06:** validate the generated plan/task schema and task count.
+- **P2-07:** validate generated dependency references and reject cycles.
 - **P2-09/P2-10:** implement/test API rate limiting and the full deterministic test matrix.
 
 This contract describes intended behavior; every behavior must be marked verified in the master checklist only after it exists and has supporting test or inspection evidence.

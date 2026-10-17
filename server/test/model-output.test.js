@@ -37,6 +37,11 @@ test("parses a complete JSON document inside an unlabeled fence", () => {
   assert.deepEqual(parseModelOutput(input), [1, true, null, "x"]);
 });
 
+test("accepts an unlabeled fence with trailing horizontal whitespace on the opening line", () => {
+  const input = FENCE + "   \\n" + '{"ok":true}' + "\\n" + FENCE;
+  assert.deepEqual(parseModelOutput(input), { ok: true });
+});
+
 test("accepts whitespace around fence lines and CRLF newlines", () => {
   const input = "  \r\n" + FENCE + "json   \r\n {\"ok\": true} \r\n  " + FENCE + "  \r\n";
   assert.deepEqual(parseModelOutput(input), { ok: true });
@@ -72,7 +77,7 @@ const rejectedInputs = [
   ["text before fenced JSON", "Result:\n" + FENCE + 'json\n{"ok":true}\n' + FENCE],
   ["fenced malformed JSON", FENCE + 'json\n{"ok":,}\n' + FENCE],
   ["empty fenced document", FENCE + "json\n   \n" + FENCE],
-  ["nested or extra fence before the closing fence", FENCE + 'json\n{"text":"' + FENCE + '"}\n' + FENCE],
+  ["extra fence delimiter inside fenced body", FENCE + 'json\n' + FENCE + 'json\n{"a":1}\n' + FENCE + '\n' + FENCE],
   ["JSON with a trailing comma", '{"values":[1,2,], "ok":true}'],
   ["JSON value followed by a second JSON value", '{"a":1} {"b":2}']
 ];

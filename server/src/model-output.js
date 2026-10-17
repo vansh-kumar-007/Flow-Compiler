@@ -52,8 +52,8 @@ export function parseModelOutput(content) {
   }
 
   const openingLine = trimmed.slice(0, openingLineEnd).replace(/\r$/, "");
-  const label = openingLine.slice(FENCE.length);
-  if (label !== "" && !/^json[ \t]*$/.test(label)) {
+  const label = openingLine.slice(FENCE.length).trim();
+  if (label !== "" && label !== "json") {
     throw invalidOutput();
   }
 

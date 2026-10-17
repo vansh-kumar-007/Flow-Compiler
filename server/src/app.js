@@ -14,6 +14,10 @@ const DEFAULT_RATE_LIMIT_MAX = 10;
 const MAX_RATE_LIMIT_WINDOW_MS = 86_400_000;
 const MAX_RATE_LIMIT_MAX = 10_000;
 const ORIGIN_PATTERN = /^https?:\/\/[^\s,]+$/i;
+const ACCESS_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43,128}$/;
+const UNAUTHORIZED_BODY = Object.freeze({
+  error: { code: "UNAUTHORIZED", message: "Valid authorization credentials are required." }
+});
 
 function parsePositiveInteger(value, name, { min, max, fallback }) {
   if (value === undefined || value === null) {

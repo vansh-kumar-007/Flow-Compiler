@@ -280,7 +280,7 @@ export default function App() {
         });
         const merged = mergeRecompiledPlan(generatedPlan, completedTaskIds, localRevision);
         setGeneratedPlan(merged);
-        setPlanKind("demo");
+        setPlanKind("demo-revision");
         setRevisionPending(false);
         setRevisionState("success");
         setRevisionMessage("Demo plan revised locally. This is a deterministic illustration; no API or AI provider was called.");
@@ -327,7 +327,7 @@ export default function App() {
       if (!isCurrentPlanRequest(requestId, planRequestId.current, mounted.current, controller.signal)) return;
       const merged = mergeRecompiledPlan(generatedPlan, completedTaskIds, responsePlan);
       setGeneratedPlan(merged);
-      setPlanKind("api");
+      setPlanKind("api-revision");
       setCompletedTaskIds(current => Object.fromEntries(
         Object.entries(current).filter(([id]) => merged.tasks.some(task => task.id === id))
       ));
@@ -443,7 +443,7 @@ export default function App() {
       </article>
       <article className="panel output-panel">
         <div className="panel-topline"><b>02</b><span>COMPILATION OUTPUT</span><small>PLAN / TASK LIST</small></div>
-        <div className="output-title"><div><h2>Execution plan</h2><p className="description">Only tasks from the active plan are shown below.</p></div><span className={planKind === "api" ? "preview-badge api-plan-badge" : "preview-badge"}>{planKind === "api" ? "VALIDATED API PLAN" : planKind === "demo" ? "DEMO / ILLUSTRATIVE" : "WAITING FOR INPUT"}</span></div>
+        <div className="output-title"><div><h2>Execution plan</h2><p className="description">Only tasks from the active plan are shown below.</p></div><span className={planKind === "api" ? "preview-badge api-plan-badge" : "preview-badge"}>{planKind?.startsWith("api") ? "VALIDATED API PLAN" : planKind?.startsWith("demo") ? "DEMO / ILLUSTRATIVE" : "WAITING FOR INPUT"}</span></div>
         {planState === "idle" && <div className="graph-banner"><span className="graph-icon">⌁</span><div><small>WORKFLOW STATUS</small><strong>Awaiting compilation</strong><p>No plan is displayed yet. Use Local Demo to view clearly labeled sample tasks, or submit valid input in API Planning mode.</p></div><span className="idle">IDLE</span></div>}
         {planState === "loading" && <div className="output-state loading-state" role="status" aria-live="polite"><span className="loading-indicator" aria-hidden="true"/> <div><strong>Compiling workflow…</strong><p>Waiting for the authenticated planning API response.</p></div></div>}
         {planState === "error" && <div className="output-state error-state" role="alert"><strong>Plan not available</strong><p>{planMessage}</p><p>No task plan is being shown for this failed request.</p></div>}
@@ -453,7 +453,7 @@ export default function App() {
             {!displayModel?.valid
               ? <p className="output-state error-state" role="alert">Plan presentation unavailable: {displayModel?.reason || "Invalid plan data."}</p>
               : <>
-            <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayModel.summary}</h3></div><span>{displayModel.totalMinutes} MIN</span></div>
+            <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayModel.summary}</h3></div><span>{displayModel.totalMinutes} MIN<small>{planKind?.endsWith("-revision") ? "REMAINING" : "SCHEDULED"}</small></span></div>
             <div className="plan-metadata"><span>{displayModel.tasks.length} scheduled tasks</span><span>{displayModel.deferredTasks.length} deferred</span><span>Time budget: {minutes} min</span></div>
             {(() => {
               const progress = getCompletionProgress(displayPlan, completedTaskIds);

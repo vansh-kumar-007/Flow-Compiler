@@ -38,3 +38,14 @@ test("input, time slider, presets, status feedback, and reduced-motion affordanc
   assert.match(appSource, /aria-live="polite"/);
   assert.match(styleSource, /prefers-reduced-motion:reduce/);
 });
+
+test("new requests clear prior plan state and error paths do not retain stale plan output", () => {
+  const compileHandler = appSource.match(/async function compileWorkflow\(\) \{([\s\S]*?)\n  \}\n\n  async function checkApi/)?.[1];
+  assert.ok(compileHandler);
+  assert.match(compileHandler, /setPlanState\("loading"\)/);
+  assert.match(compileHandler, /setGeneratedPlan\(null\)/);
+  assert.match(compileHandler, /setPlanKind\(null\)/);
+  assert.match(compileHandler, /setPlanState\("error"\)/);
+  assert.match(compileHandler, /setPlanMessage\(error instanceof Error \? error\.message/);
+  assert.doesNotMatch(appSource, /localStorage|sessionStorage|console\.log/);
+});

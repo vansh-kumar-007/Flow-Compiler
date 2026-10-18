@@ -3,26 +3,23 @@
 Last updated: 2026-10-18 (Asia/Kolkata; production browser acceptance follow-up)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
-## Latest production browser acceptance follow-up — 2026-10-18 Asia/Kolkata
+## Latest production API diagnosis — 2026-10-18 Asia/Kolkata
 
-**Current authoritative result:** production browser acceptance is only partial. Do not begin P3-06 until the reported demo POST anomaly is attributed and the missing-NVIDIA-configuration result is either verified safely or explicitly marked not tested.
+**Latest manual acceptance update:** empty-token guard is PASS. In API PLANNING mode with the session token empty, COMPILE WORKFLOW shows the local prompt, sends no Fetch/XHR request, and displays no plan. This validates only client-side validation; authenticated API behavior remains unverified.
 
-- Current `main`: `04ea333749767f353b81e130568a3faf37d10273`; PRs #15–#18 are merged.
-- Exact-main [Actions #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) passed. Application-code [Actions #291](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112563059) passed 260 backend + 17 frontend Node tests and Vite build.
-- Render Free deploy `dep-dba8eutg1s2s73b2nte0` is `live` on the current main SHA. Vercel Production deployment `dpl_DCZhTGLqdyxADJGVBdkFxv7j21Yb` is `READY` on the same SHA.
-- Owner reports demo label/counts and scheduled budget pass, keyboard/narrow viewport pass, empty-token behavior pass, and invalid token returns HTTP 401 `UNAUTHORIZED` with no plan. Owner also reports a `POST /api/plan` during the demo check. The missing-provider-key status/error field was not filled in and is unknown.
-- Current `src/App.jsx` has a local demo handler and an early return in `compileWorkflow()` before `requestPlan`; source inspection does not explain the reported POST. No browser replay was possible in this audit, and automated tests are not used to claim the network-panel behavior passed.
-- Render request-log queries require a user-selected workspace. No workspace was guessed, and no logs or secret values were accessed. Runtime change is deferred until the event can be reproduced/correlated.
-- NVIDIA remains **NOT READY** for live inference. No provider key was configured, no NVIDIA call was made, and no hosting environment was changed.
+- Current `main`: `6416792cf581590c9ffb782ab4ba3eaba108ac14`; no open PRs were found.
+- Current main combined status shows a successful Vercel check. GitHub Actions lookup returned no workflow run for the exact current main SHA. PR #19 CI run #296 passed install/tests/build on PR head `f9b0ae7ca73e974d4e1af814b9909f8e86099eba`.
+- Vercel Production `dpl_RBEFw62t3Fs3axwnqYFMqkTCyh5o` is `READY` on current main. Render Free deployment `dep-dba8q4m7bikc73ecoi2g` is `live` on current main; its service health-check path is `/api/health`.
+- Source review: `VITE_API_BASE_URL` is public frontend configuration; token absence returns locally before fetch. The backend exposes public `/api/health`, uses exact-origin CORS, rate limits `/api/*`, and authenticates `/api/plan` before body parsing. Invalid/missing session credentials do not reach the provider. If the server NVIDIA key is absent, the provider adapter returns `AI_NOT_CONFIGURED` before provider fetch; mocked tests cover this boundary.
+- Read-only Render app logs show successful deploy/startup messages. Request-log queries for `/api/plan` and `/api/health` returned zero records for 2026-10-18; this is not proof no request occurred. Fresh direct health HTTP response was unavailable through the web reader. No secret values, auth headers, cookies, request bodies, or provider credentials were retrieved or printed.
+- No concrete code defect was established, so no runtime changes or extra tests were made. No Render setting/env var was modified and no NVIDIA request was made.
 
-### Next actions
+### Exact next manual action
 
-1. Repeat the demo click test with DevTools Network cleared immediately before clicking **LOAD DEMO PLAN**; report only whether a new `POST /api/plan` appears. If yes, include status/timing only, not headers or body.
-2. Verify the empty-token submission produces no POST.
-3. Optionally test one synthetic non-sensitive authenticated request with the private token entered locally and provider key unset; report only status/error code and whether a plan displayed. Otherwise report `NOT TESTED`.
-4. Select the intended Render workspace if you want the request logs inspected. Until workspace selection and correlation, keep the demo no-network criterion open.
-5. After P3-02–P3-05 are fully accepted, P3-06 is next in the original task order; wait for explicit instruction before implementing it.
-
+1. Only if you can independently confirm in Render that `NVIDIA_API_KEY` is absent without revealing its value, enter your session token only in the production browser field and send one synthetic non-sensitive planning request (e.g. one 5-minute task; 15-minute budget). Expected if auth/origin are correct and the provider key is absent: HTTP 500 `AI_NOT_CONFIGURED`, no plan, no provider fetch. Report only status/error code and whether a plan displayed; stop after one request.
+2. If you cannot safely confirm the provider key is absent, do not run that request yet. Verify the variable's presence/absence locally in Render without disclosing its value.
+3. If still needed, repeat the demo no-network check with Network cleared immediately before selecting LOCAL DEMO and clicking LOAD DEMO PLAN. The earlier POST report remains uncorrelated; Render request logs returned no records for the queried path/time.
+4. Keep P3-06 on hold. NVIDIA remains NOT READY for live inference and no live test is authorized.
 ## Current authentication smoke-test readiness — 2026-10-18 Asia/Kolkata
 
 This update supersedes older narrative entries below that state Render is absent, the Vercel API base is unconfigured, or authentication has not been merged. Those statements describe earlier project states and are retained only for history.
@@ -551,3 +548,8 @@ The next product task in original Phase 3 order is **P3-06 — Display dependenc
 ## Detailed production browser acceptance evidence — 2026-10-18 Asia/Kolkata
 
 See the latest authoritative follow-up near the top of this file. Detailed reported outcomes: demo label/counts PASS; 70/120-minute budget PASS; demo POST observed YES but uncorrelated; empty-token behavior reported PASS; invalid token HTTP 401 / `UNAUTHORIZED`, no plan; missing NVIDIA config result unspecified and therefore NOT TESTED/UNKNOWN; keyboard/narrow viewport PASS; no other errors reported. No code changes were made because current source explicitly short-circuits demo mode before the API helper, and the observation could not safely be reproduced. Render logs await explicit workspace selection. P3-02–P3-05 remain open and P3-06 must not start yet.
+
+
+## Empty-token acceptance result — 2026-10-18 Asia/Kolkata
+
+Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WORKFLOW displays `Enter your session access token to authorize this request.`, no Fetch/XHR request appears, and no plan is displayed. This confirms only the client-side missing-token guard, not authenticated API functionality. The full diagnosis and next test are documented in the latest production API diagnosis section above.

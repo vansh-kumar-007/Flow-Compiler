@@ -70,9 +70,14 @@ export function validateActivePlan(plan, completedIds = {}, availableMinutes) {
   const budget = Number.isInteger(availableMinutes) ? availableMinutes : Math.max(5, plan.totalMinutes || 5);
 
   if (remainingTasks.length === 0) {
-    // Preserve a fully completed plan as a durable history even if deferred
-    // tasks remain; its original scheduled total still matches its task list.
-    return validatePlanResponse(plan, Math.max(budget, plan.totalMinutes));
+    // Preserve a fully completed plan as durable history. Validate its original
+    // task graph and recompute the historical total, since a prior revision's
+    // totalMinutes intentionally described only the unfinished work.
+    const historical = {
+      ...plan,
+      totalMinutes: plan.tasks.reduce((sum, task) => sum + task.minutes, 0)
+    };
+    return validatePlanResponse(historical, Math.max(budget, historical.totalMinutes));
   }
 
   const normalized = {
@@ -80,11 +85,7 @@ export function validateActivePlan(plan, completedIds = {}, availableMinutes) {
     tasks: remainingTasks,
     totalMinutes: remainingTasks.reduce((sum, task) => sum + task.minutes, 0)
   };
-  return validatePlanResponse(
-    normalized,
-    Math.max(budget, normalized.totalMinutes),
-    completedTasks.map(task => task.id)
-  );
+  return validatePlanResponse(normalized, budget, completedTasks.map(task => task.id));
 }
 
 export function getCompletionProgress(plan, completedIds = {}) {

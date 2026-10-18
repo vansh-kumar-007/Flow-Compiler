@@ -185,6 +185,7 @@ Messages should be concise and actionable, with no stack traces, credentials, ra
 | `502` | `AI_ACCESS_DENIED` | NVIDIA denies access to the model/resource (HTTP 403). |
 | `502` | `AI_RATE_LIMITED` | NVIDIA reports its upstream quota/rate limit; don't confuse it with Flow Compiler's own 429. |
 | `502` | `AI_PROVIDER_UNAVAILABLE` | NVIDIA returns an HTTP 5xx response. |
+| `502` | `AI_PROVIDER_PENDING` | NVIDIA returns HTTP 202 indicating an asynchronous request is still pending; this client does not poll and returns a safe error instead of treating it as a completed plan. |
 | `502` | `AI_NETWORK_ERROR` | A non-timeout fetch or response-stream transport failure prevents reaching/reading NVIDIA. |
 | `502` | `AI_RESPONSE_TOO_LARGE` | The declared or streamed upstream response exceeds the configured byte limit. |
 | `502` | `AI_INVALID_RESPONSE` | The upstream response body/envelope is invalid UTF-8 or JSON, or message content is missing, non-string, or blank. |

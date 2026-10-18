@@ -62,7 +62,12 @@ export function buildDependencyGraph(plan) {
  * totalMinutes represents the unfinished scheduled work after a recompile.
  */
 export function validateActivePlan(plan, completedIds = {}, availableMinutes) {
-  if (!plan || !Array.isArray(plan.tasks) || !Array.isArray(plan.deferredTasks ?? [])) {
+  if (!plan
+    || !Array.isArray(plan.tasks)
+    || plan.tasks.length === 0
+    || !plan.tasks.every(task => task && typeof task === "object" && typeof task.id === "string")
+    || !Array.isArray(plan.deferredTasks ?? [])
+    || !(plan.deferredTasks ?? []).every(task => task && typeof task === "object" && typeof task.id === "string")) {
     return "plan task collections are invalid.";
   }
   const completedTasks = plan.tasks.filter(task => completedIds?.[task.id] === true);

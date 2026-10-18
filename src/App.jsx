@@ -3,6 +3,8 @@ import { DEMO_PLAN, DEMO_INPUT, TIME_PRESETS, formatTimePreset, getInputError, g
 import { requestPlan } from "./plan-api.js";
 import { buildDependencyGraph, buildPlanPresentation, getCompletionProgress, isCurrentPlanRequest, setScheduledTaskCompletion } from "./plan-interactions.js";
 import { buildPreviousPlan, formatFocusTime, getNextReadyTask, mergeRecompiledPlan, recompileLocalDemo } from "./plan-revision.js";
+import { clearPlanSnapshot, loadPlanSnapshot, savePlanSnapshot } from "./plan-storage.js";
+import { serializeSafePlanExport } from "./plan-export.js";
 
 // Public, non-secret API origin. Production fails closed when it is not configured;
 // local Vite development continues to use the dev-server /api proxy.
@@ -51,6 +53,10 @@ export default function App() {
   const [revisionState, setRevisionState] = useState("idle");
   const [revisionMessage, setRevisionMessage] = useState("");
   const [focusTimer, setFocusTimer] = useState({ taskId: null, secondsLeft: 0, running: false });
+  const [focusMode, setFocusMode] = useState(false);
+  const [storageReady, setStorageReady] = useState(false);
+  const [storageMessage, setStorageMessage] = useState("");
+  const [exportMessage, setExportMessage] = useState("");
   const [apiState, setApiState] = useState("idle");
   const [apiMessage, setApiMessage] = useState("Backend connection has not been checked.");
   const planRequestId = useRef(0);
@@ -60,6 +66,23 @@ export default function App() {
 
   useEffect(() => {
     mounted.current = true;
+    const saved = loadPlanSnapshot();
+    if (saved.snapshot) {
+      setMinutes(saved.snapshot.availableMinutes);
+      setDemoMode(saved.snapshot.planKind.startsWith("demo"));
+      setBrainDump(saved.snapshot.planKind.startsWith("demo") ? DEMO_INPUT : "");
+      setGeneratedPlan(saved.snapshot.plan);
+      setCompletedTaskIds(saved.snapshot.completedTaskIds);
+      setPlanKind(saved.snapshot.planKind);
+      setPlanState("success");
+      setPlanMessage("Saved plan restored locally. The original input and session access token were not saved.");
+      setStorageMessage("Saved on this browser · raw input and session token were not stored.");
+    } else if (saved.status === "invalid") {
+      setStorageMessage("An expired or invalid saved plan was cleared. Load a demo or compile a new plan.");
+    } else if (saved.status === "unavailable") {
+      setStorageMessage("Browser storage is unavailable. The current plan can still be used in this tab.");
+    }
+    setStorageReady(true);
     return () => {
       mounted.current = false;
       planRequestId.current += 1;
@@ -67,6 +90,28 @@ export default function App() {
       abortController.current?.abort();
     };
   }, []);
+
+  useEffect(() => {
+    if (!storageReady || planState === "loading") return;
+    if (planState !== "success" || !generatedPlan || !planKind) {
+      clearPlanSnapshot();
+      setStorageMessage("");
+      return;
+    }
+    const saved = savePlanSnapshot({
+      plan: generatedPlan,
+      completedTaskIds,
+      availableMinutes: minutes,
+      planKind
+    });
+    if (saved.ok) {
+      setStorageMessage("Saved on this browser · raw input and session token are never stored.");
+    } else {
+      setStorageMessage(saved.reason === "unavailable"
+        ? "Browser storage is unavailable; this plan remains only in the current tab."
+        : "This plan could not be saved safely. It remains available in the current tab.");
+    }
+  }, [storageReady, planState, generatedPlan, completedTaskIds, minutes, planKind]);
 
   useEffect(() => {
     if (!focusTimer.running) return undefined;
@@ -81,6 +126,7 @@ export default function App() {
   }, [focusTimer.running]);
 
   function changeInput(value) {
+    setFocusMode(false);
     setBrainDump(value);
     if (planState === "success" || planState === "error") {
       setPlanState("idle");
@@ -113,6 +159,7 @@ export default function App() {
   }
 
   function enterDemoMode() {
+    setFocusMode(false);
     abortController.current?.abort();
     abortController.current = null;
     planRequestId.current += 1;
@@ -134,6 +181,7 @@ export default function App() {
   }
 
   function exitDemoMode() {
+    setFocusMode(false);
     // Clicking API PLANNING also invalidates any in-flight API request. This makes
     // mode changes safe even if a request is active and its response arrives late.
     abortController.current?.abort();
@@ -177,10 +225,14 @@ export default function App() {
 
     const credential = accessToken.trim();
     if (!credential) {
-      setPlanState("error");
-      setPlanMessage("Enter your session access token to authorize this request.");
-      setGeneratedPlan(null);
-      setPlanKind(null);
+      if (generatedPlan && planState === "success") {
+        setPlanMessage("Enter your session access token to authorize a new request. Your current plan is retained.");
+      } else {
+        setPlanState("error");
+        setPlanMessage("Enter your session access token to authorize this request. No request was sent.");
+        setGeneratedPlan(null);
+        setPlanKind(null);
+      }
       return;
     }
 
@@ -195,19 +247,19 @@ export default function App() {
       return;
     }
 
+    const previousActivePlan = generatedPlan;
+    const previousPlanKind = planKind;
+    const previousCompletedTaskIds = completedTaskIds;
     abortController.current?.abort();
     const controller = new AbortController();
     abortController.current = controller;
     const requestId = ++planRequestId.current;
     setPlanState("loading");
     setPlanMessage("Sending an authenticated planning request…");
-    setCompletedTaskIds({});
     setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
     setRevisionPending(false);
     setRevisionState("idle");
     setRevisionMessage("");
-    setGeneratedPlan(null);
-    setPlanKind(null);
 
     try {
       const payload = await requestPlan({
@@ -227,10 +279,19 @@ export default function App() {
       setPlanMessage("Authenticated request succeeded. The plan below is the validated backend response.");
     } catch (error) {
       if (!isCurrentPlanRequest(requestId, planRequestId.current, mounted.current, controller.signal)) return;
-      setPlanState("error");
-      setGeneratedPlan(null);
-      setPlanKind(null);
-      setPlanMessage(error instanceof Error ? error.message : "Could not reach the planning API. Check the backend URL and allowed origin.");
+      if (previousActivePlan) {
+        setGeneratedPlan(previousActivePlan);
+        setPlanKind(previousPlanKind);
+        setCompletedTaskIds(previousCompletedTaskIds);
+        setPlanState("success");
+        setPlanMessage("The new request failed; your previous plan and completion state were retained. " +
+          (error instanceof Error ? error.message : "Check the backend URL and allowed origin."));
+      } else {
+        setPlanState("error");
+        setGeneratedPlan(null);
+        setPlanKind(null);
+        setPlanMessage(error instanceof Error ? error.message : "Could not reach the planning API. Check the backend URL and allowed origin.");
+      }
     } finally {
       if (requestId === planRequestId.current && abortController.current === controller) {
         abortController.current = null;
@@ -353,6 +414,24 @@ export default function App() {
     }
   }
 
+  function exportSafePlan() {
+    if (!displayPlan) return;
+    try {
+      const serialized = serializeSafePlanExport(displayPlan, completedTaskIds);
+      const blob = new Blob([serialized], { type: "application/json;charset=utf-8" });
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "flow-compiler-safe-plan.json";
+      link.rel = "noopener";
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+      setExportMessage("Safe export created. It excludes raw thoughts, summary, task reasons, blocker notes, and credentials.");
+    } catch (error) {
+      setExportMessage(error instanceof Error ? error.message : "Safe export could not be created.");
+    }
+  }
+
   async function checkApi() {
     if (!import.meta.env.DEV && !API_BASE_URL) {
       setApiState("error");
@@ -392,7 +471,7 @@ export default function App() {
   const focusTask = displayPlan?.tasks?.find(task => task.id === focusTimer.taskId) ?? null;
   const displayModel = displayPlan ? buildPlanPresentation(displayPlan) : null;
 
-  return <main className="app-shell">
+  return <main className={"app-shell" + (focusMode ? " focus-mode" : "")}>
     <header className="topbar">
       <a className="brand" href="/" aria-label="Flow Compiler home"><span className="brand-mark" aria-hidden="true"><i/><i/><i/></span><span className="brand-copy"><strong>FLOW<span> / COMPILER</span></strong><small>PERSONAL EXECUTION ENGINE</small></span></a>
       <div className="header-right"><span className="version-chip">BUILD 0.4.0 · PHASE 3</span><div className="system-status"><i/> UI ONLINE</div></div>
@@ -461,6 +540,11 @@ export default function App() {
               ? <p className="output-state error-state" role="alert">Plan presentation unavailable: {displayModel?.reason || "Invalid plan data."}</p>
               : <>
             <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayModel.summary}</h3></div><span>{displayModel.totalMinutes} MIN<small>{planKind?.endsWith("-revision") ? "REMAINING" : "SCHEDULED"}</small></span></div>
+            <div className="plan-actions">
+              <button className="revision-button export-button" type="button" onClick={exportSafePlan}>EXPORT SAFE PLAN ↗</button>
+              {exportMessage && <p className="export-feedback" role="status" aria-live="polite">{exportMessage}</p>}
+            </div>
+            {storageMessage && <p className="storage-status" role="status" aria-live="polite">{storageMessage}</p>}
             <div className="plan-metadata"><span>{displayModel.tasks.length} scheduled tasks</span><span>{displayModel.deferredTasks.length} deferred</span><span>Time budget: {minutes} min</span></div>
             {(() => {
               const progress = getCompletionProgress(displayPlan, completedTaskIds);
@@ -507,7 +591,8 @@ export default function App() {
             <section className="focus-panel" aria-labelledby="focus-panel-title">
               <div className="focus-panel-heading">
                 <div><small>FOCUS MODE</small><h4 id="focus-panel-title">One action at a time</h4></div>
-                <time aria-live="off">{formatFocusTime(focusTimer.secondsLeft)}</time>
+                <time aria-label={"Time remaining " + formatFocusTime(focusTimer.secondsLeft)} aria-live="off">{formatFocusTime(focusTimer.secondsLeft)}</time>
+                <button className="focus-mode-toggle" type="button" onClick={() => setFocusMode(value => !value)}>{focusMode ? "EXIT FOCUS MODE" : "ENTER FOCUS MODE"}</button>
               </div>
               {focusTask
                 ? <p className="focus-task-name">Current focus: <strong>{focusTask.title}</strong> · {focusTask.minutes} min</p>

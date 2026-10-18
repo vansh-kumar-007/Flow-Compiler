@@ -1,5 +1,18 @@
 # Flow Compiler — Project State
 
+## Phase 3 coherent implementation batch — 2026-10-18 Asia/Kolkata
+
+**Working branch:** `feat/phase-3-graph-progress-states` (based on `main` `73d0c22307bca7e539d51d1fb424d92d910e46a1`). This is an implementation-branch snapshot, not a claim that the batch is merged or deployed.
+
+- Inspected the supplied `Plan.txt`, `docs/BUILD_CHECKLIST.md`, `docs/PROJECT_STATE.md`, `docs/API_CONTRACT.md`, frontend/API helpers and existing test scripts. The original P0–P8 task IDs and phase order remain intact.
+- Added a dependency/presentation model: graph edges are derived only from explicit `dependsOn` IDs, use prerequisite → dependent direction, include deferred nodes, and fail closed for unresolved, duplicate, self-referential or cyclic dependency data. No ordering-derived edges are invented.
+- Added completion/progress helpers and UI. Only scheduled tasks are in the active progress denominator; deferred tasks remain explicitly unscheduled and do not count as complete. Prerequisites are shown, not enforced as a new scheduling policy. Progress is derived from the active plan's task IDs; plan switches and new requests reset completion.
+- Expanded boundary/preset/API cancellation/error tests and added source-guard tests for demo mode: entering demo aborts/invalidates active planning requests, uses the local immutable fixture, and does not call `requestPlan` or `fetch`; the compile demo guard precedes the API call. These source tests do **not** explain the historical production `POST /api/plan` report.
+- Added reduced-motion styling and accessible dependency/progress labels/statuses. No new dependency, paid service, browser automation framework, hosting change, provider key, or NVIDIA request was introduced.
+- Automated checks for this final branch head and production build are pending in this snapshot. CI has no lint, typecheck or browser-automation scripts. Browser interaction acceptance remains distinct from Node tests.
+- The empty-token browser guard remains owner-reported PASS; no repeat was requested. The mocked authenticated missing-provider-key path remains covered by existing backend tests; no live NVIDIA call or production AI-generated plan was attempted.
+- **Outstanding manual evidence:** one clean Network-panel demo observation is still needed to attribute the historical `POST /api/plan` report; production browser interaction checks are also needed for dependency links, completion toggles/progress, reduced motion, keyboard/focus, contrast and narrow-screen overflow. The exact minimal list will be included in the delivery handoff.
+
 Last updated: 2026-10-18 (Asia/Kolkata; production browser acceptance follow-up)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 

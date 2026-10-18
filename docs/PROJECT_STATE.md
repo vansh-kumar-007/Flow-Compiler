@@ -464,3 +464,18 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 - Owner manually confirmed the backend health endpoint returned `{"status":"ok","service":"flow-compiler-api"}`. Do not equate this health marker with a successful authenticated plan or provider inference.
 - No browser test runner exists in the repo. Production UI check of demo/no-network transitions and authenticated safe errors remains manual. Hosting metadata must be refreshed against the merged commit before production UI is described as deployed.
 - NVIDIA `NVIDIA_API_KEY` remains intentionally unset; no provider call, paid service, new dependency, or hosting configuration change was made.
+
+
+## Post-merge verification snapshot — 2026-10-18 Asia/Kolkata
+
+- Current main SHA: `c99012f28c89fedc551f54da3cca55e7d9a19677`. PR #15 merged via normal squash workflow. No open PRs were reported immediately after merge.
+- Exact PR head `6ec1e727c8bea02dbabe7ceba43b1a695856ddc4` passed Actions #283. The post-merge Actions #284 was queued/in progress at the first refresh; verify the final conclusion before declaring the merge CI passed.
+- Render deployment `dep-dba7vvu7bikc73ec4kc0` and Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` both target `c99012f28c89fedc551f54da3cca55e7d9a19677`. At the initial post-merge refresh, Render was `build_in_progress` and Vercel was `BUILDING`; no successful deployed state was inferred from those intermediate states.
+- Owner supplied current backend health result `{"status":"ok","service":"flow-compiler-api"}`. This confirms the backend health route only, not frontend rollout or model inference.
+- No NVIDIA key or inference; no hosting setting/environment change. Browser acceptance remains owner manual because no browser automation runner is configured.
+
+
+## Post-merge evidence refresh — 2026-10-18 Asia/Kolkata
+
+- PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; exact merge SHA and deployment metadata have been refreshed by the connected integrations. CI/deploy final statuses are to be filled only from their observed conclusions; do not substitute PR-head CI or successful build events for exact-main/live evidence.
+- The Phase 3 batch did not implement P3-06 graph visualization, P3-07 progress tracking, or Phase 4 recompilation. The next technical task remains P3-06 after required deployed/manual acceptance for this batch.

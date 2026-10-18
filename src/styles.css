@@ -98,3 +98,33 @@ textarea[aria-invalid="true"],input[aria-invalid="true"]{border-color:#fb7185}
 .generated-task-title:has(+ .completion-control input:checked) strong{text-decoration:line-through;text-decoration-color:#38c8dc70}
 @media(max-width:480px){.dependency-links li{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:5px;padding:7px}.dependency-node{padding:7px;font-size:10px}.dependency-arrow{font-size:17px}.plan-progress{padding:11px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+
+/* Phase 4: recompile, blocker reporting, task focus, and a tab-local countdown. */
+.focus-task-button{display:inline-flex;align-items:center;margin:8px 0 0 8px;padding:7px 9px;border:1px solid #35536a;border-radius:6px;background:#0c1a29;color:#95eaf2;font:8px var(--mono);letter-spacing:.5px;cursor:pointer}
+.focus-task-button:hover:not(:disabled){border-color:var(--cyan);background:#0f2834}
+.focus-task-button:focus-visible,.focus-controls button:focus-visible,.revision-button:focus-visible,.revision-panel select:focus-visible,.revision-panel textarea:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+.focus-task-button:disabled{opacity:.4;cursor:not-allowed}
+.focus-panel,.revision-panel{margin-top:16px;padding:14px;border:1px solid #31465c;border-radius:10px;background:#07111caa}
+.focus-panel-heading,.revision-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.focus-panel-heading small,.revision-panel-heading small{color:var(--cyan);font:8px var(--mono);letter-spacing:1px}
+.focus-panel-heading h4,.revision-panel-heading h4{margin:6px 0 0;color:#e0eaf5;font-size:12px}
+.focus-panel-heading time{color:var(--cyan);font:700 24px var(--mono);font-variant-numeric:tabular-nums}
+.focus-task-name{margin:12px 0;color:#92a6bf;font-size:10px;line-height:1.6}
+.focus-task-name strong{color:#dce7f5}
+.focus-controls{display:flex;gap:7px;flex-wrap:wrap}
+.focus-controls button,.revision-button{padding:9px 10px;border:1px solid #2a4960;border-radius:6px;background:#102436;color:#c8eaf1;font:8px var(--mono);letter-spacing:.5px;cursor:pointer}
+.focus-controls button:hover:not(:disabled),.revision-button:hover:not(:disabled){border-color:var(--cyan);background:#103342}
+.focus-controls button:disabled,.revision-button:disabled{opacity:.48;cursor:not-allowed}
+.focus-hint,.revision-hint{margin:10px 0 0;color:#8397b1;font-size:9px;line-height:1.6}
+.revision-panel-heading>span{padding:5px 7px;border:1px solid #34495f;border-radius:5px;color:#9fb4cc;font:8px var(--mono)}
+.revision-panel>label{display:block;margin:13px 0 6px;color:#91a8c1;font:8px var(--mono);letter-spacing:.5px}
+.revision-panel select,.revision-panel textarea{width:100%;padding:10px 11px;border:1px solid #2c4057;border-radius:7px;background:#080f1a;color:#dce7f5;font:10px var(--sans);line-height:1.6}
+.revision-panel textarea{min-height:70px;resize:vertical}
+.revision-button{width:100%;margin-top:12px;background:linear-gradient(100deg,#0d3847,#17284b);border-color:#286477;color:#d7fbff}
+.revision-feedback,.revision-notice{margin:10px 0 0;padding:9px 10px;border:1px solid #40546a;border-radius:7px;color:#a9bdd4;font-size:10px;line-height:1.6;overflow-wrap:anywhere}
+.revision-feedback.success{border-color:#4ade8050;color:#a7f3c5;background:#05231865}
+.revision-feedback.error{border-color:#fb718550;color:#fecdd3;background:#2a0b1565}
+.revision-notice{border-color:#a78bfa60;color:#d8c9ff;background:#21153d66}
+@media(max-width:600px){.focus-panel,.revision-panel{padding:11px}.focus-panel-heading time{font-size:21px}.focus-controls button{flex:1;min-width:95px}.focus-task-button{margin-left:0}.revision-panel-heading{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.focus-task-button,.focus-controls button,.revision-button{transition:none!important}}

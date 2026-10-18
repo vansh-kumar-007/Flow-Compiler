@@ -1,3 +1,5 @@
+import { validatePlanResponse } from "./plan-ui.js";
+
 export function buildDependencyGraph(plan) {
   if (!plan || !Array.isArray(plan.tasks) || !Array.isArray(plan.deferredTasks ?? [])) {
     return { valid: false, reason: "Plan task collections are invalid.", nodes: [], edges: [] };
@@ -53,6 +55,42 @@ export function buildDependencyGraph(plan) {
   }
 
   return { valid: true, reason: null, nodes, edges };
+}
+
+/**
+ * Validate an active UI plan, where completed task records remain visible but
+ * totalMinutes represents the unfinished scheduled work after a recompile.
+ */
+export function validateActivePlan(plan, completedIds = {}, availableMinutes) {
+  if (!plan
+    || !Array.isArray(plan.tasks)
+    || plan.tasks.length === 0
+    || !plan.tasks.every(task => task && typeof task === "object" && typeof task.id === "string")
+    || !Array.isArray(plan.deferredTasks ?? [])
+    || !(plan.deferredTasks ?? []).every(task => task && typeof task === "object" && typeof task.id === "string")) {
+    return "plan task collections are invalid.";
+  }
+  const completedTasks = plan.tasks.filter(task => completedIds?.[task.id] === true);
+  const remainingTasks = plan.tasks.filter(task => completedIds?.[task.id] !== true);
+  const budget = Number.isInteger(availableMinutes) ? availableMinutes : Math.max(5, plan.totalMinutes || 5);
+
+  if (remainingTasks.length === 0) {
+    // Preserve a fully completed plan as durable history. Validate its original
+    // task graph and recompute the historical total, since a prior revision's
+    // totalMinutes intentionally described only the unfinished work.
+    const historical = {
+      ...plan,
+      totalMinutes: plan.tasks.reduce((sum, task) => sum + task.minutes, 0)
+    };
+    return validatePlanResponse(historical, Math.max(budget, historical.totalMinutes));
+  }
+
+  const normalized = {
+    ...plan,
+    tasks: remainingTasks,
+    totalMinutes: remainingTasks.reduce((sum, task) => sum + task.minutes, 0)
+  };
+  return validatePlanResponse(normalized, budget, completedTasks.map(task => task.id));
 }
 
 export function getCompletionProgress(plan, completedIds = {}) {

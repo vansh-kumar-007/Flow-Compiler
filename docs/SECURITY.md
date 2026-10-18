@@ -34,3 +34,11 @@ Flow Compiler has a public React/Vite frontend and a separate Express backend. N
 ## Required pre-live gate
 
 Before adding NVIDIA_API_KEY, deploy the backend without it, verify /api/health, configure exact APP_ORIGINS and frontend VITE_API_BASE_URL, and verify the frontend health check. Then configure FLOW_COMPILER_ACCESS_TOKEN server-side, test valid/invalid credentials against the deployed endpoint without a provider key, and confirm CORS plus rate limiting. Check NVIDIA account eligibility/quota separately before any one-shot live inference. Never expose the key in the frontend or this chat.
+
+
+## Local plan persistence and safe export
+
+- The app may save a versioned, validated active plan and completion map in the browser's localStorage. This is local to that browser profile, not encrypted cloud storage; anyone with access to the same browser profile may be able to read it. Do not put secrets or highly sensitive notes into task titles/reasons.
+- The saved snapshot excludes the original raw thought input, revision note and session access token. It is bounded to 64 KiB, expires after 30 days, validates its schema and dependency graph on restore, and discards corrupt/unsupported snapshots. Storage may be unavailable or cleared by the browser.
+- The safe JSON export is deliberately lossy: it contains task IDs/titles/durations/priorities/dependency IDs/categories/completion only. It omits the plan summary, task reasons, deferral reasons, raw input, blocker notes and credentials. Check the export before sharing.
+- When the available-time budget changes and recompile is pending, the app retains the previous consistent saved snapshot. A failed replacement request must not clear an existing plan or completion state.

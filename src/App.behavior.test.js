@@ -64,3 +64,10 @@ test("recompile handler keeps the local demo branch provider-free and invalidate
   assert.match(appSource, /window\.setInterval/);
   assert.match(appSource, /window\.clearInterval/);
 });
+
+test("task focus is dependency-gated and completing the focused task pauses its timer", () => {
+  assert.match(appSource, /!task\.dependsOn\.every\(id => completedTaskIds\[id\] === true\)/);
+  assert.match(appSource, /function toggleScheduledTask\(taskId, checked\)/);
+  assert.match(appSource, /current\.taskId === taskId \? \{ \.\.\.current, running: false \} : current/);
+  assert.match(appSource, /\.\.\.displayModel\.deferredTasks/);
+});

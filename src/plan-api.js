@@ -31,6 +31,7 @@ export async function requestPlan({
   token,
   brainDump,
   availableMinutes,
+  previousPlan = null,
   signal
 }) {
   const credential = typeof token === "string" ? token.trim() : "";
@@ -63,7 +64,7 @@ export async function requestPlan({
       body: JSON.stringify({
         brainDump: brainDump.trim(),
         availableMinutes,
-        previousPlan: null
+        previousPlan
       })
     });
   } catch {
@@ -90,7 +91,8 @@ export async function requestPlan({
     });
   }
 
-  const validationError = validatePlanResponse(payload, availableMinutes);
+  const completedTaskIds = Array.isArray(previousPlan?.completedTaskIds) ? previousPlan.completedTaskIds : [];
+  const validationError = validatePlanResponse(payload, availableMinutes, completedTaskIds);
   if (validationError) {
     throw new PlanningApiError(
       "The backend returned a response that did not match the plan contract: " + validationError,

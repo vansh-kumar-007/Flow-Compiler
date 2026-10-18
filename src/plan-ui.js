@@ -125,7 +125,7 @@ function validateTask(task, { deferred = false } = {}) {
   return null;
 }
 
-export function validatePlanResponse(payload, availableMinutes) {
+export function validatePlanResponse(payload, availableMinutes, completedTaskIds = []) {
   if (!isRecord(payload) || !hasOnlyFields(payload, ["summary", "totalMinutes", "tasks", "deferredTasks"])) {
     return "response must be a plan object with only documented fields.";
   }
@@ -143,17 +143,24 @@ export function validatePlanResponse(payload, availableMinutes) {
   const deferred = payload.deferredTasks ?? [];
   if (payload.tasks.length + deferred.length > TASK_LIMIT) return "scheduled and deferred tasks cannot exceed 20 combined.";
 
+  if (!Array.isArray(completedTaskIds) || completedTaskIds.length > TASK_LIMIT) return "completedTaskIds must be an array of at most 20 IDs.";
+  const completed = new Set();
+  for (const id of completedTaskIds) {
+    if (typeof id !== "string" || !TASK_ID.test(id) || completed.has(id)) return "completedTaskIds contains invalid or duplicate IDs.";
+    completed.add(id);
+  }
+
   const allIds = new Set();
   for (const task of payload.tasks) {
     const error = validateTask(task);
     if (error) return error;
-    if (allIds.has(task.id)) return "task IDs must be unique.";
+    if (allIds.has(task.id) || completed.has(task.id)) return "task IDs must be unique and cannot collide with completed IDs.";
     allIds.add(task.id);
   }
   for (const task of deferred) {
     const error = validateTask(task, { deferred: true });
     if (error) return error;
-    if (allIds.has(task.id)) return "task IDs must be unique across scheduled and deferred tasks.";
+    if (allIds.has(task.id) || completed.has(task.id)) return "task IDs must be unique across scheduled, deferred and completed tasks.";
     allIds.add(task.id);
   }
   if (payload.totalMinutes !== payload.tasks.reduce((sum, task) => sum + task.minutes, 0)) {
@@ -164,19 +171,21 @@ export function validatePlanResponse(payload, availableMinutes) {
   const tasksById = new Map([...payload.tasks, ...deferred].map(task => [task.id, task]));
   for (const task of [...payload.tasks, ...deferred]) {
     for (const dependencyId of task.dependsOn) {
-      if (!allIds.has(dependencyId)) return "task references an unknown dependency ID.";
+      if (!allIds.has(dependencyId) && !completed.has(dependencyId)) return "task references an unknown dependency ID.";
       if (deferredIds.has(dependencyId) && !deferredIds.has(task.id)) {
         return "scheduled task cannot depend on deferred work.";
       }
     }
   }
 
-  // Validate acyclicity without drawing or otherwise implementing the dependency
-  // graph UI. The actual graph visualization and readiness UX remain P3-06.
+  // Validate the returned graph for dependency rendering. Already-completed IDs
+  // satisfy incoming prerequisites without participating in the returned DAG.
   const indegree = new Map([...tasksById.keys()].map(id => [id, 0]));
   const dependents = new Map([...tasksById.keys()].map(id => [id, []]));
   for (const task of tasksById.values()) {
     for (const dependencyId of task.dependsOn) {
+      // A completed prerequisite satisfies the edge and is not part of the new DAG.
+      if (completed.has(dependencyId)) continue;
       indegree.set(task.id, indegree.get(task.id) + 1);
       dependents.get(dependencyId).push(task.id);
     }

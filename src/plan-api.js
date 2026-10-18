@@ -2,6 +2,7 @@ import { getInputError, getTimeError, validatePlanResponse } from "./plan-ui.js"
 
 const API_ERROR_MESSAGES = Object.freeze({
   UNAUTHORIZED: "Access token rejected. Check it and try again.",
+  AI_AUTHENTICATION_ERROR: "The NVIDIA service rejected its server-side credentials. No plan was generated.",
   AUTHENTICATION_NOT_CONFIGURED: "Backend access-token authentication is not configured yet.",
   AI_NOT_CONFIGURED: "Access was accepted, but the backend has no NVIDIA API key configured. No plan was generated.",
   RATE_LIMIT_EXCEEDED: "Too many API requests. Wait before trying again.",

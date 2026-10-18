@@ -479,3 +479,11 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 
 - PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; exact merge SHA and deployment metadata have been refreshed by the connected integrations. CI/deploy final statuses are to be filled only from their observed conclusions; do not substitute PR-head CI or successful build events for exact-main/live evidence.
 - The Phase 3 batch did not implement P3-06 graph visualization, P3-07 progress tracking, or Phase 4 recompilation. The next technical task remains P3-06 after required deployed/manual acceptance for this batch.
+
+
+## Phase 3 post-merge deployment/CI refreshed — 2026-10-18 Asia/Kolkata
+
+- Current `main`: `c99012f28c89fedc551f54da3cca55e7d9a19677`. Exact merge Actions run [#284](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110709718) passed on that SHA (Node 24, clean install, backend tests, production build).
+- Render latest deployment `dep-dba7vvu7bikc73ec4kc0` is `live` on the merge SHA; build and deployment completion events succeeded. Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` is `READY` on the same SHA.
+- User supplied the public health endpoint response `{"status":"ok","service":"flow-compiler-api"}`. This confirms backend health only; no authenticated planning request was made during this audit and no NVIDIA inference occurred.
+- No browser automation is configured. An owner browser smoke test remains the final product-level manual check for demo/no-network transitions and visible safe API errors. Keep `NVIDIA_API_KEY` unset until a separate reviewed authorization.

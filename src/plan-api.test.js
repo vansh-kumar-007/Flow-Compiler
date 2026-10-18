@@ -151,3 +151,27 @@ test("maps backend auth-configuration and provider-network errors to safe action
     fetchImpl: async () => response({ error: { code: "AI_NETWORK_ERROR", message: "private upstream host" } }, { ok: false, status: 502 })
   })), error => error.code === "AI_NETWORK_ERROR" && /could not be reached/.test(error.message) && !error.message.includes("private upstream"));
 });
+
+test("forwards revision context and accepts dependencies satisfied by completed task IDs", async () => {
+  let sentBody;
+  const responsePlan = {
+    summary: "Continue after the completed prerequisite.",
+    totalMinutes: 10,
+    tasks: [{ id: "t2", title: "Continue work", minutes: 10, priority: "high", reason: "The prerequisite is complete.", dependsOn: ["t1"], category: "build" }]
+  };
+  const previousPlan = {
+    tasks: [{ id: "t2", title: "Continue work", minutes: 10, priority: "high", reason: "The prerequisite is complete.", dependsOn: ["t1"], category: "build" }],
+    completedTaskIds: ["t1"],
+    revisionContext: { reason: "time_changed" }
+  };
+  const result = await requestPlan(args({
+    previousPlan,
+    availableMinutes: 15,
+    fetchImpl: async (_url, options) => {
+      sentBody = JSON.parse(options.body);
+      return response(responsePlan);
+    }
+  }));
+  assert.deepEqual(sentBody.previousPlan, previousPlan);
+  assert.deepEqual(result, responsePlan);
+});

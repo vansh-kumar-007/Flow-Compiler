@@ -25,7 +25,7 @@ function isRecord(value) {
 }
 
 function cleanCompletedIds(plan, completedTaskIds) {
-  if (!isRecord(completedTaskIds)) return null;
+  if (!isRecord(plan) || !Array.isArray(plan.tasks) || !isRecord(completedTaskIds)) return null;
   if (!Object.values(completedTaskIds).every(value => typeof value === "boolean")) return null;
   const scheduledIds = new Set(plan.tasks.map(task => task.id));
   return Object.fromEntries(
@@ -42,11 +42,12 @@ export function savePlanSnapshot(
   if (!Number.isInteger(availableMinutes) || getTimeError(availableMinutes)) {
     return { ok: false, reason: "invalid-budget" };
   }
-  if (!PLAN_KINDS.has(planKind) || validateActivePlan(plan, completedTaskIds, availableMinutes)) {
-    return { ok: false, reason: "invalid-plan" };
-  }
+  if (!PLAN_KINDS.has(planKind)) return { ok: false, reason: "invalid-plan" };
   const cleanedCompletedIds = cleanCompletedIds(plan, completedTaskIds);
   if (!cleanedCompletedIds) return { ok: false, reason: "invalid-completion-state" };
+  if (validateActivePlan(plan, cleanedCompletedIds, availableMinutes)) {
+    return { ok: false, reason: "invalid-plan" };
+  }
 
   const snapshot = {
     schemaVersion: SAVED_PLAN_SCHEMA_VERSION,

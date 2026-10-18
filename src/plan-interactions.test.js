@@ -6,7 +6,8 @@ import {
   buildPlanPresentation,
   getCompletionProgress,
   isCurrentPlanRequest,
-  setScheduledTaskCompletion
+  setScheduledTaskCompletion,
+  validateActivePlan
 } from "./plan-interactions.js";
 
 function plan(overrides = {}) {
@@ -121,4 +122,18 @@ test("plan presentation refuses cyclic or unresolved dependency data", () => {
   }));
   assert.equal(invalid.valid, false);
   assert.deepEqual(invalid.tasks, []);
+});
+
+test("active-plan validation supports completed records retained after recompilation", () => {
+  const revised = {
+    summary: "Continue the remaining work.",
+    totalMinutes: 10,
+    tasks: [
+      { id: "a", title: "Completed prerequisite", minutes: 5, priority: "high", reason: "Already done.", dependsOn: [], category: "build" },
+      { id: "b", title: "Remaining task", minutes: 10, priority: "normal", reason: "Continue.", dependsOn: ["a"], category: "build" }
+    ],
+    deferredTasks: []
+  };
+  assert.equal(validateActivePlan(revised, { a: true }, 10), null);
+  assert.notEqual(validateActivePlan(revised, {}, 10), null);
 });

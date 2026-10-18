@@ -298,6 +298,30 @@ test("ignores malformed Content-Length and still enforces the streamed limit", a
   });
 });
 
+test("maps NVIDIA's HTTP 202 pending response to a safe error without polling", async () => {
+  let cancelled = false;
+  let calls = 0;
+  const response = responseFromBodyText(
+    JSON.stringify({ requestId: "sensitive-pending-id", status: "pending", token: testSecret }),
+    { status: 202, onCancel: () => { cancelled = true; }, closeWhenDrained: false }
+  );
+  const client = clientFor(async () => {
+    calls += 1;
+    return response;
+  });
+
+  await assert.rejects(client.createChatCompletion({ messages }), error => {
+    assert.equal(error.code, "AI_PROVIDER_PENDING");
+    assert.equal(error.message, "The AI service has not completed the request.");
+    assert.equal(error.upstreamStatus, 202);
+    assert.equal(error.message.includes(testSecret), false);
+    assert.equal(error.message.includes("sensitive-pending-id"), false);
+    return true;
+  });
+  assert.equal(calls, 1);
+  assert.equal(cancelled, true);
+});
+
 test("maps HTTP provider statuses to stable safe errors and cancels error bodies", async () => {
   const cases = [
     [401, "AI_AUTHENTICATION_ERROR"],

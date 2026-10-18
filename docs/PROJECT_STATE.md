@@ -577,3 +577,12 @@ Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WO
 - Required browser acceptance: (1) clear DevTools Network, select LOCAL DEMO, click LOAD DEMO PLAN once, and confirm no new `POST /api/plan`; if it appears, report only method/path/status/timing and stop; (2) on the current production build, mark/unmark a scheduled task and verify progress changes 0% → partial → 100%, then switch plans and verify progress resets; (3) inspect dependency links on desktop/narrow width and verify keyboard focus, contrast and reduced-motion behavior. Do not send tokens, request headers, cookies, or bodies.
 - The owner-reported empty-token guard PASS remains recorded; it was not repeated. Existing mocked backend tests prove the no-`NVIDIA_API_KEY` path returns `AI_NOT_CONFIGURED` without provider fetch. No live inference, key setup, host configuration change, or paid dependency occurred. Actual production AI-plan rendering is **not verified**.
 - Original source plan `Plan.txt`, task IDs, and order are unchanged. Phase 4 and later tasks remain not started in this batch; P2-11 remains blocked/not attempted.
+
+
+## Checklist/deployment reconciliation — 2026-10-18 Asia/Kolkata
+
+- Current `main` at this reconciliation branch base: `3d6281cdf512e4b5fc14be11d24829927842ab37`. Implementation PR #21 merged at `cbcb316bd6bc55c5f6e61fd1b9a14dcace753eb8`; subsequent commits are documentation status records only.
+- Exact-main Actions [#39140849479](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39140849479) passed on the current main SHA. The implementation SHA's post-merge run [#39132285116](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39132285116) passed 260 backend + 34 frontend Node tests and Vite production build.
+- Render deploy `dep-dbaecfjrjlhs73ch61mg` is `live` on `3d6281cdf512e4b5fc14be11d24829927842ab37`; Vercel Production deployment `dpl_HLXiVt4W8ZHTM5M6pasyRWqsHyqt` is `READY` on the same SHA. This is deployment metadata only, not a live browser test.
+- The owner-reported missing-configuration UI is recorded as observed but not independently correlated to an exact HTTP status/error code. No repeat is required for this batch. Mocked route tests prove the no-provider-key path stops before provider fetch; live NVIDIA inference remains unauthorized.
+- Static dependency relationships are implemented in P3-06; P5-02 remains in progress because its animated/glowing graph treatment has not been implemented. Phase 4 and later work remains outside this batch.

@@ -1,4 +1,5 @@
-import { getTimeError, validatePlanResponse } from "./plan-ui.js";
+import { getTimeError } from "./plan-ui.js";
+import { validateActivePlan } from "./plan-interactions.js";
 
 export const SAVED_PLAN_STORAGE_KEY = "flow-compiler.active-plan.v1";
 export const SAVED_PLAN_SCHEMA_VERSION = 1;
@@ -41,7 +42,7 @@ export function savePlanSnapshot(
   if (!Number.isInteger(availableMinutes) || getTimeError(availableMinutes)) {
     return { ok: false, reason: "invalid-budget" };
   }
-  if (!PLAN_KINDS.has(planKind) || validatePlanResponse(plan, availableMinutes)) {
+  if (!PLAN_KINDS.has(planKind) || validateActivePlan(plan, completedTaskIds, availableMinutes)) {
     return { ok: false, reason: "invalid-plan" };
   }
   const cleanedCompletedIds = cleanCompletedIds(plan, completedTaskIds);
@@ -107,13 +108,12 @@ export function loadPlanSnapshot(storage = getBrowserStorage(), now = Date.now()
     || !Number.isInteger(value.availableMinutes)
     || getTimeError(value.availableMinutes)
     || !PLAN_KINDS.has(value.planKind)
-    || !isRecord(value.plan)
-    || validatePlanResponse(value.plan, value.availableMinutes)) {
+    || !isRecord(value.plan)) {
     return discard("invalid");
   }
 
   const completedTaskIds = cleanCompletedIds(value.plan, value.completedTaskIds);
-  if (!completedTaskIds) return discard("invalid");
+  if (!completedTaskIds || validateActivePlan(value.plan, completedTaskIds, value.availableMinutes)) return discard("invalid");
   return {
     snapshot: {
       schemaVersion: SAVED_PLAN_SCHEMA_VERSION,

@@ -857,3 +857,21 @@ This matrix supersedes all earlier dated status snapshots above. The original Pl
 4. Do not configure `NVIDIA_API_KEY`, make a provider call, weaken security controls, or start P3-06.
 
 **Next eligible product task:** P3-06 is next in phase order but remains on hold until the outstanding P3-02–P3-05 browser acceptance checks are resolved. NVIDIA live inference remains NOT READY and unauthorized.
+
+
+## Phase 4 implementation batch — 2026-10-18 Asia/Kolkata
+
+The original task IDs and order remain authoritative. Implementation is on branch `feat/phase-4-recompile-focus-workflow`; it is not yet merged or production-deployed.
+
+- [x] **P4-01 — Define stable plan/task identity and recompile contract.** Added `src/plan-revision.js` helpers to build bounded revision context with stable task IDs, completed IDs, reason, optional note and structured blocker. Tests cover validation and fully-completed plans.
+- [x] **P4-02 — Preserve completed tasks during recompile.** The UI keeps completed scheduled records and only sends unfinished task records in `previousPlan`; completed IDs are passed separately. Merge tests verify completed records remain in the displayed plan.
+- [x] **P4-03 — Revalidate IDs and dependencies after recompile.** Frontend response validation accepts dependencies satisfied by explicitly completed IDs, rejects collisions, and the merged result is rechecked through the existing dependency graph validator. Tests cover completed prerequisite context and collisions.
+- [x] **P4-04 — Support time-loss/remaining-time changes.** Changing the available-time value on an existing plan marks it for recompilation while retaining the current plan until a successful revision. Revised total is labeled as remaining scheduled time. API mode uses the existing authenticated planning client; local demo mode uses a deterministic in-memory rescheduler.
+- [x] **P4-05 — Support early finish and blocker reporting.** Revision reason options include manual adjustment, time changed, completed early and blocked. Blocker mode requires an unfinished task and non-empty bounded note; local demo mode defers the blocker and downstream dependents. API mode sends documented revision context only.
+- [x] **P4-06 — Implement countdown/focus mode.** Added a task-selectable countdown, start/pause/reset, tab-local interval cleanup, and pause when the focused task is marked complete. Focus selection is gated on completed prerequisites.
+- [x] **P4-07 — Implement next-ready action selection.** A deterministic selector chooses the highest-priority incomplete task whose prerequisites are all completed; the UI offers it as the next focus action.
+- [x] **P4-08 — Add recompile regression tests and UI verification.** Added helper/API/response/UI wiring regression tests. Latest branch CI run [#39153015178](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39153015178) succeeded on `a766117eb99537cd48fab546e12d1b9cf93058b4`; the configured workflow's install, backend tests, and frontend production build all passed. Production-browser verification remains manual and is not claimed complete.
+
+No browser-test runner, lint script or typecheck script is configured. Automated tests and a production build do not substitute for browser acceptance. The Phase 3 manual checks remain pending and do not block independent Phase 4 implementation.
+
+Security boundary: no NVIDIA key was configured or requested, no live provider inference was performed, and no hosting settings/secrets were changed. No dependency was added.

@@ -669,4 +669,14 @@ This current addendum supersedes older statements above that claim the backend o
 - Added prerequisite rendering that resolves dependency IDs to readable task titles and retains IDs, matching the source-plan rendering expectation. The client validates dependency references/cycles but deliberately does not draw dependency edges or implement readiness logic (P3-06).
 - PR #15 branch success is automated/mock evidence, not live NVIDIA use. No NVIDIA request, key, quota-consuming test, or provider-network call was made.
 - User manually confirmed public backend health JSON: `{"status":"ok","service":"flow-compiler-api"}`.
-- **Post-merge hosting snapshot must still be read as deployment state, not assumed:** Render is expected to auto-deploy main, but its latest deployment must report `live`; Vercel must be `READY` on the merged SHA before production UI acceptance is marked. Browser automation is not configured in the repository; a small owner browser smoke test remains required.
+- **Post-merge hosting snapshot must still be read as deployment state, not assumed:** Render is expected to auto-deploy main, but its latest deployment must report `live`; Vercel must be `READY` on the merged SHA before production UI acceptance is marked. Browser automation is not configured in the repository; a small owner browser smoke test remains required. `NVIDIA_API_KEY` remains unset.
+
+
+## Phase 3 post-merge deployment and CI confirmation — 2026-10-18 Asia/Kolkata
+
+- Current `main` SHA: `c99012f28c89fedc551f54da3cca55e7d9a19677`.
+- Exact-main Actions [run #284](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110709718) completed successfully on the same SHA; Node 24, dependency install, backend tests, and Vite production build all passed.
+- Render deploy `dep-dba7vvu7bikc73ec4kc0` is `live` on that SHA; Render build-ended and deploy-ended events both succeeded. Render plan remains Free and auto-deploy remains enabled from `main`.
+- Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` is `READY` on that same SHA.
+- No open PRs were found in the latest search. The backend `/api/health` JSON was supplied manually by the user. Browser test automation remains unavailable; user must perform the concise UI smoke test documented in the handoff.
+- No Render environment/settings changed; no `NVIDIA_API_KEY`, no provider request, no paid resource or added dependency.

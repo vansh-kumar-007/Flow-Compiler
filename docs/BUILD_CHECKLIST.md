@@ -201,12 +201,12 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | Task ID | Original-plan task | Current status | Evidence / blocker |
 |---|---|---|---|
 | P0-01 | Inspect repository metadata and permissions | Completed | Repository metadata and permission checks recorded. |
-| P0-02 | Inspect repository contents, branches, commits, and PRs | Completed | Remote history/branches/PRs inspected; current state refreshed in this audit. |
+| P0-02 | Inspect repository contents, branches, commits, and PRs | Completed | Refreshed current `main` at `04ea333749767f353b81e130568a3faf37d10273`; PRs #15–#18 merged, exact-main CI #293 passed, and production deployment metadata inspected. |
 | P0-03 | Read the complete supplied build plan | Completed | Plan.txt is present and remains authoritative. |
 | P0-04 | Record baseline and risk register | Completed | docs/PROJECT_STATE.md records architecture, risks and state. |
 | P0-05 | Create granular master checklist | Completed | docs/BUILD_CHECKLIST.md tracks stable task IDs. |
 | P0-06 | Reconcile governance files and next-task pointer | In progress | This audit found older status narratives above the latest matrix that still claim deployment/auth are missing. The current audit correction is being prepared on a docs branch; task is complete after PR/CI/merge. |
-| P0-07 | Define foundation verification path | Completed | Node 24 CI runs clean install, backend tests and Vite build. |
+| P0-07 | Define foundation verification path | Completed | Exact-main [Actions run #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) passed on `04ea333749767f353b81e130568a3faf37d10273`; the application-code run #291 had 260 backend + 17 frontend Node tests passing and Vite production build passing. |
 | P1-01 | Establish app directory and dependency scripts | Completed | Root/server workspaces and npm lockfile are verified by CI. |
 | P1-02 | Bootstrap React + Vite application | Completed | Frontend entry points exist and production build passes in CI. |
 | P1-03 | Bootstrap separate Express backend | Completed | Separate Express workspace and server start command are present. |
@@ -214,7 +214,7 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P1-05 | Add .gitignore and safe environment example | Completed | Real env files ignored; NVIDIA_API_KEY and FLOW_COMPILER_ACCESS_TOKEN are blank placeholders; no frontend provider key use. |
 | P1-06 | Add backend automated smoke tests | Completed | Automated Node test suite passes in CI. |
 | P1-07 | Add frontend/backend local development guidance | Completed | README scripts correspond to manifests. |
-| P1-08 | Add CI workflow and inspect actual run | Completed | Latest `main` CI [run #242](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39061261784) passed clean install, all 259 backend tests, and Vite production build on `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`. |
+| P1-08 | Add CI workflow and inspect actual run | Completed | Exact-main [Actions run #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) passed on `04ea333749767f353b81e130568a3faf37d10273`; app-code run #291 passed clean install, all 277 tests (260 backend + 17 frontend), and Vite build. |
 | P1-09 | Review source/diff and secret boundary | Completed | Targeted source review found no NVIDIA key in frontend; not a formal external security audit. |
 | P2-01 | Define and document plan request/response schema | Completed | API contract documents source fields, prior plan, output schema and error envelopes. |
 | P2-02 | Validate request fields and payload size | Completed | Request validator enforces brainDump/time/previousPlan bounds before provider call. |
@@ -225,19 +225,19 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P2-07 | Validate dependency references, edges, cycles and deferred prerequisites | Completed (mocked only) | Graph validator checks dangling/self/duplicate edges, ID collisions and cycles. |
 | P2-08 | Validate time-budget fit and deferred-work selection | Completed (mocked only) | Schedule validator enforces scheduled sum, totalMinutes and deferred reasons. |
 | P2-09 | Add rate limiting and CORS/origin configuration | Completed (mocked only) | In-memory limiter and exact APP_ORIGINS behavior have automated tests. |
-| P2-10 | Complete deterministic mocked-provider test matrix | Completed (mocked only) | Actions #151 passed 251 tests with fake key/mock fetch; no live inference. |
+| P2-10 | Deterministic mocked provider test matrix | Completed | Application-code [Actions #291](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112563059) passed 260 backend + 17 frontend tests and Vite build; exact-main docs-only [Actions #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) also passed. All provider tests are mocked; no live NVIDIA request. |
 | P2-11 | Optional real NVIDIA inference smoke test | Blocked / not attempted | User explicitly said do not request/configure key yet; account quota/eligibility is not available to this connection. |
 | P2-12 | Finalize API security documentation and verification | In progress on PR #5 branch | API contract and docs/SECURITY.md document personal bearer authentication. Exact current HEAD before this docs reconciliation `5285841eda3cd7488d7c941983c5f13f62ab483c` passed [Actions run #200](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39042755032): 256/256 backend tests, 0 failed/skipped, Vite production build passed. This documentation follow-up requires fresh branch CI; review/merge and deployed auth remain pending; no inference. |
 | P2-13 | Connect validated adapter to POST /api/plan (supplemental source-plan follow-up) | Completed on main (mocked only) | Merged via PR #4 as f0c67d478876547c753b539a78f06039c79ef88f; Actions #157/#158 passed 251 tests and build. Provider behavior is mocked; no live inference. |
 | P3-01 | Implement dark command-center frame | In progress — preview render confirmed by user | User confirms the PR #3 Vercel preview renders. Remaining manual acceptance: responsive layout; input/time controls; Load Example; Check API result. PR #3 exact HEAD `af1bf3389009f50dcc4b2a248f3d0342d1319bfc` passed [Actions #170](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39041112232): 251/251 backend tests, 0 failed/skipped, Vite build. No backend connectivity is inferred. |
-| P3-02 | Implement thought input and available-time controls | In progress (partial) | Input and time controls exist; full validation feedback/acceptance is unfinished. |
-| P3-03 | Add demo input and demo plan mode/data | In progress (partial) | Load-example input exists; there is no generated demo-plan mode. |
-| P3-04 | Connect UI to planning API | In progress | Production Vercel env contains `VITE_API_BASE_URL`; latest owner-reported Check API is `Backend reachable · flow-compiler-api`. The access-token UI is session-only and sends `Authorization: Bearer`; deployed auth is not yet tested. |
-| P3-05 | Render plan summary and task nodes | In progress (minimal rendering) | PR #5 displays actual API-returned summary/tasks/deferred tasks when present; polished graph/dependency layout and full acceptance remain. |
+| P3-02 | Thought input and time controls | In progress — partial browser acceptance | Production smoke report confirms keyboard navigation/narrow viewport and the 120-minute demo budget display, but did not report direct empty/whitespace/length/time-boundary interaction results. Automated helper tests pass; no browser runner is configured. |
+| P3-03 | Demo input and demo plan mode | Blocked — reported network anomaly needs attribution | Owner reports the demo label/counts/duration passed but also reports `POST /api/plan` during the demo check. Current deployed `src/App.jsx` sets local demo state and has an early return before `requestPlan`; source inspection cannot reproduce the reported POST. Render request logs were not inspected because a workspace must be selected first. Keep open until the exact click sequence is repeated with Network cleared and the request is correlated. |
+| P3-04 | Connect UI to planning API | In progress — partial production smoke acceptance | Owner reports empty-token behavior passed and invalid token returned generic HTTP 401 / `UNAUTHORIZED` with no plan. The missing-NVIDIA-configuration result was left as an unfilled template/unknown, so deployed HTTP 500 `AI_NOT_CONFIGURED` safe-failure behavior remains unverified. No provider call was made or authorized. |
+| P3-05 | Render plan summary and task nodes | In progress — partial browser acceptance | Owner confirms `DEMO / ILLUSTRATIVE`, 3 scheduled + 2 deferred tasks, and 70 scheduled minutes within the 120-minute example. Full API-response task-field rendering was not reported; graph edges/readiness remain P3-06. |
 | P3-06 | Display accurate dependency links/graph | Not started | Current graph is illustrative only. |
 | P3-07 | Add completion tracking and progress calculation | Not started | No actual task completion state or remaining-time calculation. |
-| P3-08 | Add empty/loading/API-error/invalid-plan states | In progress (partial) | PR #5 adds pending/success/error feedback and a minimal response-shape guard; comprehensive invalid-plan/UI regression coverage remains. |
-| P3-09 | Accessibility and interaction review | In progress (partial) | Semantic labels/focus styles exist, but full keyboard/contrast/reduced-motion checks are not evidenced. |
+| P3-08 | Empty/loading/error/invalid-plan states | In progress | Automated frontend/API error-state tests pass. Owner reports invalid-token HTTP 401 and no plan; missing-provider-key production result remains unverified, and the reported demo POST anomaly is unresolved. |
+| P3-09 | Accessibility and interaction review | In progress — partial manual pass | Owner reports keyboard navigation and narrow viewport passed. Screen-reader behavior, reduced-motion behavior, full breakpoint/contrast review, and the demo network anomaly remain outstanding. |
 | P4-01 | Define stable plan/task identity and recompile contract | In progress (contract only) | API contract defines revision context and completed IDs; runtime UI workflow not implemented. |
 | P4-02 | Preserve completed tasks during recompile | Not started | No client recompile behavior or regression tests. |
 | P4-03 | Revalidate IDs/dependencies after recompile | In progress (server validators only) | Generated plan validators exist; recompile-specific UI/runtime integration is absent. |
@@ -248,31 +248,31 @@ Status legend: **Completed** = verified with evidence; **In progress** = impleme
 | P4-08 | Add recompile regression tests and UI verification | Not started | Recompile behavior not implemented. |
 | P5-01 | Persist active plan/completion state locally | Not started | No local persistence of a real plan. |
 | P5-02 | Add animated dependency links/nodes | Not started | Current visual graph is static and illustrative. |
-| P5-03 | Finalize focus-mode visual states/responsive layout | In progress (partial) | Responsive shell exists; full breakpoint and focus-mode checks are outstanding. |
+| P5-03 | Focus states and responsive layout | In progress — partial manual pass | Owner reports keyboard navigation and narrow viewport passed for production; focus-mode behavior and a full responsive breakpoint matrix remain. |
 | P5-04 | Add privacy-preserving export/share representation | Not started | No export path. |
-| P5-05 | Add keyboard/screen-reader/reduced-motion checks | In progress (partial) | Some semantic labels/focus styles exist; formal acceptance not done. |
-| P5-06 | Add UI smoke/regression tests | Not started | No automated UI test suite evidence. |
+| P5-05 | Keyboard/screen-reader/reduced-motion checks | In progress — partial manual pass | Keyboard navigation and narrow viewport reported passed; screen-reader, reduced-motion, contrast, and comprehensive responsive checks were not reported. |
+| P5-06 | UI smoke/regression tests | In progress | Root `npm test` passes 260 backend + 17 frontend Node tests on application-code run #291; no browser runner is configured. Owner's production smoke found an unresolved report of `POST /api/plan` during the local-demo check. |
 | P5-07 | Update feature/privacy documentation | In progress (partial) | Current docs describe limitations; complete product/privacy docs await features. |
 | P6-01 | Test vague, large and conflicting inputs | In progress (mock fixtures only) | Route/model fixtures test failure cases; no live-model quality test or full UX tests. |
 | P6-02 | Test request/response bounds and malformed bodies | Completed for API boundary (CI) | Body, request, provider output and schema bounds are covered by backend tests. |
-| P6-03 | Test auth/origin/rate-limit assumptions | In progress | Code audit confirmed `timingSafeEqual`, a 43-character base64url token format, duplicate/malformed Authorization rejection, generic 401/503, auth-before-body-parser/provider, `/api/plan` path case/trailing-slash normalization, exact-origin CORS and rate limiting. Tests cover unauthorized aliases and zero provider calls; deployed credential behavior remains manual. |
-| P6-04 | Review logging and error disclosure | In progress | Targeted automated tests verify no configured/submitted token or fake provider key in console output or responses, and generic error bodies do not expose provider diagnostics. A full deployed log audit is not yet performed. |
+| P6-03 | Test auth/origin/rate-limit assumptions | In progress — partial production smoke pass | Owner reports invalid-token HTTP 401 `UNAUTHORIZED` and no plan; empty-token behavior reported passed. Missing-provider-key production status was not specified. Render request-log correlation awaits workspace selection; mocked auth-before-parse, alias, CORS and limiter tests pass. |
+| P6-04 | Review logging/error disclosure | In progress | Mocked tests check safe errors and credential non-disclosure. This follow-up could not inspect Render request logs because the Render integration requires the user to select a workspace first; no secrets were accessed. |
 | P6-05 | Review dependency validation and recompile preservation | In progress | Graph tests exist; completed-work preservation during actual recompile remains unimplemented. |
-| P6-06 | Complete test/build/lint suite | In progress | Latest `main` CI run #242 passed 259/259 backend tests and Vite build. CI has no lint, typecheck, or browser-test script, so those checks are not claimed. |
+| P6-06 | Complete test/build/lint suite | In progress — configured suite passed | Application-code Actions #291 passed 260 backend + 17 frontend Node tests and Vite production build; exact-main docs-only Actions #293 passed. No lint, typecheck or browser automation is configured. |
 | P6-07 | Final diff/dependency/security inspection | In progress | Targeted auth/API/frontend diff reviewed; exact-head CI, formal PR review, and deployed verification remain gates. No dependencies added. |
 | P7-01 | Confirm NVIDIA endpoint terms, availability and limits | Blocked | No account-specific terms/eligibility/quota check has been completed. No NVIDIA key and no live request; this remains blocked until a separate review and explicit approval. |
 | P7-02 | Compare free frontend/backend hosting options | Completed (research only) | Render Free official limits reviewed; no resource created. |
 | P7-03 | Choose compatible frontend/backend deployment | Completed | Vercel Production and Render Free are connected to the same repository/main; both latest hosting deployments report on `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`. |
 | P7-04 | Document/configure server-side secrets | In progress | Ready for the first secret-free auth setup stage: Render service is live, Vercel API origin is configured, and auth implementation is CI-verified. `FLOW_COMPILER_ACCESS_TOKEN` is still unset. Configure it only after the user follows the manual sequence; `NVIDIA_API_KEY` stays unset. |
-| P7-05 | Deploy and check frontend | Completed for deployment; manual app check reported | Latest Vercel Production deployment reports `READY` on `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`; owner reported frontend loads and Check API reports backend reachable. |
-| P7-06 | Deploy and check backend | Completed for deployment; manual health check reported | Latest Render deployment `dep-db9sg1942hec73d1p1bg` reports live on `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`; owner reported `/api/health` returns `{"status":"ok","service":"flow-compiler-api"}`. |
-| P7-07 | Verify real AI and safe failure paths | Blocked | The code-level no-key path and mocked no-provider-call behavior are tested. Deployed valid-token/no-provider-key HTTP behavior is not yet tested. Real NVIDIA inference is expressly prohibited in this milestone and remains unapproved. |
+| P7-05 | Deploy/check frontend | In progress — production deployment verified; browser gate open | Vercel Production deployment `dpl_DCZhTGLqdyxADJGVBdkFxv7j21Yb` is `READY` on `04ea333749767f353b81e130568a3faf37d10273`. Owner reports keyboard/narrow viewport pass, but demo network anomaly and missing-key result remain unresolved. |
+| P7-06 | Deploy/check backend | Completed for deployment; current health response not re-tested in this round | Render Free deployment `dep-dba8eutg1s2s73b2nte0` is `live` on `04ea333749767f353b81e130568a3faf37d10273`. Owner's earlier `/api/health` response was `{"status":"ok","service":"flow-compiler-api"}`; no new health response was captured in this round. |
+| P7-07 | Verify real AI and safe failure paths | Blocked for real AI; production no-key result not verified this round | No live NVIDIA inference. Mocked route tests prove missing `NVIDIA_API_KEY` returns `AI_NOT_CONFIGURED` before provider fetch, but the current smoke report did not specify the deployed missing-key status/code. Live inference remains separately gated by account/terms/quota review and explicit authorization. |
 | P7-08 | Add deployment/rollback/quota/troubleshooting docs | In progress | Proposed Render setup/caveats documented; final runbook depends on real deployment. |
-| P7-09 | Capture final deployed smoke-test and CI evidence | In progress | Main CI and hosting deployments are verified/reported; auth has not been exercised against deployed services yet. |
+| P7-09 | Final deployed smoke-test evidence | In progress — partial results; two issues unresolved | Reported: demo label/counts and 70/120-minute budget pass; keyboard/narrow viewport pass; invalid token gives 401/no plan. Reported `POST /api/plan` during demo check is unexplained; missing-NVIDIA-config status is unspecified. Render logs await workspace selection. |
 | P8-01 | Trace every source-plan requirement to evidence | Not started | Final traceability depends on feature and deployment acceptance. |
-| P8-02 | Verify final branch/PR/main state | Completed for current milestone | PRs #1–#9 are merged; latest `main` is `11ecaff1ecdedcf71870c682ccfa77cdbc953f93`; post-merge CI #242 passed. Final product acceptance remains open. |
-| P8-03 | Confirm setup/security/user docs are current | In progress | API contract, docs/SECURITY.md, checklist and project state are updated on PR #5 branch; merge to main is pending. |
-| P8-04 | Publish final verification/limitations handoff | Not started | Final handoff waits on merged implementation and deployment/live-test decisions. |
+| P8-02 | Verify final branch/PR/main state | Completed for current verification snapshot | Current `main` SHA `04ea333749767f353b81e130568a3faf37d10273`; PRs #15–#18 merged. Exact-main [Actions #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) passed. Render and Vercel Production both report this SHA. |
+| P8-03 | Confirm setup/security/user docs | In progress | API/security docs exist; this follow-up records the owner-reported production smoke results, the unexplained demo POST, the missing-key result left unspecified, and the Render log access blocker. |
+| P8-04 | Publish final verification and limitations handoff | In progress — Phase 3 acceptance gate open | Full task matrix is preserved. Do not mark P3-02–P3-05 accepted or begin P3-06 until the demo POST is attributed/retested and the missing-key result is reported or explicitly marked not tested. NVIDIA remains NOT READY. |
 
 ## Current PR / CI evidence at audit time
 
@@ -792,3 +792,35 @@ This matrix supersedes all earlier dated status snapshots above. The original Pl
 | P8-02 | Verify final branch/PR/main state | Completed for this verification snapshot | PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; PR #16 merged as `8fd163815ebbfbee6c429e93f1a4eabeb35875c9`; PR #17 merged as `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`. Exact-main Actions #291 passed. This docs-only PR's post-merge SHA/CI is separately verified after merge. |
 | P8-03 | Confirm setup/security/user docs | In progress | API contract/security docs exist; current Phase 3 implementation, manual acceptance gate and NVIDIA trial restrictions are being recorded in this audit. |
 | P8-04 | Publish final verification and limitations handoff | Not started | Final project handoff remains open until manual browser smoke testing, remaining phases and provider-account eligibility decision are complete. |
+
+## Production browser acceptance follow-up — 2026-10-18 Asia/Kolkata
+
+### Owner-reported observations (not independently browser-replayed)
+
+- Demo label and task counts: PASS.
+- Scheduled duration and budget: PASS (70 scheduled minutes in a 120-minute window).
+- A `POST /api/plan` was reportedly observed during the demo check: YES. This is an unresolved anomaly, not a passing no-network check.
+- Empty-token behavior: reported PASS (the supplied field contained a trailing slash; no status/code was supplied).
+- Invalid token: HTTP 401 / `UNAUTHORIZED`, no plan displayed.
+- Missing NVIDIA configuration: status/error-code field was not filled in; treat as NOT TESTED / UNKNOWN, not as a verified `AI_NOT_CONFIGURED` response.
+- Keyboard navigation and narrow viewport: PASS.
+- Other errors: none reported.
+
+### Source and deployment inspection
+
+- The production `main` source is `04ea333749767f353b81e130568a3faf37d10273`; application code remains from PR #17 (`a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`) with docs-only commits after it.
+- In `src/App.jsx`, `enterDemoMode()` sets the local immutable demo plan and does not call `fetch`; `compileWorkflow()` returns from its `demoMode` branch before calling `requestPlan`. Entering demo also aborts/invalidates an in-flight planning request. Thus the reported POST cannot be explained by the currently deployed source alone.
+- Render deployment `dep-dba8eutg1s2s73b2nte0` is `live` on the current main SHA. Vercel Production deployment `dpl_DCZhTGLqdyxADJGVBdkFxv7j21Yb` is `READY` on the same SHA.
+- Exact-main [GitHub Actions run #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) passed. Application-code [run #291](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112563059) passed 260 backend + 17 frontend Node tests and the Vite production build. Automated tests are not treated as proof of the browser network-panel behavior.
+- Render request logs were not accessed: the Render connector requires the user to select a workspace before log queries. No workspace was guessed or selected, and no secret values were accessed.
+- No code change is justified by the currently contradictory/unattributed observation. Keep P3-03 and P7-09 open until a repeatable click sequence and request correlation resolve the anomaly. If it persists, create a focused runtime fix branch and PR. Do not implement P3-06 meanwhile.
+
+### Remaining acceptance actions
+
+1. Repeat the demo check with DevTools Network open, clear the request list, select **LOCAL DEMO**, then click **LOAD DEMO PLAN** once. Confirm whether a new `POST /api/plan` appears and note only method/path/status/timing (never request headers or body). If a POST appears, repeat once after a hard reload; do not repeatedly retry API calls.
+2. In API Planning, submit with the token field empty and confirm no `POST /api/plan` request is emitted.
+3. If safe and desired, submit one synthetic non-sensitive input using the locally held valid backend token while `NVIDIA_API_KEY` remains unset. Report only HTTP status/error code and whether a plan appeared. Do not send the token here. If not tested, explicitly say `NOT TESTED`.
+4. To permit Render request-log inspection, select the intended Render workspace in a follow-up; until then server-side log correlation remains pending.
+5. Keep NVIDIA live inference blocked pending independent account eligibility, terms, quota/credits and billing review plus separate explicit authorization.
+
+**Next task pointer:** P3-06 is still the next product implementation task in the original phase order, but it is **not eligible to start yet** because P3-02–P3-05 production acceptance has not passed in full.

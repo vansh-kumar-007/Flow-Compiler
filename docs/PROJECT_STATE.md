@@ -459,7 +459,7 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 
 ## Phase 3 batch merge and verification — 2026-10-18 Asia/Kolkata
 
-- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) merged as `REPLACE_MERGE_SHA` after exact PR-head CI succeeded. The scoped change includes `src/App.jsx`, `src/plan-ui.js`, `src/plan-api.js`, two frontend test files, styles, root test script, and the two governance docs. No runtime backend security/provider source changed.
+- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) merged as `c99012f28c89fedc551f54da3cca55e7d9a19677` after exact PR-head CI succeeded. The scoped change includes `src/App.jsx`, `src/plan-ui.js`, `src/plan-api.js`, two frontend test files, styles, root test script, and the two governance docs. No runtime backend security/provider source changed.
 - The follow-up fix renders prerequisite titles as well as IDs, leaving graph-edge drawing/readiness to P3-06. Exact-head [Actions #280](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110567494) passed after that correction (head `8061471eb312e502b96a8fc88dd504dd318ac04e`).
 - Owner manually confirmed the backend health endpoint returned `{"status":"ok","service":"flow-compiler-api"}`. Do not equate this health marker with a successful authenticated plan or provider inference.
 - No browser test runner exists in the repo. Production UI check of demo/no-network transitions and authenticated safe errors remains manual. Hosting metadata must be refreshed against the merged commit before production UI is described as deployed.
@@ -469,15 +469,15 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 ## Post-merge verification snapshot — 2026-10-18 Asia/Kolkata
 
 - Current main SHA: `c99012f28c89fedc551f54da3cca55e7d9a19677`. PR #15 merged via normal squash workflow. No open PRs were reported immediately after merge.
-- Exact PR head `6ec1e727c8bea02dbabe7ceba43b1a695856ddc4` passed Actions #283. The post-merge Actions #284 was queued/in progress at the first refresh; verify the final conclusion before declaring the merge CI passed.
-- Render deployment `dep-dba7vvu7bikc73ec4kc0` and Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` both target `c99012f28c89fedc551f54da3cca55e7d9a19677`. At the initial post-merge refresh, Render was `build_in_progress` and Vercel was `BUILDING`; no successful deployed state was inferred from those intermediate states.
+- Exact PR head `6ec1e727c8bea02dbabe7ceba43b1a695856ddc4` passed Actions #283. Post-merge main CI [run #284](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110709718) also passed on exact merge SHA `c99012f28c89fedc551f54da3cca55e7d9a19677`.
+- Render deployment `dep-dba7vvu7bikc73ec4kc0` and Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` both target `c99012f28c89fedc551f54da3cca55e7d9a19677`. A subsequent refresh confirms Render `live` with successful build/deploy completion events and Vercel `READY` on that exact SHA.
 - Owner supplied current backend health result `{"status":"ok","service":"flow-compiler-api"}`. This confirms the backend health route only, not frontend rollout or model inference.
 - No NVIDIA key or inference; no hosting setting/environment change. Browser acceptance remains owner manual because no browser automation runner is configured.
 
 
 ## Post-merge evidence refresh — 2026-10-18 Asia/Kolkata
 
-- PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; exact merge SHA and deployment metadata have been refreshed by the connected integrations. CI/deploy final statuses are to be filled only from their observed conclusions; do not substitute PR-head CI or successful build events for exact-main/live evidence.
+- PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`. Exact-main Actions #284 passed, Render reports `live`, and Vercel Production reports `READY` on the same merge SHA; these states were directly refreshed.
 - The Phase 3 batch did not implement P3-06 graph visualization, P3-07 progress tracking, or Phase 4 recompilation. The next technical task remains P3-06 after required deployed/manual acceptance for this batch.
 
 

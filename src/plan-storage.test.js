@@ -88,3 +88,27 @@ test("storage failures are non-fatal and reported", () => {
   assert.equal(loadPlanSnapshot(unavailable).status, "unavailable");
   assert.equal(clearPlanSnapshot(unavailable), false);
 });
+
+test("round-trips a recompiled plan whose total describes unfinished work only", () => {
+  const storage = memoryStorage();
+  const revised = {
+    summary: "Continue the remaining task.",
+    totalMinutes: 10,
+    tasks: [
+      { id: "done", title: "Completed prerequisite", minutes: 5, priority: "high", reason: "Already complete.", dependsOn: [], category: "build" },
+      { id: "next", title: "Remaining task", minutes: 10, priority: "normal", reason: "Continue.", dependsOn: ["done"], category: "build" }
+    ],
+    deferredTasks: []
+  };
+  const saved = savePlanSnapshot({
+    plan: revised,
+    completedTaskIds: { done: true },
+    availableMinutes: 10,
+    planKind: "api-revision"
+  }, storage, 5000);
+  assert.deepEqual(saved, { ok: true });
+  const loaded = loadPlanSnapshot(storage, 6000);
+  assert.equal(loaded.status, "loaded");
+  assert.equal(loaded.snapshot.plan.totalMinutes, 10);
+  assert.deepEqual(loaded.snapshot.completedTaskIds, { done: true });
+});

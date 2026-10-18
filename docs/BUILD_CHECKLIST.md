@@ -861,7 +861,7 @@ This matrix supersedes all earlier dated status snapshots above. The original Pl
 
 ## Phase 4 implementation batch — 2026-10-18 Asia/Kolkata
 
-The original task IDs and order remain authoritative. Implementation is on branch `feat/phase-4-recompile-focus-workflow`; it is not yet merged or production-deployed.
+The original task IDs and order remain authoritative. PR [#23](https://github.com/vansh-kumar-007/Flow-Compiler/pull/23) merged via squash as `382245a58ca634367f4a1dc712e40edb3c41dbfb`. Exact post-merge main CI [#39155806836](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39155806836) passed. Vercel Production is `READY` on this exact SHA. Render commit/deployment metadata remains unverified because the Render connector requires explicit workspace selection; the public health endpoint could not be independently fetched through the available web reader.
 
 - [x] **P4-01 — Define stable plan/task identity and recompile contract.** Added `src/plan-revision.js` helpers to build bounded revision context with stable task IDs, completed IDs, reason, optional note and structured blocker. Tests cover validation and fully-completed plans.
 - [x] **P4-02 — Preserve completed tasks during recompile.** The UI keeps completed scheduled records and only sends unfinished task records in `previousPlan`; completed IDs are passed separately. Merge tests verify completed records remain in the displayed plan.
@@ -870,8 +870,15 @@ The original task IDs and order remain authoritative. Implementation is on branc
 - [x] **P4-05 — Support early finish and blocker reporting.** Revision reason options include manual adjustment, time changed, completed early and blocked. Blocker mode requires an unfinished task and non-empty bounded note; local demo mode defers the blocker and downstream dependents. API mode sends documented revision context only.
 - [x] **P4-06 — Implement countdown/focus mode.** Added a task-selectable countdown, start/pause/reset, tab-local interval cleanup, and pause when the focused task is marked complete. Focus selection is gated on completed prerequisites.
 - [x] **P4-07 — Implement next-ready action selection.** A deterministic selector chooses the highest-priority incomplete task whose prerequisites are all completed; the UI offers it as the next focus action.
-- [x] **P4-08 — Add recompile regression tests and UI verification.** Added helper/API/response/UI wiring regression tests. Latest branch CI run [#39153015178](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39153015178) succeeded on `a766117eb99537cd48fab546e12d1b9cf93058b4`; the configured workflow's install, backend tests, and frontend production build all passed. Production-browser verification remains manual and is not claimed complete.
+- [x] **P4-08 — Add recompile regression tests and UI verification.** Added helper/API/response/UI wiring regression tests. Branch CI [#39153015178](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39153015178) passed on `a766117eb99537cd48fab546e12d1b9cf93058b4`; post-merge main CI [#39155806836](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39155806836) also passed on `382245a58ca634367f4a1dc712e40edb3c41dbfb`. Production-browser verification remains manual and is not claimed complete.
 
 No browser-test runner, lint script or typecheck script is configured. Automated tests and a production build do not substitute for browser acceptance. The Phase 3 manual checks remain pending and do not block independent Phase 4 implementation.
 
 Security boundary: no NVIDIA key was configured or requested, no live provider inference was performed, and no hosting settings/secrets were changed. No dependency was added.
+
+
+### Post-merge evidence refresh
+
+- Current main SHA: `382245a58ca634367f4a1dc712e40edb3c41dbfb`; PR #23 is merged. Exact-main Actions run #39155806836 passed the configured Node 24 install, backend tests, frontend Node tests, and Vite production build.
+- Vercel Production deployment `dpl_6y6b6fADxNgTruqx1HwZ6WTMbo8h` is `READY`, with alias `flow-compiler-cyan.vercel.app`, on the exact main SHA.
+- Render deployment commit/status remains unverified: the connected Render integration requires the owner to explicitly select a workspace before listing services. No workspace was selected, no settings/secrets were changed, and no deployment was triggered manually.

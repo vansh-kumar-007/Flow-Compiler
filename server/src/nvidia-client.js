@@ -21,6 +21,7 @@ const MESSAGES = Object.freeze({
   AI_ACCESS_DENIED: "The AI service denied access to the requested resource.",
   AI_RATE_LIMITED: "The AI service is rate-limited. Please try again later.",
   AI_PROVIDER_UNAVAILABLE: "The AI service is temporarily unavailable.",
+  AI_PROVIDER_PENDING: "The AI service has not completed the request.",
   AI_PROVIDER_ERROR: "The AI service could not complete the request.",
   AI_RESPONSE_TOO_LARGE: "The AI service returned a response that was too large.",
   AI_INVALID_RESPONSE: "The AI service returned an invalid response.",
@@ -266,6 +267,14 @@ export function createNvidiaClient({
         if (!response || typeof response.ok !== "boolean"
             || !Number.isInteger(response.status)) {
           throw createError("AI_INVALID_RESPONSE");
+        }
+
+        // NVIDIA documents HTTP 202 as an asynchronous request still pending.
+        // This client deliberately does not poll a second endpoint: return a safe,
+        // explicit failure rather than misclassifying the pending envelope as a plan.
+        if (response.status === 202) {
+          cancelResponseBody(response);
+          throw createError("AI_PROVIDER_PENDING", response.status);
         }
 
         if (!response.ok) {

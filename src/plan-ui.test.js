@@ -96,3 +96,15 @@ test("response rejects a cycle without implementing the dependency graph UI", ()
   assert.equal(good.totalMinutes, 40);
   assert.equal(good.deferredTasks[0].minutes, 45);
 });
+
+
+test("dependency titles are renderable from the validated plan IDs without changing graph scope", () => {
+  const plan = validPlan();
+  const byId = new Map([...plan.tasks, ...plan.deferredTasks].map(task => [task.id, task]));
+  const resolved = plan.tasks[1].dependsOn.map(id => {
+    const task = byId.get(id);
+    return task ? task.title + " (" + id + ")" : id;
+  });
+  assert.deepEqual(resolved, ["Reproduce the bug (t1)"]);
+  assert.equal(validatePlanResponse(plan, 60), null);
+});

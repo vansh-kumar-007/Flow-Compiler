@@ -55,10 +55,10 @@ This file is the durable, task-level source of truth for implementation progress
 **Acceptance criteria:** the user can submit raw thoughts and a time budget; visible plans are backend-validated and show actions, durations, priorities, reasons, and dependencies; loading/empty/error states work.
 
 - [x] **P3-01 — Implement dark command-center frame.** Acceptance: coherent visual identity follows source plan (dark futuristic UI, readable contrast, mobile-ready layout).
-- [ ] **P3-02 — Implement thought input and available-time controls.** Acceptance: text limits/labels, accessible controls, and validation feedback.
-- [ ] **P3-03 — Add demo input and demo plan mode/data.** Acceptance: first-time user can explore without NVIDIA credentials; demo is clearly labelled and never presented as real model output.
-- [ ] **P3-04 — Connect UI to backend plan API.** Acceptance: configured API origin, safe JSON/error handling, pending state, request failure feedback, and no browser-side NVIDIA calls.
-- [ ] **P3-05 — Render plan summary and task nodes.** Acceptance: each task shows index/title/duration/priority/reason/category as appropriate; dependencies reference readable task titles as well as IDs.
+- [ ] **P3-02 — Implement thought input and available-time controls.** Implementation is merged in PR #15; input/time helper tests pass. Full production interaction acceptance remains pending a manual browser smoke test (no browser automation is configured).
+- [ ] **P3-03 — Add demo input and demo plan mode/data.** A fixed immutable local demo fixture and explicit demo-only UI are merged; tests verify fixture invariants. The actual mode-transition/no-network click path remains pending manual browser verification.
+- [ ] **P3-04 — Connect UI to backend plan API.** Authenticated mocked request/error paths are covered by frontend tests; token is transient React state and Authorization-header only. Upstream auth failure mapping was fixed in PR #17. Production browser interaction remains pending manual verification.
+- [ ] **P3-05 — Render plan summary and task nodes.** Validated response rendering includes summary, scheduled/deferred tasks, relevant task fields and prerequisite titles + IDs; client schema/graph/time-budget tests pass. Production visual/render acceptance remains pending manual browser verification.
 - [ ] **P3-06 — Display dependency links or an explicit graph view.** Acceptance: dependency edges are accurate and distinguish prerequisite direction; graph remains understandable on small screens and with long task titles.
 - [ ] **P3-07 — Add completion tracking and progress calculation.** Acceptance: completed count/progress and remaining time update correctly; dependency readiness is represented accurately.
 - [ ] **P3-08 — Add empty, loading, API error, and invalid-plan states.** Acceptance: no crashes or stale misleading success state on errors.
@@ -680,3 +680,115 @@ This current addendum supersedes older statements above that claim the backend o
 - Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` is `READY` on that same SHA.
 - No open PRs were found in the latest search. The backend `/api/health` JSON was supplied manually by the user. Browser test automation remains unavailable; user must perform the concise UI smoke test documented in the handoff.
 - No Render environment/settings changed; no `NVIDIA_API_KEY`, no provider request, no paid resource or added dependency.
+
+
+## Phase 3 closure and NVIDIA readiness audit — 2026-10-18 Asia/Kolkata
+
+### Verified repository, CI and deployments
+
+- Source plan: the attached original `Plan.txt` was inspected; its architecture remains React/Vite frontend + Express backend, with server-only NVIDIA credentials. Its original feature sequence calls for task input/time, demo, API planning, task output, then dependency graph, completion/progress, recompile/focus, persistence/export, QA and final acceptance. Task IDs in this governance checklist remain stable and ordered.
+- Application-code `main` SHA at this audit snapshot: `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`. Exact-main Actions [run #291](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112563059) passed on that SHA. Logs show `npm test` passed 260 backend tests and 17 frontend Node tests (0 failures, 0 skipped), followed by a successful Vite production build. No new dependencies were added.
+- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; it added P3-02–P3-05 UI/API/demo/list rendering, helper tests and root test script. PR [#16](https://github.com/vansh-kumar-007/Flow-Compiler/pull/16) merged as `8fd163815ebbfbee6c429e93f1a4eabeb35875c9` with docs evidence. The post-merge audit found the frontend lacked a dedicated message for the backend's `AI_AUTHENTICATION_ERROR`; PR [#17](https://github.com/vansh-kumar-007/Flow-Compiler/pull/17) merged the safe message and a mocked regression test as `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`. No open PRs were found before this documentation PR.
+- Render Free deploy `dep-dba8df61egvs73ddvsng` is `live` on that application-code SHA; build and deploy-ended events both succeeded. Vercel Production deploy `dpl_8n2uAydRoPv6zkC3jzqppHSJ7a5A` is `READY` on the same SHA. These are deployment metadata observations, not browser interaction tests.
+- Owner previously reported the public health route returned `{"status":"ok","service":"flow-compiler-api"}`. This confirms only the health endpoint, not authenticated plan generation or NVIDIA inference.
+
+### P3-02–P3-05 acceptance boundary
+
+- Input/time helpers and validators enforce non-whitespace text up to 5,000 characters and integer minutes 5–720; accessible labels/errors and presets are implemented. Boundary tests run in CI.
+- Demo fixture is immutable, labelled illustrative, includes scheduled/deferred work, and the UI's demo path is guarded to avoid API fetch; entering demo aborts/invalidates an active plan request. Fixture/schema tests run in CI, but the actual browser transition/no-network path is not automated.
+- API helper sends only the documented body plus bearer token in Authorization; token stays in transient React state, not storage, URL, request body or logs. Mock tests cover auth/provider/network/timeout/malformed-plan/cancellation cases, including upstream `AI_AUTHENTICATION_ERROR`. Request IDs and AbortController prevent stale results from overwriting current state.
+- Rendering uses the validated response shape and shows summary, scheduled/deferred tasks, relevant fields, prerequisite titles and IDs. Client tests cover schema, bounds, dependency references and cycles. Dependency edges/readiness are P3-06 and were not implemented.
+- **Acceptance remains in progress until owner browser smoke test:** this repository has no browser automation runner. Exact steps are in the Project State handoff; do not mark P3-02–P3-05 fully accepted based on helper tests alone.
+
+### NVIDIA adapter/readiness findings (research/audit only)
+
+- Adapter in `server/src/nvidia-client.js` uses `POST https://integrate.api.nvidia.com/v1/chat/completions`, model `nvidia/nemotron-3-ultra-550b-a55b`, JSON `messages`, `temperature: 0.3`, `max_tokens: 2500`, `stream: false`, and `chat_template_kwargs: { enable_thinking: false }`. Authentication is `Authorization: Bearer` from server-side `NVIDIA_API_KEY` only. Timeout defaults to 90 seconds; response cap defaults to 1 MiB, with bounded server-only overrides. Provider error bodies are not retained or exposed; the adapter maps safe error codes and the frontend now maps upstream auth failure explicitly.
+- Current official NVIDIA model page identifies the exact model and says a free API endpoint is available: https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b. The official LLM API catalog documents `POST /v1/chat/completions` at `https://integrate.api.nvidia.com` and lists the model: https://docs.api.nvidia.com/nim/reference/llm-apis. Adapter request shape is consistent with the documented OpenAI-compatible endpoint; the chosen temperature/token cap/non-streaming settings are valid conservative request options, but account-specific model entitlement has not been tested.
+- Official [NVIDIA API Trial Terms of Service](https://assets.ngc.nvidia.com/products/api-catalog/legal/NVIDIA%20API%20Trial%20Terms%20of%20Service.pdf) describes trial access as limited, internal testing/evaluation only (not production), allows use limits/credits, says additional use after credits may require a separate subscription, and permits security/abuse monitoring/logging. Do not send private/confidential notes. A free endpoint label does not prove this account has usable credits, no billing exposure, or a zero-cost entitlement.
+- Account-specific eligibility, remaining credits, per-model rate limits/quota, billing state, payment-method requirement and trial acceptance are **unknown**; the connected account tools did not provide NVIDIA account details. No key was requested/read/configured; no provider network request was made. `NVIDIA_API_KEY` remains unset.
+- **Readiness verdict: NOT READY for a live-provider test yet.** First, the owner must independently review and accept the current trial/model terms, verify account/model availability, current quota/rate limits, remaining credits, billing/payment settings, and confirm the intended request is strictly internal evaluation—not production use under trial terms. Only after that, a separate explicit authorization is required. Do not configure the key or invoke NVIDIA before that approval.
+- Proposed future test, not executed: one synthetic, non-sensitive 5-minute task request (e.g. “Plan a three-step desk-tidying workflow in five minutes”), one attempt only, no automatic retries, inspect only status/error code and whether validated JSON passes; do not log prompt/token/provider body. With the present 2,500-token output cap, actual usage is still unknown and could consume account-limited credits.
+
+## Current authoritative status matrix — refreshed 2026-10-18 Asia/Kolkata
+
+This latest matrix supersedes earlier status snapshots for current facts. Task IDs, phase order, and the original `Plan.txt` remain unchanged. P3-02–P3-05 implementation is merged and automated checks pass, but end-to-end production browser acceptance remains pending.
+
+## Current authoritative status matrix — 2026-10-18 Asia/Kolkata
+
+This matrix supersedes all earlier dated status snapshots above. The original Plan.txt task IDs and phase order are preserved.
+
+| Task ID | Task | Current status | Evidence / blocker / dependency |
+|---|---|---|---|
+| P0-01 | Inspect repository metadata and permissions | Completed | Repository metadata verified: public repo, default branch `main`, connected identity can push/administer. |
+| P0-02 | Inspect repository contents, branches, commits, and PRs | Completed | Refreshed GitHub main/history, PRs #15–#17, changed files, discussion/review threads, exact-main CI and deployment metadata. |
+| P0-03 | Read the complete supplied build plan | Completed | Project source `Plan.txt` retrieved from attached Project source, all 1,072 extracted lines. |
+| P0-04 | Record baseline and risk register | Completed | `docs/PROJECT_STATE.md` maintained; this current audit is being appended to supersede stale snapshots. |
+| P0-05 | Create granular master checklist | Completed | `docs/BUILD_CHECKLIST.md` maintains stable P0–P8 task IDs. |
+| P0-06 | Reconcile governance files and next-task pointer | Completed | PR #13 reconciliation remains complete. This follow-up audit refreshed the Phase 3 task statuses and NVIDIA readiness evidence without altering Plan.txt or task IDs. |
+| P0-07 | Define foundation verification path | Completed | Exact-main Actions run #291 passed on application-code SHA `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`: clean install, `npm test` (260 backend + 17 frontend tests), and Vite production build. |
+| P1-01 | Establish app directory and dependency scripts | Completed | Root/server workspaces and npm lockfile; clean `npm ci` is part of CI. |
+| P1-02 | Bootstrap React + Vite application | Completed | UI and Vite production build are on main; latest CI build passed. |
+| P1-03 | Bootstrap separate Express backend | Completed | `server/src/server.js` and Express app; Render service executes the workspace start script. |
+| P1-04 | Add health endpoint and bounded JSON parsing | Completed | Public `GET /api/health`, 20 KiB parser, and safe malformed/oversized request handling have automated coverage. Owner's last manual health check passed before PR #7; rerun after the latest deployment. |
+| P1-05 | Add ignore rules and safe environment examples | Completed | `.gitignore` excludes real .env files; `server/.env.example` has blank provider/auth placeholders. |
+| P1-06 | Add backend smoke tests | Completed | Current backend suite passes in CI. |
+| P1-07 | Add local development guidance | Completed | README scripts match package manifests; local setup avoids live keys. |
+| P1-08 | Add CI workflow and inspect actual run | Completed | Latest main run [#238](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39060783792) passed install, tests and Vite build. |
+| P1-09 | Review source/diff and secret boundary | Completed | Targeted source, environment examples and PR #7 diff inspected; no credential value was configured or added. Not a formal external audit. |
+| P2-01 | Define/document plan request and response schema | Completed | `docs/API_CONTRACT.md` and schema examples exist; source fields retained. |
+| P2-02 | Validate request fields and payload size | Completed | `server/src/plan-request.js`; malformed, unsupported and oversized requests are tested. |
+| P2-03 | Implement server-only NVIDIA adapter | Completed | `server/src/nvidia-client.js` uses the planned endpoint/model, injected fetch, and server-only `NVIDIA_API_KEY`; no real request made. |
+| P2-04 | Timeout, response cap and safe provider errors | Completed | 90-second timeout, response byte cap, cancellation and stable safe errors; mocked tests. |
+| P2-05 | Robust complete-document model JSON parsing | Completed | `server/src/model-output.js`; invalid/prose/truncated responses rejected. |
+| P2-06 | Validate generated plan/task schema | Completed | `server/src/plan-output.js` validates shape, fields, types, IDs, counts and scheduled total. |
+| P2-07 | Validate dependency references, edges and cycles | Completed | `server/src/dependency-graph.js` validates graph structure and cycles. |
+| P2-08 | Validate time budget/deferred selection | Completed | `server/src/schedule-output.js` rejects over-budget/mismatched totals and invalid deferred reasons. |
+| P2-09 | Rate limiting and exact-origin CORS | Completed | In-memory per-peer limiter, exact `APP_ORIGINS`, Authorization preflight; limitations are documented. |
+| P2-10 | Deterministic mocked provider test matrix | Completed | Integrated route/provider suite and alias regressions. Latest main CI passed 259/259 tests. No live provider call. |
+| P2-11 | Optional live NVIDIA inference smoke test | Blocked / not attempted | No NVIDIA key or provider request. Official model/API docs reviewed; account eligibility, current quota/rate limits, remaining credits and billing/payment exposure are not accessible through connected tools and remain unknown. Official trial terms restrict trial use to internal testing/evaluation, not production. |
+| P2-12 | Finalize API security docs and verification | Completed | Security/API docs and route tests are merged; live inference remains unverified and separate from mocked verification. |
+| P2-13 | Connect validated planning adapter to `POST /api/plan` | Completed | PR #4 merged; route invokes existing adapter and revalidates output. Real inference remains unverified. |
+| P3-01 | Dark command-center frame | Completed | Dark command-center UI frame is on main; current deployed frontend commit verified via Vercel. |
+| P3-02 | Thought input and time controls | In progress — implementation and automated checks present; browser acceptance pending | `src/App.jsx` + `src/plan-ui.js` enforce non-whitespace input ≤5,000 chars and integer time 5–720 min with labels/accessible error feedback. Boundary tests run in CI; no component/browser interaction test is configured. |
+| P3-03 | Demo input and demo plan mode | In progress — local demo implementation verified; browser acceptance pending | Immutable fixed `DEMO_PLAN` has scheduled and deferred examples and explicit `DEMO / ILLUSTRATIVE` labelling. Demo branch is local-only, aborts/invalidates in-flight API requests, and compile handler guards against fetch. Fixture tests pass; click-path/network-panel smoke test is manual. |
+| P3-04 | Connect UI to planning API | In progress — mocked API integration verified; browser acceptance pending | `src/plan-api.js` sends `{brainDump, availableMinutes, previousPlan:null}` and bearer token only in Authorization. Token is transient React state. Mock tests cover missing/invalid auth, `AI_NOT_CONFIGURED`, rate limit, timeout, network, malformed response/plan, cancellation and upstream provider-auth error. Request IDs + AbortController suppress stale results. No provider call. |
+| P3-05 | Render plan summary and task nodes | In progress — validated task-list implementation verified; browser acceptance pending | Summary, total, scheduled/deferred tasks, task index/title/minutes/priority/reason/category/ID, prerequisite title + ID, and deferred reason render from validated API response or labelled local demo. Schema/time/dependency/cycle tests pass; graph edges/readiness are P3-06. |
+| P3-06 | Accurate dependency graph | Not started | Current graph is illustrative and does not yet draw actual dependency edges. |
+| P3-07 | Completion tracking and progress | Not started | Generated-task completion/progress behavior is not implemented. |
+| P3-08 | Empty/loading/error/invalid-plan states | In progress | Idle/loading/error/success states and invalid-plan guards exist; frontend Node tests run in CI. End-to-end browser state transitions remain manual. |
+| P3-09 | Accessibility and interaction review | In progress | Semantic labels, status announcements, focus styling and reduced-motion CSS exist; keyboard/mobile/contrast review remains manual. |
+| P4-01 | Stable plan/task identity and recompile contract | In progress | Contract supports previous-plan/revision context; end-to-end UI revision is not complete. |
+| P4-02 | Preserve completed tasks during recompile | Not started | Preservation/remerge behavior is not implemented end-to-end. |
+| P4-03 | Revalidate IDs and dependencies after recompile | In progress | Server validators exist; UI recompile workflow is absent. |
+| P4-04 | Support time-loss/remaining-time changes | Not started | Dynamic re-scheduling UI is absent. |
+| P4-05 | Early finish and blocker reporting | In progress | Contract concepts exist; user-facing events/recompile flow remains. |
+| P4-06 | Countdown/focus mode | Not started | Focus timer/actions not implemented. |
+| P4-07 | Next-ready action selection | Not started | Dependency-aware task readiness UI not implemented. |
+| P4-08 | Recompile tests/UI verification | Not started | Depends on Phase 4 runtime implementation. |
+| P5-01 | Persist plan/completion locally | Not started | Plan persistence absent. Never persist the bearer token. |
+| P5-02 | Animated dependency links/nodes | Not started | Real graph links are not yet implemented. |
+| P5-03 | Focus states and responsive layout | In progress | General UI shell checked; focus mode and full breakpoint test matrix remain. |
+| P5-04 | Privacy-preserving export/share | Not started | Export that excludes raw thought/private notes by default not implemented. |
+| P5-05 | Keyboard/screen-reader/reduced-motion checks | In progress | Partial support exists; comprehensive manual/automated audit pending. |
+| P5-06 | UI smoke/regression tests | In progress | Root `npm test` runs backend and frontend Node tests (260 + 17 on current main); no browser test runner is configured, so the key UI flow still requires manual smoke testing. |
+| P5-07 | Feature/privacy documentation | In progress | Security/API docs exist; final feature guide depends on remaining product. |
+| P6-01 | Test vague, large and conflicting inputs | In progress — mocked only | Provider and validator fixtures cover malformed, large/boundary and schedule cases; real model behavior cannot be assessed without an authorized provider call. |
+| P6-02 | Test request/response bounds and malformed bodies | Completed | Automated regression suite covers limits and malformed bodies. |
+| P6-03 | Test auth/origin/rate-limit assumptions | In progress | Automated auth-before-parse, alias, rate-limit and CORS tests pass; owner-reported invalid-token/no-key observations exist, but no fresh authenticated production browser request was performed in this audit. |
+| P6-04 | Review logging/error disclosure | In progress | Targeted tests check safe errors and credential non-disclosure; no complete deployed-log audit or formal external security review. |
+| P6-05 | Review dependency validation/recompile preservation | In progress | Dependency/cycle validators are complete; preservation during interactive recompile remains. |
+| P6-06 | Complete test/build/lint suite | In progress — configured suite passed | Exact-main CI #291 passed 260 backend tests and 17 frontend Node tests (0 failures/skips), then Vite production build. No lint, typecheck or browser automation is configured. |
+| P6-07 | Final diff/dependency/security inspection | In progress | Reviewed the PR #15 UI/API diff and PR #17 error mapping fix; no dependencies added. Targeted source review is not a formal security certification. |
+| P7-01 | Confirm NVIDIA endpoint terms, availability and limits | Blocked — account-specific review pending | Official NVIDIA model/API docs and trial terms reviewed. Model page shows a free API endpoint available, but account eligibility, current quota/rate limits, remaining credits, billing status and payment-method requirements cannot be verified from connected account data. |
+| P7-02 | Compare free hosting options | Completed | Free-first research complete; Render Free + Vercel chosen. |
+| P7-03 | Choose compatible deployment | Completed | Render Free Express API and Vercel frontend are deployed on main; settings confirmed by integrations. |
+| P7-04 | Configure server-side secrets | Completed for safe auth only (owner-reported) | Owner previously reported `FLOW_COMPILER_ACCESS_TOKEN` is privately configured in Render. No token value was read, printed or changed. `NVIDIA_API_KEY` remains unset. |
+| P7-05 | Deploy/check frontend | In progress — deployment verified; UI smoke pending | Vercel Production is `READY` on application-code SHA `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221` (deployment `dpl_8n2uAydRoPv6zkC3jzqppHSJ7a5A`). Production browser interaction has not been independently exercised by this audit. |
+| P7-06 | Deploy/check backend | Completed for deployment; health response owner-reported | Render deploy `dep-dba8df61egvs73ddvsng` is `live` on application-code SHA `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`; build/deploy events succeeded. Owner previously reported `/api/health` returned `{"status":"ok","service":"flow-compiler-api"}`. |
+| P7-07 | Verify real AI and safe failure paths | Blocked for real AI; safe no-key path covered | No real NVIDIA inference. Mocked route tests prove a missing provider key returns `AI_NOT_CONFIGURED` before provider fetch; owner previously reported the deployed safe failure. Live AI requires separate eligibility/terms/quota review and explicit approval. |
+| P7-08 | Deployment/rollback/quota/troubleshooting docs | In progress | Hosting/auth/provider boundaries are documented; add final operating/rollback instructions after the manual browser gate and account-specific NVIDIA decision. |
+| P7-09 | Final deployed smoke-test evidence | In progress | CI and exact deployment metadata are verified; current production UI smoke evidence for demo/no-network transitions and visible API errors is still manual. |
+| P8-01 | Trace source plan requirements to evidence | Not started | Final traceability depends on implementing and testing remaining UI/recompile/export features. |
+| P8-02 | Verify final branch/PR/main state | Completed for this verification snapshot | PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; PR #16 merged as `8fd163815ebbfbee6c429e93f1a4eabeb35875c9`; PR #17 merged as `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`. Exact-main Actions #291 passed. This docs-only PR's post-merge SHA/CI is separately verified after merge. |
+| P8-03 | Confirm setup/security/user docs | In progress | API contract/security docs exist; current Phase 3 implementation, manual acceptance gate and NVIDIA trial restrictions are being recorded in this audit. |
+| P8-04 | Publish final verification and limitations handoff | Not started | Final project handoff remains open until manual browser smoke testing, remaining phases and provider-account eligibility decision are complete. |

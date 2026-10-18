@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { DEMO_PLAN, DEMO_INPUT, TIME_PRESETS, formatTimePreset, getInputError, getTimeError } from "./plan-ui.js";
 import { requestPlan } from "./plan-api.js";
-import { buildDependencyGraph, getCompletionProgress, isCurrentPlanRequest, setScheduledTaskCompletion } from "./plan-interactions.js";
+import { buildDependencyGraph, buildPlanPresentation, getCompletionProgress, isCurrentPlanRequest, setScheduledTaskCompletion } from "./plan-interactions.js";
 
 // Public, non-secret API origin. Production fails closed when it is not configured;
 // local Vite development continues to use the dev-server /api proxy.
@@ -224,6 +224,7 @@ export default function App() {
   const timeError = getTimeError(minutes);
   const formValid = !inputError && !timeError;
   const displayPlan = planState === "success" ? generatedPlan : null;
+  const displayModel = displayPlan ? buildPlanPresentation(displayPlan) : null;
 
   return <main className="app-shell">
     <header className="topbar">
@@ -290,8 +291,11 @@ export default function App() {
         {planState === "success" && displayPlan && <>
           <div className="plan-feedback success" role="status" aria-live="polite">{planMessage}</div>
           <section className={"generated-plan " + (planKind === "demo" ? "demo-plan" : "api-plan")} aria-labelledby="generated-plan-title">
-            <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayPlan.summary}</h3></div><span>{displayPlan.totalMinutes} MIN</span></div>
-            <div className="plan-metadata"><span>{displayPlan.tasks.length} scheduled tasks</span><span>{displayPlan.deferredTasks?.length || 0} deferred</span><span>Time budget: {minutes} min</span></div>
+            {!displayModel?.valid
+              ? <p className="output-state error-state" role="alert">Plan presentation unavailable: {displayModel?.reason || "Invalid plan data."}</p>
+              : <>
+            <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayModel.summary}</h3></div><span>{displayModel.totalMinutes} MIN</span></div>
+            <div className="plan-metadata"><span>{displayModel.tasks.length} scheduled tasks</span><span>{displayModel.deferredTasks.length} deferred</span><span>Time budget: {minutes} min</span></div>
             {(() => {
               const progress = getCompletionProgress(displayPlan, completedTaskIds);
               const dependencyGraph = buildDependencyGraph(displayPlan);
@@ -320,15 +324,8 @@ export default function App() {
                 </section>
               </section>;
             })()}
-            <ol className="scheduled-task-list">{displayPlan.tasks.map((task, index) => {
-              const tasksById = new Map([
-                ...displayPlan.tasks,
-                ...(displayPlan.deferredTasks || [])
-              ].map(item => [item.id, item]));
-              const prerequisites = task.dependsOn.map(id => {
-                const prerequisite = tasksById.get(id);
-                return prerequisite ? prerequisite.title + " (" + id + ")" : id;
-              });
+            <ol className="scheduled-task-list">{displayModel.tasks.map((task, index) => {
+              const prerequisites = task.prerequisites.map(item => item.title + " (" + item.id + ")");
               return <li key={task.id}>
                 <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span className="scheduled-status">SCHEDULED · {task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
                 <label className="completion-control">
@@ -339,7 +336,8 @@ export default function App() {
                 <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{prerequisites.length ? "PREREQUISITES: " + prerequisites.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
               </li>;
             })}</ol>
-            {displayPlan.deferredTasks?.length > 0 && <div className="deferred-tasks"><strong>Deferred work · not scheduled in this time window</strong><ul>{displayPlan.deferredTasks.map(task => <li key={task.id}><b>{task.title}</b><p>{task.deferredReason}</p><small>{task.minutes} MIN · {task.priority.toUpperCase()} · {task.category.toUpperCase()} · ID: {task.id}</small></li>)}</ul></div>}
+            {displayModel.deferredTasks.length > 0 && <div className="deferred-tasks"><strong>Deferred work · not scheduled in this time window</strong><ul>{displayModel.deferredTasks.map(task => <li key={task.id}><b>{task.title}</b><p>{task.deferredReason}</p><small>{task.minutes} MIN · {task.priority.toUpperCase()} · {task.category.toUpperCase()} · ID: {task.id}</small></li>)}</ul></div>}
+            </>}
           </section>
         </>}
         {planState !== "loading" && planState !== "success" && <div className="api-card"><div className="api-heading"><i className={"api-dot "+apiState}/><div><small>BACKEND CONNECTIVITY</small><strong>{apiState==="success"?"Connection verified":apiState==="loading"?"Checking connection":apiState==="error"?"Backend not reachable":"Not checked yet"}</strong></div><button type="button" onClick={checkApi} disabled={apiState==="loading"}>{apiState==="loading"?"CHECKING…":"CHECK API ↗"}</button></div><p role="status" aria-live="polite">{apiMessage}</p></div>}

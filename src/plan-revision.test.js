@@ -40,7 +40,8 @@ test("revision requests preserve completed IDs, unfinished tasks and documented 
 
 test("revision request refuses invalid or fully completed plans", () => {
   assert.throws(() => buildPreviousPlan(makePlan(), {}, "blocked", { blockedTaskId: "b" }), /describe its blocker/);
-  assert.throws(() => buildPreviousPlan(makePlan(), { a: true, b: true }, "manual"), /All tasks are complete/);
+  const fullyDone = { ...makePlan(), deferredTasks: [] };
+  assert.throws(() => buildPreviousPlan(fullyDone, { a: true, b: true }, "manual"), /All tasks are complete/);
 });
 
 test("merge keeps completed scheduled records and merges new response dependencies", () => {

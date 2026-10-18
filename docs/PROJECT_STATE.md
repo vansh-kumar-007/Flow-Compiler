@@ -625,3 +625,11 @@ Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WO
 - The Vercel status for the PR preview is failure with the explicit build-rate-limit/upgradeToPro signal. No paid upgrade or hosting setting change was made. Production remains on the baseline main SHA until post-merge deployment metadata is verified.
 - Render deployed SHA and fresh /api/health response remain unknown pending explicit workspace selection. No Render setting/secret change, NVIDIA request/key, paid service or dependency was used.
 - Manual release gate still includes Local Demo no-network check, task progress/unmark, recompile failure preservation, blocker/dependent deferral, focus timer and focus mode, persistence reload/corrupt-state recovery, safe export contents, keyboard/screen-reader/contrast/reduced-motion and narrow-width behavior. Source inspection and Node tests are not substitutes for those observations.
+
+
+## Post-merge V1 release gate — 2026-10-19
+
+- PR #25 merged as b797708e567f0b4d13b0c0926cce10c52ed57262. PR-head Actions run #39157234589 passed on tree/head e1c2c166c8ca3aa3d1f0647814e08dd9c905502d: 260 backend tests, 56 frontend Node tests and Vite production build. The GitHub connector does not return the push-triggered exact-main Actions run, so exact-main CI is recorded as unavailable through this integration rather than inferred.
+- Vercel Production alias still points to READY deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB on old main SHA d2e6c8ad36aa910c082a76dc11214eab2b95632c. The Vercel status for the sprint merge SHA is failure with the explicit build-rate-limit/upgradeToPro signal; no deployment on b797708… is present in the latest production list. No paid upgrade or hosting setting change is authorized.
+- Render commit/deployment and a fresh /api/health response remain unverified because the Render connector requires explicit workspace selection. Do not treat this as a backend failure. No settings/secrets were changed.
+- Release verdict is NOT READY for public V1. Code and automated tests are merged; deployment and manual browser acceptance remain external gates. No NVIDIA_API_KEY, provider request, paid service or new dependency was used.

@@ -164,3 +164,13 @@ textarea[aria-invalid="true"],input[aria-invalid="true"]{border-color:#fb7185}
   .dependency-arrow{animation:none!important;opacity:1}
   .dependency-links li:hover .dependency-node{box-shadow:none}
 }
+
+.app-shell.focus-mode .generated-plan-heading,
+.app-shell.focus-mode .plan-actions,
+.app-shell.focus-mode .storage-status,
+.app-shell.focus-mode .plan-metadata,
+.app-shell.focus-mode .plan-progress,
+.app-shell.focus-mode .generated-plan>ol,
+.app-shell.focus-mode .deferred-tasks,
+.app-shell.focus-mode .revision-panel{display:none}
+.app-shell.focus-mode .focus-panel{margin-top:0}

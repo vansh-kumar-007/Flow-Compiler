@@ -448,3 +448,19 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 - Vercel Production is `READY` on SHA `64cfff39395847523498a4424bccda207908224d`. Render's latest deployment `dep-db9ujg142hec73d3rp6g` targets the same SHA and its build succeeded, but its deployment status remained `update_in_progress` at refresh. Last confirmed live deployment is on `57fda2412b6f83af2e9816428c5c730c4c008d87`; no failure is currently reported. No Render logs were needed because no failure event was observed.
 - No open PRs were found after PR #13 merged. No manual changes to Render settings, environment variables, secrets, or hosting plans occurred. `NVIDIA_API_KEY` remains unset; no inference was attempted.
 - Next task candidate: **P3-02 — Thought input and time controls**, the earliest in-progress task after completed P3-01. Await owner review before implementation.
+
+## Coordinated Phase 3 core UI batch — 2026-10-18 Asia/Kolkata
+
+- Original Project `Plan.txt` was reviewed. Only P3-02–P3-05 were implemented; P3-06 graph drawing/readiness visualization and later tasks are out of scope.
+- P3-02–P3-05 implementation is on `feat/phase-3-core-ui-batch`: validated input/time controls, no-network demo mode, authenticated API integration isolated behind mocks, and validated plan/task/deferred display. Exact branch CI is recorded in this session's final audit.
+- `npm test` now runs the server tests and Node built-in frontend tests. No testing dependency was added. Browser automation is not configured, so desktop/mobile appearance and direct UI interactions still require a small manual smoke test after deploy.
+- Owner manually confirmed `GET https://flow-compiler.onrender.com/api/health` returned `{"status":"ok","service":"flow-compiler-api"}`. At the pre-feature refresh Render was live on `c6d057cbbfa3b5c3a79e0f8cc3477f93f35d82b9`; Vercel's latest READY deployment was on `64cfff39395847523498a4424bccda207908224d`. Refresh both after merge before claiming the production UI has this batch.
+- No NVIDIA key/provider call, no access-token values accessed, no hosting settings/env/plan changes, and no paid dependencies.
+
+## Phase 3 batch merge and verification — 2026-10-18 Asia/Kolkata
+
+- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) merged as `REPLACE_MERGE_SHA` after exact PR-head CI succeeded. The scoped change includes `src/App.jsx`, `src/plan-ui.js`, `src/plan-api.js`, two frontend test files, styles, root test script, and the two governance docs. No runtime backend security/provider source changed.
+- The follow-up fix renders prerequisite titles as well as IDs, leaving graph-edge drawing/readiness to P3-06. Exact-head [Actions #280](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110567494) passed after that correction (head `8061471eb312e502b96a8fc88dd504dd318ac04e`).
+- Owner manually confirmed the backend health endpoint returned `{"status":"ok","service":"flow-compiler-api"}`. Do not equate this health marker with a successful authenticated plan or provider inference.
+- No browser test runner exists in the repo. Production UI check of demo/no-network transitions and authenticated safe errors remains manual. Hosting metadata must be refreshed against the merged commit before production UI is described as deployed.
+- NVIDIA `NVIDIA_API_KEY` remains intentionally unset; no provider call, paid service, new dependency, or hosting configuration change was made.

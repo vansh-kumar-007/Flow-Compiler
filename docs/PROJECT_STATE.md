@@ -607,29 +607,11 @@ Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WO
 - Production browser acceptance is still outstanding for the Phase 3 items already listed and the new Phase 4 recompile/focus UI. No provider inference or authenticated live planning request was performed.
 - Next task: P5-01 — Persist active plan/completion state locally. Preserve the session-only access-token boundary; do not persist credentials.
 
+ 
+## Consolidated V1 release gate — 2026-10-19
 
-## V1 readiness sprint — 2026-10-19
-
-- **Baseline refreshed:** main = d2e6c8ad36aa910c082a76dc11214eab2b95632c; PR #23 (Phase 4 implementation) and #24 (governance reconciliation) are merged; no open PRs were returned by the connected GitHub search. The exact-SHA combined status returned a successful Vercel check only; the connector did not return a GitHub Actions run for that main SHA.
-- **Vercel baseline:** Production deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB reports READY on d2e6c8ad36aa910c082a76dc11214eab2b95632c. This is baseline evidence; sprint branch changes are not deployed until merged.
-- **Render:** workspace listing returned one available workspace, but no workspace was selected for service/deployment/log queries. Render commit and fresh /api/health response remain unverified; no hosting settings or secrets were changed.
-- **V1 branch:** feat/v1-readiness-sprint contains local plan persistence, safe JSON export, focus-mode layout, subtle dependency-edge animation and regression tests. The branch is not yet merged; test/build results must be taken from its actual Actions run and the exact resulting main SHA after merge.
-- **Data/security boundaries:** saved snapshots exclude raw input, revision notes and access token; the access token remains transient React state. Safe export omits free-form notes. No dependency added, no live NVIDIA request, no provider key, no paid service and no host setting/secret change.
-- **V1 verdict remains provisional:** READY AS DEMO/PREVIEW ONLY is the maximum supportable target until exact-main CI, post-merge Vercel/Render commit and health evidence, and the remaining browser acceptance are verified. Live AI planning is blocked.
-- **Next original task:** finish P5-01 through P5-07 and P6-01 through P6-07 in this same readiness sprint; then reconcile P7/P8 evidence. The compact manual gate must include Local Demo no-network verification, persistence/export, dependency/progress/recompile/focus behavior, accessibility/responsive checks, and deployed health/commit confirmation.
-
-
-## V1 sprint CI and PR preview update — 2026-10-19
-
-- PR #25 head 46ab16673f272b8d7ee32428e19111ae37ecb9d3 passed GitHub Actions run #39157147324: npm ci, 260 backend tests, 56 frontend Node tests, and Vite production build. Earlier run #39157031409 failed one test assertion that read the fake storage twice after the first read cleared corrupted data; the test was fixed, and the newer exact-head run passed.
-- The Vercel status for the PR preview is failure with the explicit build-rate-limit/upgradeToPro signal. No paid upgrade or hosting setting change was made. Production remains on the baseline main SHA until post-merge deployment metadata is verified.
-- Render deployed SHA and fresh /api/health response remain unknown pending explicit workspace selection. No Render setting/secret change, NVIDIA request/key, paid service or dependency was used.
-- Manual release gate still includes Local Demo no-network check, task progress/unmark, recompile failure preservation, blocker/dependent deferral, focus timer and focus mode, persistence reload/corrupt-state recovery, safe export contents, keyboard/screen-reader/contrast/reduced-motion and narrow-width behavior. Source inspection and Node tests are not substitutes for those observations.
-
-
-## Post-merge V1 release gate — 2026-10-19
-
-- PR #25 merged as b797708e567f0b4d13b0c0926cce10c52ed57262. PR-head Actions run #39157234589 passed on tree/head e1c2c166c8ca3aa3d1f0647814e08dd9c905502d: 260 backend tests, 56 frontend Node tests and Vite production build. The GitHub connector does not return the push-triggered exact-main Actions run, so exact-main CI is recorded as unavailable through this integration rather than inferred.
-- Vercel Production alias still points to READY deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB on old main SHA d2e6c8ad36aa910c082a76dc11214eab2b95632c. The Vercel status for the sprint merge SHA is failure with the explicit build-rate-limit/upgradeToPro signal; no deployment on b797708… is present in the latest production list. No paid upgrade or hosting setting change is authorized.
-- Render commit/deployment and a fresh /api/health response remain unverified because the Render connector requires explicit workspace selection. Do not treat this as a backend failure. No settings/secrets were changed.
-- Release verdict is NOT READY for public V1. Code and automated tests are merged; deployment and manual browser acceptance remain external gates. No NVIDIA_API_KEY, provider request, paid service or new dependency was used.
+- PR #25 code merged as b797708e567f0b4d13b0c0926cce10c52ed57262. PR #26 evidence reconciliation merged as 752b60626b603e3d02614834d1ce75cbd7d1d8d3. The current documentation-only PR corrects the latest dated P4 task rows and consolidates the release gate.
+- PR-head Actions #39157234589 passed 260 backend tests, 56 frontend Node tests and the Vite production build. The connected GitHub tool does not expose the push-triggered exact-main Actions run; do not infer that run passed.
+- At the latest deployment refresh, Vercel Production still points to READY deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB on old main SHA d2e6c8ad36aa910c082a76dc11214eab2b95632c. The V1 merge SHA has a Vercel build-rate-limit/upgradeToPro failure status, and no V1 production deployment was listed. No paid upgrade or hosting setting change was made.
+- Render commit/deployment and fresh /api/health remain unverified because the connector requires explicit workspace selection. This is unknown, not a claimed backend failure.
+- Verdict remains NOT READY for public V1 until the current frontend deployment, Render commit/health, exact-main CI evidence, and manual browser acceptance are resolved. Live AI remains blocked; no NVIDIA key/request or hosting-secret changes were made.

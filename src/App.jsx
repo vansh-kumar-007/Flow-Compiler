@@ -281,11 +281,21 @@ export default function App() {
           <section className={"generated-plan " + (planKind === "demo" ? "demo-plan" : "api-plan")} aria-labelledby="generated-plan-title">
             <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayPlan.summary}</h3></div><span>{displayPlan.totalMinutes} MIN</span></div>
             <div className="plan-metadata"><span>{displayPlan.tasks.length} scheduled tasks</span><span>{displayPlan.deferredTasks?.length || 0} deferred</span><span>Time budget: {minutes} min</span></div>
-            <ol>{displayPlan.tasks.map((task, index) => <li key={task.id}>
-              <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span className="scheduled-status">SCHEDULED · {task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
-              <p>{task.reason}</p>
-              <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{task.dependsOn.length ? "PREREQUISITES: " + task.dependsOn.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
-            </li>)}</ol>
+            <ol>{displayPlan.tasks.map((task, index) => {
+              const tasksById = new Map([
+                ...displayPlan.tasks,
+                ...(displayPlan.deferredTasks || [])
+              ].map(item => [item.id, item]));
+              const prerequisites = task.dependsOn.map(id => {
+                const prerequisite = tasksById.get(id);
+                return prerequisite ? prerequisite.title + " (" + id + ")" : id;
+              });
+              return <li key={task.id}>
+                <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span className="scheduled-status">SCHEDULED · {task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
+                <p>{task.reason}</p>
+                <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{prerequisites.length ? "PREREQUISITES: " + prerequisites.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
+              </li>;
+            })}</ol>
             {displayPlan.deferredTasks?.length > 0 && <div className="deferred-tasks"><strong>Deferred work · not scheduled in this time window</strong><ul>{displayPlan.deferredTasks.map(task => <li key={task.id}><b>{task.title}</b><p>{task.deferredReason}</p><small>{task.minutes} MIN · {task.priority.toUpperCase()} · {task.category.toUpperCase()} · ID: {task.id}</small></li>)}</ul></div>}
           </section>
         </>}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { DEMO_PLAN, DEMO_INPUT, TIME_PRESETS, formatTimePreset, getInputError, getTimeError } from "./plan-ui.js";
 import { requestPlan } from "./plan-api.js";
 import { buildDependencyGraph, buildPlanPresentation, getCompletionProgress, isCurrentPlanRequest, setScheduledTaskCompletion } from "./plan-interactions.js";
+import { buildPreviousPlan, formatFocusTime, getNextReadyTask, mergeRecompiledPlan, recompileLocalDemo } from "./plan-revision.js";
 
 // Public, non-secret API origin. Production fails closed when it is not configured;
 // local Vite development continues to use the dev-server /api proxy.
@@ -43,6 +44,13 @@ export default function App() {
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [planKind, setPlanKind] = useState(null);
   const [completedTaskIds, setCompletedTaskIds] = useState({});
+  const [revisionReason, setRevisionReason] = useState("manual");
+  const [revisionNote, setRevisionNote] = useState("");
+  const [blockedTaskId, setBlockedTaskId] = useState("");
+  const [revisionPending, setRevisionPending] = useState(false);
+  const [revisionState, setRevisionState] = useState("idle");
+  const [revisionMessage, setRevisionMessage] = useState("");
+  const [focusTimer, setFocusTimer] = useState({ taskId: null, secondsLeft: 0, running: false });
   const [apiState, setApiState] = useState("idle");
   const [apiMessage, setApiMessage] = useState("Backend connection has not been checked.");
   const planRequestId = useRef(0);
@@ -60,6 +68,18 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!focusTimer.running) return undefined;
+    const interval = window.setInterval(() => {
+      setFocusTimer(current => {
+        if (!current.running) return current;
+        const secondsLeft = Math.max(0, current.secondsLeft - 1);
+        return { ...current, secondsLeft, running: secondsLeft > 0 };
+      });
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [focusTimer.running]);
+
   function changeInput(value) {
     setBrainDump(value);
     if (planState === "success" || planState === "error") {
@@ -67,13 +87,24 @@ export default function App() {
       setPlanMessage("");
       setGeneratedPlan(null);
       setPlanKind(null);
+      setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+      setRevisionPending(false);
+      setRevisionState("idle");
+      setRevisionMessage("");
     }
   }
 
   function changeMinutes(value) {
     if (demoMode) return;
     setMinutes(value);
-    if (planState === "success" || planState === "error") {
+    if (planState === "success" && generatedPlan) {
+      setRevisionPending(true);
+      setRevisionReason("time_changed");
+      setRevisionState("idle");
+      setRevisionMessage("Execution window changed. Recompile to apply the new budget while preserving completed work.");
+      return;
+    }
+    if (planState === "error") {
       setPlanState("idle");
       setPlanMessage("");
       setGeneratedPlan(null);
@@ -86,6 +117,13 @@ export default function App() {
     abortController.current = null;
     planRequestId.current += 1;
     setCompletedTaskIds({});
+    setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+    setRevisionPending(false);
+    setRevisionState("idle");
+    setRevisionMessage("");
+    setRevisionReason("manual");
+    setRevisionNote("");
+    setBlockedTaskId("");
     setDemoMode(true);
     setBrainDump(DEMO_INPUT);
     setMinutes(120);
@@ -102,6 +140,13 @@ export default function App() {
     abortController.current = null;
     planRequestId.current += 1;
     setCompletedTaskIds({});
+    setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+    setRevisionPending(false);
+    setRevisionState("idle");
+    setRevisionMessage("");
+    setRevisionReason("manual");
+    setRevisionNote("");
+    setBlockedTaskId("");
     setDemoMode(false);
     setGeneratedPlan(null);
     setPlanKind(null);
@@ -157,6 +202,10 @@ export default function App() {
     setPlanState("loading");
     setPlanMessage("Sending an authenticated planning request…");
     setCompletedTaskIds({});
+    setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+    setRevisionPending(false);
+    setRevisionState("idle");
+    setRevisionMessage("");
     setGeneratedPlan(null);
     setPlanKind(null);
 
@@ -182,6 +231,114 @@ export default function App() {
       setGeneratedPlan(null);
       setPlanKind(null);
       setPlanMessage(error instanceof Error ? error.message : "Could not reach the planning API. Check the backend URL and allowed origin.");
+    } finally {
+      if (requestId === planRequestId.current && abortController.current === controller) {
+        abortController.current = null;
+      }
+    }
+  }
+
+  function startFocusForTask(task) {
+    setFocusTimer({ taskId: task.id, secondsLeft: task.minutes * 60, running: false });
+  }
+
+  function toggleFocusTimer() {
+    setFocusTimer(current => {
+      if (!current.taskId || current.secondsLeft <= 0) return current;
+      return { ...current, running: !current.running };
+    });
+  }
+
+  function resetFocusTimer() {
+    const task = generatedPlan?.tasks?.find(item => item.id === focusTimer.taskId);
+    if (!task) {
+      setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+      return;
+    }
+    setFocusTimer({ taskId: task.id, secondsLeft: task.minutes * 60, running: false });
+  }
+
+  async function recompileWorkflow() {
+    if (planState !== "success" || !generatedPlan || revisionState === "loading") return;
+    const reason = revisionPending && revisionReason === "manual" ? "time_changed" : revisionReason;
+    const options = { note: revisionNote.trim(), blockedTaskId };
+    let previousPlan;
+    try {
+      previousPlan = buildPreviousPlan(generatedPlan, completedTaskIds, reason, options);
+    } catch (error) {
+      setRevisionState("error");
+      setRevisionMessage(error instanceof Error ? error.message : "The current plan cannot be revised safely.");
+      return;
+    }
+
+    if (demoMode) {
+      try {
+        const localRevision = recompileLocalDemo(generatedPlan, completedTaskIds, minutes, {
+          reason,
+          note: options.note,
+          blockedTaskId: options.blockedTaskId
+        });
+        const merged = mergeRecompiledPlan(generatedPlan, completedTaskIds, localRevision);
+        setGeneratedPlan(merged);
+        setPlanKind("demo");
+        setRevisionPending(false);
+        setRevisionState("success");
+        setRevisionMessage("Demo plan revised locally. This is a deterministic illustration; no API or AI provider was called.");
+        setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+      } catch (error) {
+        setRevisionState("error");
+        setRevisionMessage(error instanceof Error ? error.message : "The local demo plan could not be revised.");
+      }
+      return;
+    }
+
+    const credential = accessToken.trim();
+    if (!credential) {
+      setRevisionState("error");
+      setRevisionMessage("Enter your session access token to authorize this revision. No request was sent.");
+      return;
+    }
+
+    let requestUrl;
+    try {
+      requestUrl = planningUrl();
+    } catch (error) {
+      setRevisionState("error");
+      setRevisionMessage(error instanceof Error ? error.message : "The planning API URL is not configured.");
+      return;
+    }
+
+    abortController.current?.abort();
+    const controller = new AbortController();
+    abortController.current = controller;
+    const requestId = ++planRequestId.current;
+    setRevisionState("loading");
+    setRevisionMessage("Recompiling unfinished work and preserving completed tasks…");
+    try {
+      const responsePlan = await requestPlan({
+        fetchImpl: fetch,
+        url: requestUrl,
+        token: credential,
+        brainDump,
+        availableMinutes: minutes,
+        previousPlan,
+        signal: controller.signal
+      });
+      if (!isCurrentPlanRequest(requestId, planRequestId.current, mounted.current, controller.signal)) return;
+      const merged = mergeRecompiledPlan(generatedPlan, completedTaskIds, responsePlan);
+      setGeneratedPlan(merged);
+      setPlanKind("api");
+      setCompletedTaskIds(current => Object.fromEntries(
+        Object.entries(current).filter(([id]) => merged.tasks.some(task => task.id === id))
+      ));
+      setRevisionPending(false);
+      setRevisionState("success");
+      setRevisionMessage("Remaining work was recompiled. Completed task records were preserved; deferred work remains explicit.");
+      setFocusTimer({ taskId: null, secondsLeft: 0, running: false });
+    } catch (error) {
+      if (!isCurrentPlanRequest(requestId, planRequestId.current, mounted.current, controller.signal)) return;
+      setRevisionState("error");
+      setRevisionMessage(error instanceof Error ? error.message : "Could not recompile the remaining plan.");
     } finally {
       if (requestId === planRequestId.current && abortController.current === controller) {
         abortController.current = null;
@@ -224,6 +381,8 @@ export default function App() {
   const timeError = getTimeError(minutes);
   const formValid = !inputError && !timeError;
   const displayPlan = planState === "success" ? generatedPlan : null;
+  const nextReadyTask = displayPlan ? getNextReadyTask(displayPlan, completedTaskIds) : null;
+  const focusTask = displayPlan?.tasks?.find(task => task.id === focusTimer.taskId) ?? null;
   const displayModel = displayPlan ? buildPlanPresentation(displayPlan) : null;
 
   return <main className="app-shell">
@@ -332,11 +491,50 @@ export default function App() {
                   <input type="checkbox" checked={completedTaskIds[task.id] === true} onChange={event => setCompletedTaskIds(current => setScheduledTaskCompletion(displayPlan, current, task.id, event.target.checked))} aria-label={"Mark scheduled task as complete: " + task.title} />
                   <span>{completedTaskIds[task.id] === true ? "COMPLETED" : "MARK COMPLETE"}</span>
                 </label>
+                <button className="focus-task-button" type="button" onClick={() => startFocusForTask(task)} disabled={completedTaskIds[task.id] === true}>FOCUS THIS TASK</button>
                 <p>{task.reason}</p>
                 <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{prerequisites.length ? "PREREQUISITES: " + prerequisites.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
               </li>;
             })}</ol>
             {displayModel.deferredTasks.length > 0 && <div className="deferred-tasks"><strong>Deferred work · not scheduled in this time window</strong><ul>{displayModel.deferredTasks.map(task => <li key={task.id}><b>{task.title}</b><p>{task.deferredReason}</p><small>{task.minutes} MIN · {task.priority.toUpperCase()} · {task.category.toUpperCase()} · ID: {task.id}</small></li>)}</ul></div>}
+            <section className="focus-panel" aria-labelledby="focus-panel-title">
+              <div className="focus-panel-heading">
+                <div><small>FOCUS MODE</small><h4 id="focus-panel-title">One action at a time</h4></div>
+                <time aria-live="off">{formatFocusTime(focusTimer.secondsLeft)}</time>
+              </div>
+              {focusTask
+                ? <p className="focus-task-name">Current focus: <strong>{focusTask.title}</strong> · {focusTask.minutes} min</p>
+                : <p className="focus-task-name">Choose a scheduled task to start its countdown.</p>}
+              <div className="focus-controls">
+                <button type="button" onClick={toggleFocusTimer} disabled={!focusTask || focusTimer.secondsLeft <= 0}>{focusTimer.running ? "PAUSE TIMER" : focusTimer.secondsLeft === 0 ? "TIMER COMPLETE" : "START TIMER"}</button>
+                <button type="button" onClick={resetFocusTimer} disabled={!focusTask}>RESET</button>
+                <button type="button" onClick={() => nextReadyTask && startFocusForTask(nextReadyTask)} disabled={!nextReadyTask}>NEXT READY TASK</button>
+              </div>
+              <p className="focus-hint">{nextReadyTask ? "Next ready: " + nextReadyTask.title : "No incomplete task has all prerequisites completed."} The timer runs only in this open tab.</p>
+            </section>
+            <section className="revision-panel" aria-labelledby="revision-panel-title">
+              <div className="revision-panel-heading"><div><small>LIVE RECOMPILATION</small><h4 id="revision-panel-title">Revise unfinished work</h4></div><span>{demoMode ? "LOCAL ONLY" : "AUTHENTICATED API"}</span></div>
+              {revisionPending && <p className="revision-notice" role="status">The time budget changed. The current plan is retained until you recompile.</p>}
+              <label htmlFor="revision-reason">WHY ARE YOU REVISING?</label>
+              <select id="revision-reason" value={revisionReason} onChange={event => setRevisionReason(event.target.value)} disabled={revisionState === "loading"}>
+                <option value="manual">Manual adjustment</option>
+                <option value="time_changed">Available time changed</option>
+                <option value="completed_early">Finished a task early</option>
+                <option value="blocked">A task is blocked</option>
+              </select>
+              {revisionReason === "blocked" && <>
+                <label htmlFor="blocked-task">BLOCKED TASK</label>
+                <select id="blocked-task" value={blockedTaskId} onChange={event => setBlockedTaskId(event.target.value)} disabled={revisionState === "loading"}>
+                  <option value="">Select an unfinished task</option>
+                  {displayModel.tasks.filter(task => completedTaskIds[task.id] !== true).map(task => <option key={task.id} value={task.id}>{task.title}</option>)}
+                </select>
+              </>}
+              <label htmlFor="revision-note">CONTEXT / BLOCKER DETAILS</label>
+              <textarea id="revision-note" value={revisionNote} onChange={event => setRevisionNote(event.target.value)} maxLength={1000} disabled={revisionState === "loading"} placeholder="Optional: what changed, what finished early, or what is blocking progress? Do not include credentials."/>
+              <button className="revision-button" type="button" onClick={recompileWorkflow} disabled={revisionState === "loading"}>{revisionState === "loading" ? "RECOMPILING…" : demoMode ? "RECOMPILE DEMO LOCALLY" : "RECOMPILE REMAINING WORK"}</button>
+              {revisionMessage && <p className={"revision-feedback " + (revisionState === "error" ? "error" : revisionState === "success" ? "success" : "")} role={revisionState === "error" ? "alert" : "status"} aria-live="polite">{revisionMessage}</p>}
+              <p className="revision-hint">Only unfinished task data and the documented revision reason are sent during API planning. Completed tasks remain on screen and are not requested again.</p>
+            </section>
             </>}
           </section>
         </>}

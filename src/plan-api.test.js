@@ -80,6 +80,18 @@ test("handles the safe missing-provider-key result without treating it as a plan
   })), error => error.code === "AI_NOT_CONFIGURED" && /No plan was generated/.test(error.message) && !error.message.includes("private"));
 });
 
+test("maps upstream provider authentication errors without exposing provider details", async () => {
+  await assert.rejects(requestPlan(args({
+    fetchImpl: async () => response({
+      error: { code: "AI_AUTHENTICATION_ERROR", message: "private upstream diagnostic" }
+    }, { ok: false, status: 502 })
+  })), error =>
+    error.code === "AI_AUTHENTICATION_ERROR"
+    && /server-side credentials/.test(error.message)
+    && /No plan was generated/.test(error.message)
+    && !error.message.includes("private upstream diagnostic"));
+});
+
 test("handles rate-limit and timeout codes with stable guidance", async () => {
   await assert.rejects(requestPlan(args({
     fetchImpl: async () => response({ error: { code: "RATE_LIMIT_EXCEEDED", message: "internal" } }, { ok: false, status: 429 })

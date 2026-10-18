@@ -540,14 +540,14 @@ This matrix supersedes all earlier dated status snapshots above. The original Pl
 | P3-07 | Completion tracking and progress | Not started | Generated-task completion/progress behavior is not implemented. |
 | P3-08 | Empty/loading/error/invalid-plan states | In progress | Basic loading/error/shape guards exist; broader frontend regression coverage remains. |
 | P3-09 | Accessibility and interaction review | In progress | Some labels, status announcements, focus styling and reduced-motion behavior exist; full review remains. |
-| P4-01 | Stable plan/task identity and recompile contract | In progress | Contract supports previous-plan/revision context; end-to-end UI revision is not complete. |
-| P4-02 | Preserve completed tasks during recompile | Not started | Preservation/remerge behavior is not implemented end-to-end. |
-| P4-03 | Revalidate IDs and dependencies after recompile | In progress | Server validators exist; UI recompile workflow is absent. |
-| P4-04 | Support time-loss/remaining-time changes | Not started | Dynamic re-scheduling UI is absent. |
-| P4-05 | Early finish and blocker reporting | In progress | Contract concepts exist; user-facing events/recompile flow remains. |
-| P4-06 | Countdown/focus mode | Not started | Focus timer/actions not implemented. |
-| P4-07 | Next-ready action selection | Not started | Dependency-aware task readiness UI not implemented. |
-| P4-08 | Recompile tests/UI verification | Not started | Depends on Phase 4 runtime implementation. |
+| P4-01 | Stable plan/task identity and recompile contract | Complete | PR #23 merged as `382245a58ca634367f4a1dc712e40edb3c41dbfb`; revision context helper and regression tests pass. |
+| P4-02 | Preserve completed tasks during recompile | Complete — browser acceptance pending | Completed scheduled records are preserved in merge logic and unfinished work alone is sent in revision context; tests pass in Actions #39155806836. |
+| P4-03 | Revalidate IDs and dependencies after recompile | Complete — browser acceptance pending | Completed prerequisite IDs are accepted explicitly, ID collisions and invalid merged dependency graphs fail closed; regression tests pass in Actions #39155806836. |
+| P4-04 | Support time-loss/remaining-time changes | Complete — browser acceptance pending | Time changes mark the active plan for recompile; deterministic local demo reschedules within the selected budget, API mode forwards revision context. |
+| P4-05 | Early finish and blocker reporting | Complete — browser acceptance pending | UI reason selection and bounded blocker note; local demo defers blocked task and downstream dependents; API revision context uses documented fields. |
+| P4-06 | Countdown/focus mode | Complete — browser acceptance pending | Countdown start/pause/reset, interval cleanup, pause-on-completion and prerequisite-gated focus controls are implemented and CI-tested. |
+| P4-07 | Next-ready action selection | Complete — browser acceptance pending | Deterministic priority selector chooses only incomplete tasks whose prerequisites are all complete; helper tests pass. |
+| P4-08 | Recompile tests/UI verification | Complete for automated verification; production browser pending | Exact-main Actions #39155806836 passed install, backend/frontend Node tests (45 frontend tests, 0 failed) and Vite build. No browser runner exists; manual production acceptance is outstanding. |
 | P5-01 | Persist plan/completion locally | Not started | Plan persistence absent. Never persist the bearer token. |
 | P5-02 | Animated dependency links/nodes | Not started | Real graph links are not yet implemented. |
 | P5-03 | Focus states and responsive layout | In progress | General UI shell checked; focus mode and full breakpoint test matrix remain. |

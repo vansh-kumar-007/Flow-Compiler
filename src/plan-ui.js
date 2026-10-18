@@ -178,8 +178,8 @@ export function validatePlanResponse(payload, availableMinutes, completedTaskIds
     }
   }
 
-  // Validate acyclicity without drawing or otherwise implementing the dependency
-  // graph UI. The actual graph visualization and readiness UX remain P3-06.
+  // Validate the returned graph for dependency rendering. Already-completed IDs
+  // satisfy incoming prerequisites without participating in the returned DAG.
   const indegree = new Map([...tasksById.keys()].map(id => [id, 0]));
   const dependents = new Map([...tasksById.keys()].map(id => [id, []]));
   for (const task of tasksById.values()) {

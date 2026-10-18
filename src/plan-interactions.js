@@ -84,3 +84,21 @@ export function setScheduledTaskCompletion(plan, completedIds, taskId, checked) 
 export function isCurrentPlanRequest(requestId, currentRequestId, mounted, signal) {
   return requestId === currentRequestId && mounted === true && !signal?.aborted;
 }
+
+export function buildPlanPresentation(plan) {
+  const graph = buildDependencyGraph(plan);
+  if (!graph.valid) return { valid: false, reason: graph.reason, summary: "", totalMinutes: 0, tasks: [], deferredTasks: [] };
+  const byId = new Map(graph.nodes.map(node => [node.id, node]));
+  const presentTask = task => ({
+    ...task,
+    prerequisites: task.dependsOn.map(id => ({ id, title: byId.get(id).title, status: byId.get(id).status }))
+  });
+  return {
+    valid: true,
+    reason: null,
+    summary: plan.summary,
+    totalMinutes: plan.totalMinutes,
+    tasks: plan.tasks.map(presentTask),
+    deferredTasks: (plan.deferredTasks ?? []).map(presentTask)
+  };
+}

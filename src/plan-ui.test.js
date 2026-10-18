@@ -123,3 +123,17 @@ test("time presets remain integer values within the slider/API range and format 
   assert.equal(formatTimePreset(60), "1H");
   assert.equal(formatTimePreset(720), "12H");
 });
+
+test("response accepts completed prerequisites as satisfied revision dependencies", () => {
+  const revised = {
+    summary: "Continue remaining work.",
+    totalMinutes: 10,
+    tasks: [{
+      id: "t2", title: "Continue work", minutes: 10, priority: "high",
+      reason: "Its prerequisite is complete.", dependsOn: ["t1"], category: "build"
+    }]
+  };
+  assert.equal(validatePlanResponse(revised, 15, ["t1"]), null);
+  assert.match(validatePlanResponse(revised, 15, []), /unknown dependency/);
+  assert.match(validatePlanResponse({ ...revised, tasks: [{ ...revised.tasks[0], id: "t1" }] }, 15, ["t1"]), /collide/);
+});

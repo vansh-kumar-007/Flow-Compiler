@@ -56,11 +56,10 @@ This matrix maps the original Project source Plan.txt to the repository's stable
 - Vercel's PR preview status failed with an explicit build-rate-limit signal. This is not an app build result, and no paid upgrade/settings change is permitted. The sprint branch is not yet production-deployed.
 - Render commit/health evidence is pending explicit workspace selection. The release verdict cannot exceed READY AS DEMO/PREVIEW ONLY until deployment and manual browser acceptance are complete. Live inference remains blocked.
 
+ 
+## Consolidated post-merge release status — 2026-10-19
 
-## Post-merge release status — 2026-10-19
-
-- PR #25 is merged as b797708e567f0b4d13b0c0926cce10c52ed57262. The final PR-head CI run passed 260 backend tests, 56 frontend Node tests and the Vite production build. The connector does not expose the push-triggered exact-main Actions run, so that check remains unverified rather than assumed.
-- The current Vercel Production alias still points to READY deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB on the old main SHA d2e6c8ad36aa910c082a76dc11214eab2b95632c. The merge SHA has a failed Vercel status carrying the explicit build-rate-limit/upgradeToPro signal; no new production deployment was listed. No paid upgrade/settings change is permitted.
+- V1 code PR #25 merged as b797708e567f0b4d13b0c0926cce10c52ed57262. Evidence reconciliation PR #26 merged as 752b60626b603e3d02614834d1ce75cbd7d1d8d3. The latest PR-head Actions run passed 260 backend tests, 56 frontend Node tests and Vite production build. The GitHub integration does not surface the push-triggered exact-main Actions run.
+- Vercel Production still points to READY deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB on old main SHA d2e6c8ad36aa910c082a76dc11214eab2b95632c. The V1 merge SHA has a failed Vercel status with a build-rate-limit/upgradeToPro signal, and no matching production deployment was listed. No paid upgrade or hosting setting change is permitted.
 - Render deployed SHA and health remain unknown pending explicit workspace selection. Manual browser checks remain pending, including the fresh Local Demo no-network test. Live inference remains blocked.
-
-**Current verdict: NOT READY for public V1.** The feature code is merged and its PR-head automated suite is green, but current production deployment, backend commit/health evidence, and browser acceptance are not complete. Use the local demo for safe evaluation until the release gate closes.
+- **Current verdict: NOT READY for public V1.** Features are merged and PR-head tests/build are green, but current production deployment, Render health/commit evidence, exact-main Actions evidence and browser acceptance are not complete.

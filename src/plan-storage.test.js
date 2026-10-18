@@ -124,7 +124,8 @@ test("discards snapshots whose task arrays contain malformed entries without thr
       completedTaskIds: {}
     })
   });
-  assert.doesNotThrow(() => loadPlanSnapshot(storage, 1000));
-  assert.equal(loadPlanSnapshot(storage, 1000).status, "invalid");
+  let loaded;
+  assert.doesNotThrow(() => { loaded = loadPlanSnapshot(storage, 1000); });
+  assert.equal(loaded.status, "invalid");
   assert.equal(storage.getItem(SAVED_PLAN_STORAGE_KEY), null);
 });

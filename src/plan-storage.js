@@ -25,7 +25,10 @@ function isRecord(value) {
 }
 
 function cleanCompletedIds(plan, completedTaskIds) {
-  if (!isRecord(plan) || !Array.isArray(plan.tasks) || !isRecord(completedTaskIds)) return null;
+  if (!isRecord(plan)
+    || !Array.isArray(plan.tasks)
+    || !plan.tasks.every(task => isRecord(task) && typeof task.id === "string")
+    || !isRecord(completedTaskIds)) return null;
   if (!Object.values(completedTaskIds).every(value => typeof value === "boolean")) return null;
   const scheduledIds = new Set(plan.tasks.map(task => task.id));
   return Object.fromEntries(

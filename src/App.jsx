@@ -92,7 +92,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!storageReady || planState === "loading") return;
+    if (!storageReady || planState === "loading" || revisionPending) return;
     if (planState !== "success" || !generatedPlan || !planKind) {
       clearPlanSnapshot();
       setStorageMessage("");
@@ -111,7 +111,7 @@ export default function App() {
         ? "Browser storage is unavailable; this plan remains only in the current tab."
         : "This plan could not be saved safely. It remains available in the current tab.");
     }
-  }, [storageReady, planState, generatedPlan, completedTaskIds, minutes, planKind]);
+  }, [storageReady, planState, generatedPlan, completedTaskIds, minutes, planKind, revisionPending]);
 
   useEffect(() => {
     if (!focusTimer.running) return undefined;
@@ -240,10 +240,14 @@ export default function App() {
     try {
       requestUrl = planningUrl();
     } catch (error) {
-      setPlanState("error");
-      setPlanMessage(error.message);
-      setGeneratedPlan(null);
-      setPlanKind(null);
+      if (generatedPlan && planState === "success") {
+        setPlanMessage("The new request could not start; your current plan was retained. " + error.message);
+      } else {
+        setPlanState("error");
+        setPlanMessage(error.message);
+        setGeneratedPlan(null);
+        setPlanKind(null);
+      }
       return;
     }
 

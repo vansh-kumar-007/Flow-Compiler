@@ -1,3 +1,5 @@
+import { validatePlanResponse } from "./plan-ui.js";
+
 export function buildDependencyGraph(plan) {
   if (!plan || !Array.isArray(plan.tasks) || !Array.isArray(plan.deferredTasks ?? [])) {
     return { valid: false, reason: "Plan task collections are invalid.", nodes: [], edges: [] };
@@ -53,6 +55,36 @@ export function buildDependencyGraph(plan) {
   }
 
   return { valid: true, reason: null, nodes, edges };
+}
+
+/**
+ * Validate an active UI plan, where completed task records remain visible but
+ * totalMinutes represents the unfinished scheduled work after a recompile.
+ */
+export function validateActivePlan(plan, completedIds = {}, availableMinutes) {
+  if (!plan || !Array.isArray(plan.tasks) || !Array.isArray(plan.deferredTasks ?? [])) {
+    return "plan task collections are invalid.";
+  }
+  const completedTasks = plan.tasks.filter(task => completedIds?.[task.id] === true);
+  const remainingTasks = plan.tasks.filter(task => completedIds?.[task.id] !== true);
+  const budget = Number.isInteger(availableMinutes) ? availableMinutes : Math.max(5, plan.totalMinutes || 5);
+
+  if (remainingTasks.length === 0) {
+    // Preserve a fully completed plan as a durable history even if deferred
+    // tasks remain; its original scheduled total still matches its task list.
+    return validatePlanResponse(plan, Math.max(budget, plan.totalMinutes));
+  }
+
+  const normalized = {
+    ...plan,
+    tasks: remainingTasks,
+    totalMinutes: remainingTasks.reduce((sum, task) => sum + task.minutes, 0)
+  };
+  return validatePlanResponse(
+    normalized,
+    Math.max(budget, normalized.totalMinutes),
+    completedTasks.map(task => task.id)
+  );
 }
 
 export function getCompletionProgress(plan, completedIds = {}) {

@@ -112,3 +112,19 @@ test("round-trips a recompiled plan whose total describes unfinished work only",
   assert.equal(loaded.snapshot.plan.totalMinutes, 10);
   assert.deepEqual(loaded.snapshot.completedTaskIds, { done: true });
 });
+
+test("discards snapshots whose task arrays contain malformed entries without throwing", () => {
+  const storage = memoryStorage({
+    [SAVED_PLAN_STORAGE_KEY]: JSON.stringify({
+      schemaVersion: 1,
+      savedAt: 1000,
+      availableMinutes: 120,
+      planKind: "demo",
+      plan: { summary: "broken", totalMinutes: 5, tasks: [null], deferredTasks: [] },
+      completedTaskIds: {}
+    })
+  });
+  assert.doesNotThrow(() => loadPlanSnapshot(storage, 1000));
+  assert.equal(loadPlanSnapshot(storage, 1000).status, "invalid");
+  assert.equal(storage.getItem(SAVED_PLAN_STORAGE_KEY), null);
+});

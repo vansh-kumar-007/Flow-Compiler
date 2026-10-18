@@ -22,3 +22,19 @@ test("safe export refuses malformed plans and completion state", () => {
   assert.throws(() => createSafePlanExport({ ...DEMO_PLAN, tasks: [] }), /validated plan/);
   assert.throws(() => createSafePlanExport(DEMO_PLAN, null), /Completion state/);
 });
+
+test("exports a recompiled plan with completed records without leaking their notes", () => {
+  const revised = {
+    summary: "Private summary that must not be exported.",
+    totalMinutes: 10,
+    tasks: [
+      { id: "done", title: "Completed prerequisite", minutes: 5, priority: "high", reason: "Private completion context.", dependsOn: [], category: "build" },
+      { id: "next", title: "Remaining task", minutes: 10, priority: "normal", reason: "Private task context.", dependsOn: ["done"], category: "build" }
+    ],
+    deferredTasks: []
+  };
+  const exported = createSafePlanExport(revised, { done: true }, "2026-10-19T00:00:00.000Z");
+  assert.equal(exported.scheduledTasks.length, 2);
+  assert.equal(exported.scheduledTasks[0].completed, true);
+  assert.equal(JSON.stringify(exported).includes("Private"), false);
+});

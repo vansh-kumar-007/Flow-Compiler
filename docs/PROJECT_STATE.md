@@ -617,3 +617,11 @@ Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WO
 - **Data/security boundaries:** saved snapshots exclude raw input, revision notes and access token; the access token remains transient React state. Safe export omits free-form notes. No dependency added, no live NVIDIA request, no provider key, no paid service and no host setting/secret change.
 - **V1 verdict remains provisional:** READY AS DEMO/PREVIEW ONLY is the maximum supportable target until exact-main CI, post-merge Vercel/Render commit and health evidence, and the remaining browser acceptance are verified. Live AI planning is blocked.
 - **Next original task:** finish P5-01 through P5-07 and P6-01 through P6-07 in this same readiness sprint; then reconcile P7/P8 evidence. The compact manual gate must include Local Demo no-network verification, persistence/export, dependency/progress/recompile/focus behavior, accessibility/responsive checks, and deployed health/commit confirmation.
+
+
+## V1 sprint CI and PR preview update — 2026-10-19
+
+- PR #25 head 46ab16673f272b8d7ee32428e19111ae37ecb9d3 passed GitHub Actions run #39157147324: npm ci, 260 backend tests, 56 frontend Node tests, and Vite production build. Earlier run #39157031409 failed one test assertion that read the fake storage twice after the first read cleared corrupted data; the test was fixed, and the newer exact-head run passed.
+- The Vercel status for the PR preview is failure with the explicit build-rate-limit/upgradeToPro signal. No paid upgrade or hosting setting change was made. Production remains on the baseline main SHA until post-merge deployment metadata is verified.
+- Render deployed SHA and fresh /api/health response remain unknown pending explicit workspace selection. No Render setting/secret change, NVIDIA request/key, paid service or dependency was used.
+- Manual release gate still includes Local Demo no-network check, task progress/unmark, recompile failure preservation, blocker/dependent deferral, focus timer and focus mode, persistence reload/corrupt-state recovery, safe export contents, keyboard/screen-reader/contrast/reduced-motion and narrow-width behavior. Source inspection and Node tests are not substitutes for those observations.

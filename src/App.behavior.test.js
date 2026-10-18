@@ -49,3 +49,18 @@ test("new requests clear prior plan state and error paths do not retain stale pl
   assert.match(compileHandler, /setPlanMessage\(error instanceof Error \? error\.message/);
   assert.doesNotMatch(appSource, /localStorage|sessionStorage|console\.log/);
 });
+
+ 
+test("recompile handler keeps the local demo branch provider-free and invalidates stale requests", () => {
+  const revisionHandler = appSource.match(/async function recompileWorkflow\(\) \{([\s\S]*?)\n  \}\n\n  async function checkApi/)?.[1];
+  assert.ok(revisionHandler, "recompileWorkflow handler exists");
+  const demoGuard = revisionHandler.indexOf("if (demoMode)");
+  const providerCall = revisionHandler.indexOf("await requestPlan(");
+  assert.ok(demoGuard >= 0 && providerCall > demoGuard, "local demo recompile is handled before API invocation");
+  assert.match(revisionHandler.slice(demoGuard, providerCall), /recompileLocalDemo/);
+  assert.match(revisionHandler.slice(demoGuard, providerCall), /mergeRecompiledPlan/);
+  assert.match(revisionHandler, /previousPlan/);
+  assert.match(revisionHandler, /isCurrentPlanRequest/);
+  assert.match(appSource, /window\.setInterval/);
+  assert.match(appSource, /window\.clearInterval/);
+});

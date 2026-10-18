@@ -23,6 +23,7 @@ export function buildPreviousPlan(plan, completedIds = {}, reason = "manual", op
     throw new Error("Select a task and describe its blocker before recompiling.");
   }
   if (note.length > 1000) throw new Error("Revision notes must be 1,000 characters or fewer.");
+  if (reason === "blocked" && note.length > 500) throw new Error("Blocker descriptions must be 500 characters or fewer.");
 
   const scheduled = plan.tasks;
   const deferred = plan.deferredTasks ?? [];
@@ -86,12 +87,11 @@ export function mergeRecompiledPlan(currentPlan, completedIds, response) {
 /** Pick a high-priority incomplete task whose prerequisites are already complete. */
 export function getNextReadyTask(plan, completedIds = {}) {
   if (!plan || !Array.isArray(plan.tasks)) return null;
-  const scheduledIds = new Set(plan.tasks.map(task => task.id));
   return plan.tasks
     .map((task, index) => ({ task, index }))
     .filter(({ task }) => completedIds?.[task.id] !== true)
     .filter(({ task }) => Array.isArray(task.dependsOn)
-      && task.dependsOn.every(id => completedIds?.[id] === true || (!scheduledIds.has(id) && false)))
+      && task.dependsOn.every(id => completedIds?.[id] === true))
     .sort((a, b) => (PRIORITY_RANK[a.task.priority] ?? 99) - (PRIORITY_RANK[b.task.priority] ?? 99) || a.index - b.index)[0]?.task ?? null;
 }
 

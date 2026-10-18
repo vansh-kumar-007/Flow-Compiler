@@ -1,8 +1,27 @@
 # Flow Compiler — Project State
 
-Last updated: 2026-10-18 (Asia/Kolkata; Phase 3 batch and NVIDIA readiness audit refreshed)
+Last updated: 2026-10-18 (Asia/Kolkata; production browser acceptance follow-up)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
+## Latest production browser acceptance follow-up — 2026-10-18 Asia/Kolkata
+
+**Current authoritative result:** production browser acceptance is only partial. Do not begin P3-06 until the reported demo POST anomaly is attributed and the missing-NVIDIA-configuration result is either verified safely or explicitly marked not tested.
+
+- Current `main`: `04ea333749767f353b81e130568a3faf37d10273`; PRs #15–#18 are merged.
+- Exact-main [Actions #293](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112770926) passed. Application-code [Actions #291](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112563059) passed 260 backend + 17 frontend Node tests and Vite build.
+- Render Free deploy `dep-dba8eutg1s2s73b2nte0` is `live` on the current main SHA. Vercel Production deployment `dpl_DCZhTGLqdyxADJGVBdkFxv7j21Yb` is `READY` on the same SHA.
+- Owner reports demo label/counts and scheduled budget pass, keyboard/narrow viewport pass, empty-token behavior pass, and invalid token returns HTTP 401 `UNAUTHORIZED` with no plan. Owner also reports a `POST /api/plan` during the demo check. The missing-provider-key status/error field was not filled in and is unknown.
+- Current `src/App.jsx` has a local demo handler and an early return in `compileWorkflow()` before `requestPlan`; source inspection does not explain the reported POST. No browser replay was possible in this audit, and automated tests are not used to claim the network-panel behavior passed.
+- Render request-log queries require a user-selected workspace. No workspace was guessed, and no logs or secret values were accessed. Runtime change is deferred until the event can be reproduced/correlated.
+- NVIDIA remains **NOT READY** for live inference. No provider key was configured, no NVIDIA call was made, and no hosting environment was changed.
+
+### Next actions
+
+1. Repeat the demo click test with DevTools Network cleared immediately before clicking **LOAD DEMO PLAN**; report only whether a new `POST /api/plan` appears. If yes, include status/timing only, not headers or body.
+2. Verify the empty-token submission produces no POST.
+3. Optionally test one synthetic non-sensitive authenticated request with the private token entered locally and provider key unset; report only status/error code and whether a plan displayed. Otherwise report `NOT TESTED`.
+4. Select the intended Render workspace if you want the request logs inspected. Until workspace selection and correlation, keep the demo no-network criterion open.
+5. After P3-02–P3-05 are fully accepted, P3-06 is next in the original task order; wait for explicit instruction before implementing it.
 
 ## Current authentication smoke-test readiness — 2026-10-18 Asia/Kolkata
 
@@ -528,3 +547,7 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 ### Next task
 
 The next product task in original Phase 3 order is **P3-06 — Display dependency links or an explicit graph view**. Do not begin it until the owner completes the manual smoke test above and confirms P3-02–P3-05 behavior. P2-11 live NVIDIA inference remains blocked and is not the next task.
+
+## Detailed production browser acceptance evidence — 2026-10-18 Asia/Kolkata
+
+See the latest authoritative follow-up near the top of this file. Detailed reported outcomes: demo label/counts PASS; 70/120-minute budget PASS; demo POST observed YES but uncorrelated; empty-token behavior reported PASS; invalid token HTTP 401 / `UNAUTHORIZED`, no plan; missing NVIDIA config result unspecified and therefore NOT TESTED/UNKNOWN; keyboard/narrow viewport PASS; no other errors reported. No code changes were made because current source explicitly short-circuits demo mode before the API helper, and the observation could not safely be reproduced. Render logs await explicit workspace selection. P3-02–P3-05 remain open and P3-06 must not start yet.

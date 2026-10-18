@@ -430,3 +430,75 @@ test("no-Origin requests work without cross-origin grants", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("access-control-allow-origin"), null);
 });
+
+
+test("provider attribution logs correlated success metadata without request content", async () => {
+  const events = [];
+  const started = await listen(createApp({
+    env: { NVIDIA_API_KEY: "configured-only", FLOW_COMPILER_ACCESS_TOKEN: testAccessToken },
+    allowedOrigins: ["http://localhost:5173"],
+    rateLimit: { windowMs: 60_000, limit: 10 },
+    attributionLogger: event => events.push(event),
+    planClient: {
+      async createChatCompletion() {
+        return {
+          upstreamStatus: 200,
+          output: {
+            summary: "Complete a small task",
+            totalMinutes: 15,
+            tasks: [{
+              id: "t1",
+              title: "Complete a small task",
+              minutes: 15,
+              priority: "normal",
+              reason: "It is the next concrete action.",
+              dependsOn: [],
+              category: "build"
+            }]
+          }
+        };
+      }
+    }
+  }));
+  try {
+    const response = await fetch(started.baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
+      body: JSON.stringify({ brainDump: "PRIVATE_INPUT_SENTINEL", availableMinutes: 30 })
+    });
+    assert.equal(response.status, 200);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].event, "provider_attribution");
+    assert.equal(events[0].provider, "nvidia");
+    assert.equal(events[0].model, "nvidia/nemotron-3-ultra-550b-a55b");
+    assert.equal(events[0].upstreamStatus, 200);
+    assert.equal(events[0].outcome, "validated");
+    assert.match(events[0].requestId, /^[0-9a-f-]{36}$/);
+    assert.equal(JSON.stringify(events).includes("PRIVATE_INPUT_SENTINEL"), false);
+    assert.equal(JSON.stringify(events).includes(testAccessToken), false);
+  } finally { await close(started.server); }
+});
+
+test("provider attribution records safe failure metadata without secrets or provider body", async () => {
+  const events = [];
+  const started = await listen(createApp({
+    env: { NVIDIA_API_KEY: "", FLOW_COMPILER_ACCESS_TOKEN: testAccessToken },
+    allowedOrigins: ["http://localhost:5173"],
+    rateLimit: { windowMs: 60_000, limit: 10 },
+    attributionLogger: event => events.push(event)
+  }));
+  try {
+    const response = await fetch(started.baseUrl + "/api/plan", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + testAccessToken },
+      body: JSON.stringify({ brainDump: "PRIVATE_INPUT_SENTINEL", availableMinutes: 30 })
+    });
+    assert.equal(response.status, 500);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].provider, "none");
+    assert.equal(events[0].upstreamStatus, null);
+    assert.equal(events[0].outcome, "AI_NOT_CONFIGURED");
+    assert.equal(JSON.stringify(events).includes("PRIVATE_INPUT_SENTINEL"), false);
+    assert.equal(JSON.stringify(events).includes(testAccessToken), false);
+  } finally { await close(started.server); }
+});

@@ -586,3 +586,14 @@ Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WO
 - Render deploy `dep-dbaecfjrjlhs73ch61mg` is `live` on `3d6281cdf512e4b5fc14be11d24829927842ab37`; Vercel Production deployment `dpl_HLXiVt4W8ZHTM5M6pasyRWqsHyqt` is `READY` on the same SHA. This is deployment metadata only, not a live browser test.
 - The owner-reported missing-configuration UI is recorded as observed but not independently correlated to an exact HTTP status/error code. No repeat is required for this batch. Mocked route tests prove the no-provider-key path stops before provider fetch; live NVIDIA inference remains unauthorized.
 - Static dependency relationships are implemented in P3-06; P5-02 remains in progress because its animated/glowing graph treatment has not been implemented. Phase 4 and later work remains outside this batch.
+
+
+## Phase 4 batch handoff — 2026-10-18 Asia/Kolkata
+
+- Refreshed `main`: `7c11b3e990d95204af475da89dc8da7a87e8aa5d`. The existing branch `feat/phase-4-recompile-focus-workflow` was retained; no duplicate branch was created. No open PRs were present at the start of this resumed batch.
+- Phase 4 implementation now covers P4-01 through P4-08 on that branch. The latest branch commit is `a766117eb99537cd48fab546e12d1b9cf93058b4`; latest Actions run [#39153015178](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39153015178) is successful. Workflow steps verified: Node 24 setup, dependency install, backend tests, and Vite production build. Earlier branch CI failures occurred on `b3783217621b1b8ab0b50141798340ce68001d1b` and `3d667cf66101f80b747e800e3f2708da9da91264`; subsequent fixes led to the green run. No test log evidence is being represented as a production browser test.
+- The current implementation keeps demo recompilation local and deterministic, forwards authenticated API revision context only in API mode, preserves completed records, revalidates dependencies, and guards asynchronous responses against stale request IDs/aborts. Focus timer uses a React effect interval with cleanup.
+- Review caveat: a browser-based production smoke test is still needed for revision controls, completion preservation, timer controls and narrow-width/focus behavior. The API recompile success path cannot be exercised without an authenticated request, and no live NVIDIA inference is permitted.
+- Phase 3 acceptance remains partially open for P3-02/P3-03/P3-04/P3-05/P3-08/P3-09 where the latest checklist records missing production-browser evidence. Do not let these independent manual checks block this Phase 4 code batch, and do not claim Phase 3 fully accepted.
+- Next eligible task after Phase 4 is **P5-01 — Persist active plan/completion state locally**, but only after this Phase 4 PR is reviewed/merged and its post-merge CI passes. Phase 5 has not been started in this batch.
+- No NVIDIA key was configured or used; no live provider inference occurred; no hosting settings or secrets were changed.

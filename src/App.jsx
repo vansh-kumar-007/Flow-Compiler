@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { DEMO_PLAN, DEMO_INPUT, getInputError, getTimeError } from "./plan-ui.js";
+import { DEMO_PLAN, DEMO_INPUT, TIME_PRESETS, formatTimePreset, getInputError, getTimeError } from "./plan-ui.js";
 import { requestPlan } from "./plan-api.js";
+import { buildDependencyGraph, getCompletionProgress, isCurrentPlanRequest, setScheduledTaskCompletion } from "./plan-interactions.js";
 
 // Public, non-secret API origin. Production fails closed when it is not configured;
 // local Vite development continues to use the dev-server /api proxy.
@@ -41,6 +42,7 @@ export default function App() {
   const [planMessage, setPlanMessage] = useState("");
   const [generatedPlan, setGeneratedPlan] = useState(null);
   const [planKind, setPlanKind] = useState(null);
+  const [completedTaskIds, setCompletedTaskIds] = useState({});
   const [apiState, setApiState] = useState("idle");
   const [apiMessage, setApiMessage] = useState("Backend connection has not been checked.");
   const planRequestId = useRef(0);
@@ -81,7 +83,9 @@ export default function App() {
 
   function enterDemoMode() {
     abortController.current?.abort();
+    abortController.current = null;
     planRequestId.current += 1;
+    setCompletedTaskIds({});
     setDemoMode(true);
     setBrainDump(DEMO_INPUT);
     setMinutes(120);
@@ -92,6 +96,12 @@ export default function App() {
   }
 
   function exitDemoMode() {
+    // Clicking API PLANNING also invalidates any in-flight API request. This makes
+    // mode changes safe even if a request is active and its response arrives late.
+    abortController.current?.abort();
+    abortController.current = null;
+    planRequestId.current += 1;
+    setCompletedTaskIds({});
     setDemoMode(false);
     setGeneratedPlan(null);
     setPlanKind(null);
@@ -146,6 +156,7 @@ export default function App() {
     const requestId = ++planRequestId.current;
     setPlanState("loading");
     setPlanMessage("Sending an authenticated planning request…");
+    setCompletedTaskIds({});
     setGeneratedPlan(null);
     setPlanKind(null);
 
@@ -158,15 +169,15 @@ export default function App() {
         availableMinutes: minutes,
         signal: controller.signal
       });
-      if (requestId !== planRequestId.current || !mounted.current) return;
+      if (!isCurrentPlanRequest(requestId, planRequestId.current, mounted.current, controller.signal)) return;
 
+      setCompletedTaskIds({});
       setGeneratedPlan(payload);
       setPlanKind("api");
       setPlanState("success");
       setPlanMessage("Authenticated request succeeded. The plan below is the validated backend response.");
     } catch (error) {
-      if (requestId !== planRequestId.current || !mounted.current) return;
-      if (controller.signal.aborted) return;
+      if (!isCurrentPlanRequest(requestId, planRequestId.current, mounted.current, controller.signal)) return;
       setPlanState("error");
       setGeneratedPlan(null);
       setPlanKind(null);
@@ -241,7 +252,7 @@ export default function App() {
         <div className="time-heading"><label className="field-label" htmlFor="available-minutes">EXECUTION WINDOW</label><strong>{minutes} <small>MIN</small></strong></div>
         <input id="available-minutes" className="time-slider" aria-label="Available time in minutes" type="range" min="5" max="720" step="1" value={minutes} aria-describedby="available-minutes-help available-minutes-error" aria-invalid={Boolean(timeError)} disabled={demoMode || planState === "loading"} onChange={e=>changeMinutes(Number(e.target.value))}/>
         <div className="range-labels"><span>5 MIN</span><span>12 HOURS</span></div>
-        <div className="time-presets">{[15,30,60,120,240,480,720].map(v=><button type="button" key={v} className={minutes===v?"preset active":"preset"} aria-pressed={minutes===v} disabled={demoMode || planState === "loading"} onClick={()=>changeMinutes(v)}>{v>=60?v/60+"H":v+"M"}</button>)}</div>
+        <div className="time-presets">{TIME_PRESETS.map(v=><button type="button" key={v} className={minutes===v?"preset active":"preset"} aria-pressed={minutes===v} disabled={demoMode || planState === "loading"} onClick={()=>changeMinutes(v)}>{formatTimePreset(v)}</button>)}</div>
         <p id="available-minutes-help" className="field-help">{demoMode ? "The fixed sample is designed for a 120-minute window. Switch back to API Planning to change available time." : "Choose an integer from 5 to 720 minutes, matching the planning API contract."}</p>
         {timeError && <p id="available-minutes-error" className="field-error" role="alert">{timeError}</p>}
         <div className="rule"/>
@@ -281,7 +292,35 @@ export default function App() {
           <section className={"generated-plan " + (planKind === "demo" ? "demo-plan" : "api-plan")} aria-labelledby="generated-plan-title">
             <div className="generated-plan-heading"><div><small>{planKind === "demo" ? "FIXED LOCAL EXAMPLE · NOT AI GENERATED" : "VALIDATED BACKEND RESPONSE"}</small><h3 id="generated-plan-title">{displayPlan.summary}</h3></div><span>{displayPlan.totalMinutes} MIN</span></div>
             <div className="plan-metadata"><span>{displayPlan.tasks.length} scheduled tasks</span><span>{displayPlan.deferredTasks?.length || 0} deferred</span><span>Time budget: {minutes} min</span></div>
-            <ol>{displayPlan.tasks.map((task, index) => {
+            {(() => {
+              const progress = getCompletionProgress(displayPlan, completedTaskIds);
+              const dependencyGraph = buildDependencyGraph(displayPlan);
+              return <section className="plan-progress" aria-labelledby="plan-progress-title">
+                <div className="progress-heading"><h4 id="plan-progress-title">Execution progress</h4><strong>{progress.percent}%</strong></div>
+                <div className="progress-track" role="progressbar" aria-label="Scheduled task completion" aria-valuemin="0" aria-valuemax={progress.total} aria-valuenow={progress.completed} aria-valuetext={progress.completed + " of " + progress.total + " scheduled tasks complete"}>
+                  <span style={{ width: progress.percent + "%" }} />
+                </div>
+                <p>{progress.completed} of {progress.total} scheduled tasks complete · {progress.remaining} remaining. Deferred tasks are excluded until they are scheduled in a future plan.</p>
+                <section className="dependency-view" aria-labelledby="dependency-view-title">
+                  <div className="dependency-heading"><h4 id="dependency-view-title">Dependency links</h4><span>DECLARED PREREQUISITES</span></div>
+                  {!dependencyGraph.valid
+                    ? <p className="dependency-empty" role="status">Dependency view unavailable: {dependencyGraph.reason}</p>
+                    : dependencyGraph.edges.length === 0
+                      ? <p className="dependency-empty">No prerequisites are declared in this plan. Task display order alone does not imply a dependency.</p>
+                      : <ul className="dependency-links">{dependencyGraph.edges.map(edge => {
+                          const from = dependencyGraph.nodes.find(node => node.id === edge.from);
+                          const to = dependencyGraph.nodes.find(node => node.id === edge.to);
+                          return <li key={edge.from + "->" + edge.to}>
+                            <span className={"dependency-node " + edge.fromStatus}>{from.title}<small>{from.status.toUpperCase()} · {from.id}</small></span>
+                            <span className="dependency-arrow" aria-label="must happen before">→</span>
+                            <span className={"dependency-node " + edge.toStatus}>{to.title}<small>{to.status.toUpperCase()} · {to.id}</small></span>
+                            <p>{from.title} must happen before {to.title}.</p>
+                          </li>;
+                        })}</ul>}
+                </section>
+              </section>;
+            })()}
+            <ol className="scheduled-task-list">{displayPlan.tasks.map((task, index) => {
               const tasksById = new Map([
                 ...displayPlan.tasks,
                 ...(displayPlan.deferredTasks || [])
@@ -292,6 +331,10 @@ export default function App() {
               });
               return <li key={task.id}>
                 <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span className="scheduled-status">SCHEDULED · {task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
+                <label className="completion-control">
+                  <input type="checkbox" checked={completedTaskIds[task.id] === true} onChange={event => setCompletedTaskIds(current => setScheduledTaskCompletion(displayPlan, current, task.id, event.target.checked))} aria-label={"Mark scheduled task as complete: " + task.title} />
+                  <span>{completedTaskIds[task.id] === true ? "COMPLETED" : "MARK COMPLETE"}</span>
+                </label>
                 <p>{task.reason}</p>
                 <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{prerequisites.length ? "PREREQUISITES: " + prerequisites.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
               </li>;

@@ -142,3 +142,12 @@ test("rejects malformed API URLs before invoking fetch", async () => {
   }
   assert.equal(calls, 0);
 });
+
+test("maps backend auth-configuration and provider-network errors to safe actionable messages", async () => {
+  await assert.rejects(requestPlan(args({
+    fetchImpl: async () => response({ error: { code: "AUTHENTICATION_NOT_CONFIGURED", message: "internal" } }, { ok: false, status: 503 })
+  })), error => error.code === "AUTHENTICATION_NOT_CONFIGURED" && /not configured/.test(error.message) && !error.message.includes("internal"));
+  await assert.rejects(requestPlan(args({
+    fetchImpl: async () => response({ error: { code: "AI_NETWORK_ERROR", message: "private upstream host" } }, { ok: false, status: 502 })
+  })), error => error.code === "AI_NETWORK_ERROR" && /could not be reached/.test(error.message) && !error.message.includes("private upstream"));
+});

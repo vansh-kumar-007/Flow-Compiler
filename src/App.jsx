@@ -364,6 +364,12 @@ export default function App() {
       return;
     }
 
+    if (getInputError(brainDump)) {
+      setRevisionState("error");
+      setRevisionMessage("Your original task input was not saved for privacy. Re-enter the task description before recompiling. No request was sent.");
+      return;
+    }
+
     const credential = accessToken.trim();
     if (!credential) {
       setRevisionState("error");

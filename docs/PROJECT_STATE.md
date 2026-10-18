@@ -459,8 +459,31 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 
 ## Phase 3 batch merge and verification — 2026-10-18 Asia/Kolkata
 
-- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) merged as `REPLACE_MERGE_SHA` after exact PR-head CI succeeded. The scoped change includes `src/App.jsx`, `src/plan-ui.js`, `src/plan-api.js`, two frontend test files, styles, root test script, and the two governance docs. No runtime backend security/provider source changed.
+- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) merged as `c99012f28c89fedc551f54da3cca55e7d9a19677` after exact PR-head CI succeeded. The scoped change includes `src/App.jsx`, `src/plan-ui.js`, `src/plan-api.js`, two frontend test files, styles, root test script, and the two governance docs. No runtime backend security/provider source changed.
 - The follow-up fix renders prerequisite titles as well as IDs, leaving graph-edge drawing/readiness to P3-06. Exact-head [Actions #280](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110567494) passed after that correction (head `8061471eb312e502b96a8fc88dd504dd318ac04e`).
 - Owner manually confirmed the backend health endpoint returned `{"status":"ok","service":"flow-compiler-api"}`. Do not equate this health marker with a successful authenticated plan or provider inference.
 - No browser test runner exists in the repo. Production UI check of demo/no-network transitions and authenticated safe errors remains manual. Hosting metadata must be refreshed against the merged commit before production UI is described as deployed.
 - NVIDIA `NVIDIA_API_KEY` remains intentionally unset; no provider call, paid service, new dependency, or hosting configuration change was made.
+
+
+## Post-merge verification snapshot — 2026-10-18 Asia/Kolkata
+
+- Current main SHA: `c99012f28c89fedc551f54da3cca55e7d9a19677`. PR #15 merged via normal squash workflow. No open PRs were reported immediately after merge.
+- Exact PR head `6ec1e727c8bea02dbabe7ceba43b1a695856ddc4` passed Actions #283. Post-merge main CI [run #284](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110709718) also passed on exact merge SHA `c99012f28c89fedc551f54da3cca55e7d9a19677`.
+- Render deployment `dep-dba7vvu7bikc73ec4kc0` and Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` both target `c99012f28c89fedc551f54da3cca55e7d9a19677`. A subsequent refresh confirms Render `live` with successful build/deploy completion events and Vercel `READY` on that exact SHA.
+- Owner supplied current backend health result `{"status":"ok","service":"flow-compiler-api"}`. This confirms the backend health route only, not frontend rollout or model inference.
+- No NVIDIA key or inference; no hosting setting/environment change. Browser acceptance remains owner manual because no browser automation runner is configured.
+
+
+## Post-merge evidence refresh — 2026-10-18 Asia/Kolkata
+
+- PR #15 merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`. Exact-main Actions #284 passed, Render reports `live`, and Vercel Production reports `READY` on the same merge SHA; these states were directly refreshed.
+- The Phase 3 batch did not implement P3-06 graph visualization, P3-07 progress tracking, or Phase 4 recompilation. The next technical task remains P3-06 after required deployed/manual acceptance for this batch.
+
+
+## Phase 3 post-merge deployment/CI refreshed — 2026-10-18 Asia/Kolkata
+
+- Current `main`: `c99012f28c89fedc551f54da3cca55e7d9a19677`. Exact merge Actions run [#284](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110709718) passed on that SHA (Node 24, clean install, backend tests, production build).
+- Render latest deployment `dep-dba7vvu7bikc73ec4kc0` is `live` on the merge SHA; build and deployment completion events succeeded. Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` is `READY` on the same SHA.
+- User supplied the public health endpoint response `{"status":"ok","service":"flow-compiler-api"}`. This confirms backend health only; no authenticated planning request was made during this audit and no NVIDIA inference occurred.
+- No browser automation is configured. An owner browser smoke test remains the final product-level manual check for demo/no-network transitions and visible safe API errors. Keep `NVIDIA_API_KEY` unset until a separate reviewed authorization.

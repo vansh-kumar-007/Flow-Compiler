@@ -664,9 +664,19 @@ This current addendum supersedes older statements above that claim the backend o
 
 ## Phase 3 batch merged — post-merge evidence — 2026-10-18 Asia/Kolkata
 
-- **PR #15** ([Phase 3 coordinated input/demo/API/task-list batch](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15)) merged via the repository normal PR flow as commit `REPLACE_MERGE_SHA`. No branch protection was bypassed.
-- Exact-head CI run #280 ([Actions](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110567494)) passed on `8061471eb312e502b96a8fc88dd504dd318ac04e`: install, full backend tests, frontend Node tests, and Vite production build. The test command is `npm test --workspace server && node --test src/*.test.js`; no dependency was added.
+- **PR #15** ([Phase 3 coordinated input/demo/API/task-list batch](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15)) merged via the repository normal PR flow as commit `c99012f28c89fedc551f54da3cca55e7d9a19677`. No branch protection was bypassed.
+- Exact-head CI run #283 ([Actions](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110660535)) passed on PR head `6ec1e727c8bea02dbabe7ceba43b1a695856ddc4`: install, backend tests, frontend Node tests, and Vite production build. Post-merge main CI run #284 is separate and is being verified against the merge SHA. The test command is `npm test --workspace server && node --test src/*.test.js`; no dependency was added.
 - Added prerequisite rendering that resolves dependency IDs to readable task titles and retains IDs, matching the source-plan rendering expectation. The client validates dependency references/cycles but deliberately does not draw dependency edges or implement readiness logic (P3-06).
 - PR #15 branch success is automated/mock evidence, not live NVIDIA use. No NVIDIA request, key, quota-consuming test, or provider-network call was made.
 - User manually confirmed public backend health JSON: `{"status":"ok","service":"flow-compiler-api"}`.
-- **Post-merge hosting snapshot must still be read as deployment state, not assumed:** Render is expected to auto-deploy main, but its latest deployment must report `live`; Vercel must be `READY` on the merged SHA before production UI acceptance is marked. Browser automation is not configured in the repository; a small owner browser smoke test remains required.
+- **Post-merge hosting snapshot must still be read as deployment state, not assumed:** Render is expected to auto-deploy main, but its latest deployment must report `live`; Vercel must be `READY` on the merged SHA before production UI acceptance is marked. Browser automation is not configured in the repository; a small owner browser smoke test remains required. `NVIDIA_API_KEY` remains unset.
+
+
+## Phase 3 post-merge deployment and CI confirmation — 2026-10-18 Asia/Kolkata
+
+- Current `main` SHA: `c99012f28c89fedc551f54da3cca55e7d9a19677`.
+- Exact-main Actions [run #284](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39110709718) completed successfully on the same SHA; Node 24, dependency install, backend tests, and Vite production build all passed.
+- Render deploy `dep-dba7vvu7bikc73ec4kc0` is `live` on that SHA; Render build-ended and deploy-ended events both succeeded. Render plan remains Free and auto-deploy remains enabled from `main`.
+- Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` is `READY` on that same SHA.
+- No open PRs were found in the latest search. The backend `/api/health` JSON was supplied manually by the user. Browser test automation remains unavailable; user must perform the concise UI smoke test documented in the handoff.
+- No Render environment/settings changed; no `NVIDIA_API_KEY`, no provider request, no paid resource or added dependency.

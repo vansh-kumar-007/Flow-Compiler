@@ -2,6 +2,11 @@ export const MAX_BRAIN_DUMP_LENGTH = 5000;
 export const MIN_AVAILABLE_MINUTES = 5;
 export const MAX_AVAILABLE_MINUTES = 720;
 export const TASK_LIMIT = 20;
+export const TIME_PRESETS = Object.freeze([15, 30, 60, 120, 240, 480, 720]);
+
+export function formatTimePreset(minutes) {
+  return minutes >= 60 && minutes % 60 === 0 ? minutes / 60 + "H" : minutes + "M";
+}
 
 export const DEMO_INPUT = "Finish my portfolio, fix the login bug, learn React Query, and apply for internships. The login bug blocks deployment.";
 

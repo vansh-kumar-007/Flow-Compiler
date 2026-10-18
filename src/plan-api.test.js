@@ -118,3 +118,36 @@ test("aborted request never exposes low-level fetch details", async () => {
     fetchImpl: async () => { throw new Error("low-level details"); }
   })), error => error.code === "REQUEST_CANCELLED" && !error.message.includes("low-level"));
 });
+
+test("passes the supplied AbortSignal to fetch and classifies an aborted fetch as cancellation", async () => {
+  const controller = new AbortController();
+  let seenSignal;
+  const pending = requestPlan(args({
+    signal: controller.signal,
+    fetchImpl: async (_url, options) => {
+      seenSignal = options.signal;
+      controller.abort();
+      throw new Error("low-level abort detail");
+    }
+  }));
+  await assert.rejects(pending, error => error.code === "REQUEST_CANCELLED" && !error.message.includes("low-level"));
+  assert.equal(seenSignal, controller.signal);
+});
+
+test("rejects malformed API URLs before invoking fetch", async () => {
+  let calls = 0;
+  for (const url of ["", "https://api.example.test/other", null]) {
+    await assert.rejects(requestPlan(args({ url, fetchImpl: async () => { calls += 1; return response(plan()); } })),
+      error => error.code === "INVALID_API_URL");
+  }
+  assert.equal(calls, 0);
+});
+
+test("maps backend auth-configuration and provider-network errors to safe actionable messages", async () => {
+  await assert.rejects(requestPlan(args({
+    fetchImpl: async () => response({ error: { code: "AUTHENTICATION_NOT_CONFIGURED", message: "internal" } }, { ok: false, status: 503 })
+  })), error => error.code === "AUTHENTICATION_NOT_CONFIGURED" && /not configured/.test(error.message) && !error.message.includes("internal"));
+  await assert.rejects(requestPlan(args({
+    fetchImpl: async () => response({ error: { code: "AI_NETWORK_ERROR", message: "private upstream host" } }, { ok: false, status: 502 })
+  })), error => error.code === "AI_NETWORK_ERROR" && /could not be reached/.test(error.message) && !error.message.includes("private upstream"));
+});

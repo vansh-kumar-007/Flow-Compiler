@@ -242,6 +242,13 @@ export default function App() {
     setFocusTimer({ taskId: task.id, secondsLeft: task.minutes * 60, running: false });
   }
 
+  function toggleScheduledTask(taskId, checked) {
+    setCompletedTaskIds(current => setScheduledTaskCompletion(generatedPlan, current, taskId, checked));
+    if (checked) {
+      setFocusTimer(current => current.taskId === taskId ? { ...current, running: false } : current);
+    }
+  }
+
   function toggleFocusTimer() {
     setFocusTimer(current => {
       if (!current.taskId || current.secondsLeft <= 0) return current;
@@ -488,10 +495,10 @@ export default function App() {
               return <li key={task.id}>
                 <div className="generated-task-title"><strong><span className="task-index">{String(index + 1).padStart(2, "0")}</span>{task.title}</strong><span className="scheduled-status">SCHEDULED · {task.minutes} MIN · {task.priority.toUpperCase()}</span></div>
                 <label className="completion-control">
-                  <input type="checkbox" checked={completedTaskIds[task.id] === true} onChange={event => setCompletedTaskIds(current => setScheduledTaskCompletion(displayPlan, current, task.id, event.target.checked))} aria-label={"Mark scheduled task as complete: " + task.title} />
+                  <input type="checkbox" checked={completedTaskIds[task.id] === true} onChange={event => toggleScheduledTask(task.id, event.target.checked)} aria-label={"Mark scheduled task as complete: " + task.title} />
                   <span>{completedTaskIds[task.id] === true ? "COMPLETED" : "MARK COMPLETE"}</span>
                 </label>
-                <button className="focus-task-button" type="button" onClick={() => startFocusForTask(task)} disabled={completedTaskIds[task.id] === true}>FOCUS THIS TASK</button>
+                <button className="focus-task-button" type="button" onClick={() => startFocusForTask(task)} disabled={completedTaskIds[task.id] === true || !task.dependsOn.every(id => completedTaskIds[id] === true)}>FOCUS THIS TASK</button>
                 <p>{task.reason}</p>
                 <div className="task-facts"><span>{task.category.toUpperCase()}</span><span>{prerequisites.length ? "PREREQUISITES: " + prerequisites.join(", ") : "NO PREREQUISITES"}</span><span>ID: {task.id}</span></div>
               </li>;
@@ -506,7 +513,7 @@ export default function App() {
                 ? <p className="focus-task-name">Current focus: <strong>{focusTask.title}</strong> · {focusTask.minutes} min</p>
                 : <p className="focus-task-name">Choose a scheduled task to start its countdown.</p>}
               <div className="focus-controls">
-                <button type="button" onClick={toggleFocusTimer} disabled={!focusTask || focusTimer.secondsLeft <= 0}>{focusTimer.running ? "PAUSE TIMER" : focusTimer.secondsLeft === 0 ? "TIMER COMPLETE" : "START TIMER"}</button>
+                <button type="button" onClick={toggleFocusTimer} disabled={!focusTask || focusTimer.secondsLeft <= 0}>{focusTimer.running ? "PAUSE TIMER" : focusTask && focusTimer.secondsLeft === 0 ? "TIMER COMPLETE" : "START TIMER"}</button>
                 <button type="button" onClick={resetFocusTimer} disabled={!focusTask}>RESET</button>
                 <button type="button" onClick={() => nextReadyTask && startFocusForTask(nextReadyTask)} disabled={!nextReadyTask}>NEXT READY TASK</button>
               </div>
@@ -526,7 +533,7 @@ export default function App() {
                 <label htmlFor="blocked-task">BLOCKED TASK</label>
                 <select id="blocked-task" value={blockedTaskId} onChange={event => setBlockedTaskId(event.target.value)} disabled={revisionState === "loading"}>
                   <option value="">Select an unfinished task</option>
-                  {displayModel.tasks.filter(task => completedTaskIds[task.id] !== true).map(task => <option key={task.id} value={task.id}>{task.title}</option>)}
+                  {[...displayModel.tasks, ...displayModel.deferredTasks].filter(task => completedTaskIds[task.id] !== true).map(task => <option key={task.id} value={task.id}>{task.title}{displayModel.deferredTasks.some(deferred => deferred.id === task.id) ? " (deferred)" : ""}</option>)}
                 </select>
               </>}
               <label htmlFor="revision-note">CONTEXT / BLOCKER DETAILS</label>

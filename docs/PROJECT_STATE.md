@@ -1,6 +1,6 @@
 # Flow Compiler — Project State
 
-Last updated: 2026-10-18 (Asia/Kolkata; current main, authentication alias fix and deployment audit verified)
+Last updated: 2026-10-18 (Asia/Kolkata; Phase 3 batch and NVIDIA readiness audit refreshed)
 Authoritative product source: the ChatGPT Project source “Flow Compiler — build plan and starter code” (uploaded as Plan.txt; the master instructions refer to Plan.md). The source plan remains authoritative.
 
 
@@ -487,3 +487,44 @@ The uploaded Plan.txt §9 says to (1) validate dependencies including circular d
 - Render latest deployment `dep-dba7vvu7bikc73ec4kc0` is `live` on the merge SHA; build and deployment completion events succeeded. Vercel Production deployment `dpl_zo5EKr4T75cKmaV9PV4323eqrXWH` is `READY` on the same SHA.
 - User supplied the public health endpoint response `{"status":"ok","service":"flow-compiler-api"}`. This confirms backend health only; no authenticated planning request was made during this audit and no NVIDIA inference occurred.
 - No browser automation is configured. An owner browser smoke test remains the final product-level manual check for demo/no-network transitions and visible safe API errors. Keep `NVIDIA_API_KEY` unset until a separate reviewed authorization.
+
+
+## Phase 3 batch closure audit and NVIDIA readiness — 2026-10-18 Asia/Kolkata
+
+### Exact repository and CI state at the runtime-code snapshot
+
+- `main` application-code SHA: `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`.
+- PR [#15](https://github.com/vansh-kumar-007/Flow-Compiler/pull/15) is merged as `c99012f28c89fedc551f54da3cca55e7d9a19677`; PR [#16](https://github.com/vansh-kumar-007/Flow-Compiler/pull/16) is merged as `8fd163815ebbfbee6c429e93f1a4eabeb35875c9`; narrow follow-up PR [#17](https://github.com/vansh-kumar-007/Flow-Compiler/pull/17) is merged as `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`. PR #17 adds an explicit safe frontend message/test for upstream `AI_AUTHENTICATION_ERROR`; no runtime backend or provider settings changed.
+- Exact-main [Actions #291](https://github.com/vansh-kumar-007/Flow-Compiler/actions/runs/39112563059) passed on `a0f2b0a04392f2eecb089ca2a90dad1b1c62d221`: Node 24 clean install, `npm test` with 260 backend tests + 17 frontend Node tests (all passed, none skipped), and Vite production build. No lint/typecheck/browser runner is configured.
+- Render Free deployment `dep-dba8df61egvs73ddvsng` is `live` on that same SHA; build and deploy completion events succeeded. Vercel Production deployment `dpl_8n2uAydRoPv6zkC3jzqppHSJ7a5A` is `READY` on the same SHA. Owner previously reported the health response `{"status":"ok","service":"flow-compiler-api"}`; this does not prove authenticated plan generation.
+- No NVIDIA request, no API key, no paid service/dependency, no Render setting/environment change and no access-token value inspection occurred. The reported `FLOW_COMPILER_ACCESS_TOKEN` configuration remains owner-reported only.
+
+### P3-02–P3-05 results and remaining manual acceptance
+
+- **P3-02:** input validation (empty/whitespace/5,000-character boundary) and time validation (integer 5–720) tested; accessible controls and presets present. Automated helper tests passed. Browser interaction not yet verified.
+- **P3-03:** immutable demo fixture with three scheduled and two deferred tasks; explicit illustrative labels; demo path contains no API call and aborts/invalidates an in-flight API request. Fixture/schema tests passed. Browser transition and Network-panel no-request check remain manual.
+- **P3-04:** documented request body and Authorization-only token transport; token is transient React state only. Mocked errors include 401, authentication-not-configured, missing NVIDIA config, rate limit, timeout, network, malformed JSON/plan, cancellation and upstream provider-auth rejection. Stale request IDs/AbortController reviewed. No live request.
+- **P3-05:** validated plan renderer shows summary, scheduled total, task fields, readable prerequisite titles + IDs and deferred reasons. Schema, budget, dependency-reference and cycle tests passed. Graph edges/readiness are explicitly out of scope (P3-06).
+- **Batch acceptance is not fully closed:** no browser automation is configured, so owner must run the production browser smoke test below. Do not start P3-06 until this check is reported.
+
+### Exact owner browser smoke test (no NVIDIA request)
+
+1. Open https://flow-compiler-cyan.vercel.app in a normal browser tab and test at desktop width and a narrow mobile viewport.
+2. Select **LOCAL DEMO** (or **LOAD EXAMPLE**). Confirm the UI says **DEMO / ILLUSTRATIVE**, shows 3 scheduled tasks and 2 deferred tasks, and the fixed plan totals 70 scheduled minutes against the 120-minute example. In DevTools → Network, clear the list and click **LOAD DEMO PLAN** again; confirm no `/api/plan` request is sent.
+3. Switch to **API PLANNING**. With token field empty, submit is expected to show the local “Enter your session access token…” error and make no request. Use a locally typed invalid dummy token and synthetic input; expect generic `401 UNAUTHORIZED` with no plan displayed.
+4. If using the privately configured valid access token, enter it only into the password field locally (never send it to chat or paste it elsewhere), use synthetic non-sensitive input and 15 minutes, and submit. Because `NVIDIA_API_KEY` is unset, expected result is HTTP 500 `AI_NOT_CONFIGURED`, safe explanatory text, and no plan displayed. This path must stop before any NVIDIA fetch. Report only HTTP status/error code and whether a plan was displayed; never report the token.
+5. Confirm idle/loading/error messages are understandable, keyboard focus is visible, and the layout has no horizontal overflow. Do not retry repeatedly; rate limit is active.
+
+### NVIDIA official-documentation and account gate
+
+- Official model page: https://build.nvidia.com/nvidia/nemotron-3-ultra-550b-a55b — current page lists the exact model and a free API endpoint.
+- Official API catalog: https://docs.api.nvidia.com/nim/reference/llm-apis — documents the OpenAI-compatible `POST /v1/chat/completions` endpoint and lists `nvidia/nemotron-3-ultra-550b-a55b`.
+- Official NVIDIA API Trial Terms: https://assets.ngc.nvidia.com/products/api-catalog/legal/NVIDIA%20API%20Trial%20Terms%20of%20Service.pdf — trial use is limited to internal testing/evaluation, not production; access can be credit/usage limited and further use may require subscription; monitoring/logging is permitted under the terms. Avoid private/confidential notes.
+- Adapter matches the documented endpoint/model and uses bearer auth, non-streaming JSON, 2,500 max output tokens, 90-second timeout and 1 MiB default response cap. Output body/error diagnostics are not forwarded to UI/logs; server auth, in-memory request limits, validation and provider key boundary exist. In-memory rate limits are not distributed, and no external security certification has been performed.
+- **Unknown:** account/model entitlement, trial acceptance, remaining credits, exact rate limits/quota, billing/payment status and whether a payment method is required. These are account-specific and were not accessible to the connected tools. A “free endpoint” label does not prove zero cost or no credit consumption.
+- **Recommendation: NOT READY for live inference.** Keep `NVIDIA_API_KEY` unset until the owner reviews account status and terms, confirms only internal evaluation is intended, verifies remaining quota/credits and billing settings, and then gives a separate explicit authorization. No live test was performed.
+- Proposed future test (not executed): one synthetic 5-minute task-planning request, one attempt without retries, no personal/private content, record only HTTP status/error code and schema pass/fail; current output cap allows up to 2,500 tokens, so usage cannot be guaranteed zero.
+
+### Next task
+
+The next product task in original Phase 3 order is **P3-06 — Display dependency links or an explicit graph view**. Do not begin it until the owner completes the manual smoke test above and confirms P3-02–P3-05 behavior. P2-11 live NVIDIA inference remains blocked and is not the next task.

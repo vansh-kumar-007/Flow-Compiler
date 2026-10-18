@@ -47,3 +47,11 @@ This matrix maps the original Project source Plan.txt to the repository's stable
 - If a new planning request fails, preserve the existing plan and completion state rather than replacing it with an empty result.
 - The safe export is intentionally lossy: it excludes plan summary and all free-form reasons/notes by default.
 - No paid service/dependency, NVIDIA request, hosting settings change or secret change is part of this sprint.
+
+
+## Sprint verification update — 2026-10-19
+
+- PR #25 head 46ab16673f272b8d7ee32428e19111ae37ecb9d3 passed configured Actions run #39157147324: 260 backend tests, 56 frontend Node tests, and the Vite production build.
+- The first run after adding malformed-snapshot recovery failed because its test called load twice; the first call correctly discarded the snapshot and the second saw an empty store. The test now reads once and checks that result; the later exact-head run is green.
+- Vercel's PR preview status failed with an explicit build-rate-limit signal. This is not an app build result, and no paid upgrade/settings change is permitted. The sprint branch is not yet production-deployed.
+- Render commit/health evidence is pending explicit workspace selection. The release verdict cannot exceed READY AS DEMO/PREVIEW ONLY until deployment and manual browser acceptance are complete. Live inference remains blocked.

@@ -1,5 +1,4 @@
-import { validatePlanResponse } from "./plan-ui.js";
-import { buildDependencyGraph } from "./plan-interactions.js";
+import { buildDependencyGraph, validateActivePlan } from "./plan-interactions.js";
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -11,7 +10,7 @@ function isRecord(value) {
  */
 export function createSafePlanExport(plan, completedTaskIds = {}, exportedAt = new Date().toISOString()) {
   const budget = Math.max(5, Number.isInteger(plan?.totalMinutes) ? plan.totalMinutes : 5);
-  if (validatePlanResponse(plan, budget)) throw new Error("Only a validated plan can be exported.");
+  if (validateActivePlan(plan, completedTaskIds, budget)) throw new Error("Only a validated plan can be exported.");
   if (!isRecord(completedTaskIds) || !Object.values(completedTaskIds).every(value => typeof value === "boolean")) {
     throw new Error("Completion state is invalid; export was not created.");
   }

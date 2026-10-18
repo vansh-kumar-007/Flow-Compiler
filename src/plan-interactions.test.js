@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { DEMO_PLAN } from "./plan-ui.js";
 import {
   buildDependencyGraph,
+  buildPlanPresentation,
   getCompletionProgress,
   isCurrentPlanRequest,
   setScheduledTaskCompletion
@@ -34,9 +35,12 @@ test("dependency view uses only declared edges and labels deferred nodes", () =>
 });
 
 test("dependency view supports no dependencies and multiple prerequisites", () => {
-  const noEdges = buildDependencyGraph(plan({ deferredTasks: [] }));
+  const noEdges = buildDependencyGraph(plan({
+    tasks: plan().tasks.map(task => ({ ...task, dependsOn: [] })),
+    deferredTasks: []
+  }));
   assert.equal(noEdges.valid, true);
-  assert.equal(noEdges.edges.length, 1);
+  assert.equal(noEdges.edges.length, 0);
   const multiple = plan({
     tasks: [
       { id: "a", title: "A", minutes: 5, priority: "high", reason: "A.", dependsOn: [], category: "build" },
@@ -94,4 +98,27 @@ test("stale, unmounted, and aborted request results cannot be applied", () => {
   assert.equal(isCurrentPlanRequest(3, 3, false, controller.signal), false);
   controller.abort();
   assert.equal(isCurrentPlanRequest(3, 3, true, controller.signal), false);
+});
+
+test("plan presentation preserves summary, durations, task details, prerequisites, and deferral reasons", () => {
+  const view = buildPlanPresentation(plan());
+  assert.equal(view.valid, true);
+  assert.equal(view.summary, "A small dependency plan.");
+  assert.equal(view.totalMinutes, 15);
+  assert.equal(view.tasks.length, 2);
+  assert.equal(view.tasks[1].title, "Second");
+  assert.equal(view.tasks[1].minutes, 10);
+  assert.equal(view.tasks[1].reason, "Follow first.");
+  assert.deepEqual(view.tasks[1].prerequisites, [{ id: "a", title: "First", status: "scheduled" }]);
+  assert.equal(view.deferredTasks.length, 1);
+  assert.equal(view.deferredTasks[0].deferredReason, "Outside this window.");
+  assert.deepEqual(view.deferredTasks[0].prerequisites, [{ id: "b", title: "Second", status: "scheduled" }]);
+});
+
+test("plan presentation refuses cyclic or unresolved dependency data", () => {
+  const invalid = buildPlanPresentation(plan({
+    tasks: [{ ...plan().tasks[0], dependsOn: ["missing"] }]
+  }));
+  assert.equal(invalid.valid, false);
+  assert.deepEqual(invalid.tasks, []);
 });

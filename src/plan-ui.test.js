@@ -5,6 +5,8 @@ import {
   DEMO_PLAN,
   getInputError,
   getTimeError,
+  TIME_PRESETS,
+  formatTimePreset,
   validatePlanResponse
 } from "./plan-ui.js";
 
@@ -107,4 +109,17 @@ test("dependency titles are renderable from the validated plan IDs without chang
   });
   assert.deepEqual(resolved, ["Reproduce the bug (t1)"]);
   assert.equal(validatePlanResponse(plan, 60), null);
+});
+
+test("time presets remain integer values within the slider/API range and format consistently", () => {
+  assert.ok(TIME_PRESETS.length > 0);
+  assert.equal(new Set(TIME_PRESETS).size, TIME_PRESETS.length);
+  for (const preset of TIME_PRESETS) {
+    assert.ok(Number.isInteger(preset));
+    assert.ok(preset >= 5 && preset <= 720);
+    assert.equal(getTimeError(preset), null);
+  }
+  assert.equal(formatTimePreset(15), "15M");
+  assert.equal(formatTimePreset(60), "1H");
+  assert.equal(formatTimePreset(720), "12H");
 });

@@ -135,5 +135,5 @@ test("response accepts completed prerequisites as satisfied revision dependencie
   };
   assert.equal(validatePlanResponse(revised, 15, ["t1"]), null);
   assert.match(validatePlanResponse(revised, 15, []), /unknown dependency/);
-  assert.match(validatePlanResponse({ ...revised, tasks: [{ ...revised.tasks[0], id: "t1" }] }, 15, ["t1"]), /collide/);
+  assert.match(validatePlanResponse({ ...revised, tasks: [{ ...revised.tasks[0], id: "t1", dependsOn: [] }] }, 15, ["t1"]), /collide/);
 });

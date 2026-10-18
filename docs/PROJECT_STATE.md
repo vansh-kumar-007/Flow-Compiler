@@ -606,3 +606,14 @@ Owner-reported PASS: with the API PLANNING session token field empty, COMPILE WO
 - Render remains unverified for exact commit/deploy state because its connector requires explicit workspace selection; no workspace was selected. No manual deploy was triggered. This does not imply a Render failure.
 - Production browser acceptance is still outstanding for the Phase 3 items already listed and the new Phase 4 recompile/focus UI. No provider inference or authenticated live planning request was performed.
 - Next task: P5-01 — Persist active plan/completion state locally. Preserve the session-only access-token boundary; do not persist credentials.
+
+
+## V1 readiness sprint — 2026-10-19
+
+- **Baseline refreshed:** main = d2e6c8ad36aa910c082a76dc11214eab2b95632c; PR #23 (Phase 4 implementation) and #24 (governance reconciliation) are merged; no open PRs were returned by the connected GitHub search. The exact-SHA combined status returned a successful Vercel check only; the connector did not return a GitHub Actions run for that main SHA.
+- **Vercel baseline:** Production deployment dpl_StavRzEEQ6PpB3ANRBrZrMhxtbzB reports READY on d2e6c8ad36aa910c082a76dc11214eab2b95632c. This is baseline evidence; sprint branch changes are not deployed until merged.
+- **Render:** workspace listing returned one available workspace, but no workspace was selected for service/deployment/log queries. Render commit and fresh /api/health response remain unverified; no hosting settings or secrets were changed.
+- **V1 branch:** feat/v1-readiness-sprint contains local plan persistence, safe JSON export, focus-mode layout, subtle dependency-edge animation and regression tests. The branch is not yet merged; test/build results must be taken from its actual Actions run and the exact resulting main SHA after merge.
+- **Data/security boundaries:** saved snapshots exclude raw input, revision notes and access token; the access token remains transient React state. Safe export omits free-form notes. No dependency added, no live NVIDIA request, no provider key, no paid service and no host setting/secret change.
+- **V1 verdict remains provisional:** READY AS DEMO/PREVIEW ONLY is the maximum supportable target until exact-main CI, post-merge Vercel/Render commit and health evidence, and the remaining browser acceptance are verified. Live AI planning is blocked.
+- **Next original task:** finish P5-01 through P5-07 and P6-01 through P6-07 in this same readiness sprint; then reconcile P7/P8 evidence. The compact manual gate must include Local Demo no-network verification, persistence/export, dependency/progress/recompile/focus behavior, accessibility/responsive checks, and deployed health/commit confirmation.

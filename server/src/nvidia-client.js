@@ -338,7 +338,7 @@ export function createNvidiaClient({
           throw createError("INVALID_MODEL_OUTPUT", response.status);
         }
 
-        return { content, output };
+        return { content, output, upstreamStatus: response.status };
       };
 
       try {

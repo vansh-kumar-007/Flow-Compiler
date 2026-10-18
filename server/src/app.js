@@ -1,8 +1,8 @@
-import { timingSafeEqual } from "node:crypto";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import cors from "cors";
 import express from "express";
 import { validatePlanRequest } from "./plan-request.js";
-import { createNvidiaClient, NvidiaProviderError } from "./nvidia-client.js";
+import { createNvidiaClient, NvidiaProviderError, NVIDIA_MODEL } from "./nvidia-client.js";
 import { createPlanMessages } from "./plan-prompt.js";
 import { validateGeneratedPlan } from "./plan-output.js";
 import { validateGeneratedDependencies } from "./dependency-graph.js";
@@ -203,6 +203,7 @@ export function createApp(options = {}) {
       : parseAllowedOrigins(env.APP_ORIGINS ?? env.APP_ORIGIN);
   const rateLimitConfig = options.rateLimit ?? readRateLimitConfig(env);
   const now = options.now ?? Date.now;
+  const attributionLogger = options.attributionLogger ?? (event => console.info(JSON.stringify(event)));
 
   if (!Array.isArray(allowedOrigins) || allowedOrigins.length === 0) {
     throw new Error("At least one trusted APP_ORIGINS origin is required.");
@@ -280,6 +281,7 @@ export function createApp(options = {}) {
       return response.status(400).json({ error: validationError });
     }
 
+    const requestId = randomUUID();
     const previousPlan = request.body.previousPlan ?? null;
     const completedTaskIds = previousPlan?.completedTaskIds ?? [];
     const revisionContext = previousPlan?.revisionContext ?? null;
@@ -310,8 +312,24 @@ export function createApp(options = {}) {
         throw new NvidiaProviderError("INVALID_MODEL_OUTPUT");
       }
 
+      attributionLogger({
+        event: "provider_attribution",
+        requestId,
+        provider: "nvidia",
+        model: NVIDIA_MODEL,
+        upstreamStatus: Number.isInteger(result?.upstreamStatus) ? result.upstreamStatus : null,
+        outcome: "validated"
+      });
       return response.status(200).json(plan);
     } catch (error) {
+      attributionLogger({
+        event: "provider_attribution",
+        requestId,
+        provider: error?.code === "AI_NOT_CONFIGURED" ? "none" : "nvidia",
+        model: NVIDIA_MODEL,
+        upstreamStatus: Number.isInteger(error?.upstreamStatus) ? error.upstreamStatus : null,
+        outcome: error instanceof NvidiaProviderError ? error.code : "internal_error"
+      });
       if (error instanceof NvidiaProviderError) {
         const status = error.code === "AI_NOT_CONFIGURED"
           ? 500

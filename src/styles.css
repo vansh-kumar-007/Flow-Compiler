@@ -128,3 +128,5 @@ textarea[aria-invalid="true"],input[aria-invalid="true"]{border-color:#fb7185}
 .revision-notice{border-color:#a78bfa60;color:#d8c9ff;background:#21153d66}
 @media(max-width:600px){.focus-panel,.revision-panel{padding:11px}.focus-panel-heading time{font-size:21px}.focus-controls button{flex:1;min-width:95px}.focus-task-button{margin-left:0}.revision-panel-heading{align-items:flex-start}}
 @media(prefers-reduced-motion:reduce){.focus-task-button,.focus-controls button,.revision-button{transition:none!important}}
+
+.generated-plan-heading>span small{display:block;margin-top:5px;color:#8298b3;font:7px var(--mono);letter-spacing:.7px;text-align:right}
